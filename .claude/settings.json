@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File C:/Users/zxcbi/.claude/hooks/dotnet-build-summary.ps1"
+          }
+        ]
+      }
+    ]
+  }
+}

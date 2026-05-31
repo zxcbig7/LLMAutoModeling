@@ -1,5 +1,20 @@
 # OptimFoundation CPLEX Framework
 
+## 開發兩階段原則（天條）
+
+### 第一階段：數學模型
+
+在 `Model/ProjectName_Model.md` 完整定義 Sets、Parameters、Variables、Objective、Constraints。
+數學模型不考慮任何程式細節。
+
+### 第二階段：程式實作
+
+程式開發是**純粹將數學模型轉譯為程式碼**，沒有任何創意發揮。
+
+**★ 禁止 Hardcode（天條）：所有數值一律在 Dataload 的 Parameter 中定義，Constraint / Objective 只能透過 dataload 查詢係數，不得直接寫死任何數字。**
+
+---
+
 ## 概述
 
 OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線性規劃（ILP / MIP）**模型。
