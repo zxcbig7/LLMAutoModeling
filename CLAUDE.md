@@ -62,9 +62,11 @@ ClaudeAIAssistant/
 **方向二：IIS → Soft Constraint**（模型 infeasible 時的標準流程）
 
 1. 執行 CPLEX IIS，找出最小衝突 constraint 集合
-2. 對衝突 constraint 加入 `VariableX_Slack`
-3. Slack 乘以 penalty weight 進目標函數
-4. Model.md 同步標記該 constraint 從 Hard 改為 Soft
+2. 把該 constraint 改用框架內建的軟限制式 API（自動加彈性變數 + penalty）：
+   - `engine.CreateLeSoft(rhs, penalty)` / `CreateGeSoft(rhs, penalty)` / `CreateEqSoft(rhs, penalty, name)`
+   - 用法同 hard 版：先 `AddLHS(...)` 再 `CreateXxSoft(...)`（見 CPLEX_API_REFERENCE 6.5）
+3. 違反量 = 彈性變數解值，可 `GetVariableValue("Deficit_...")` 查
+4. Model.md 同步標記該 constraint 從 Hard 改為 Soft（penalty 值寫進 Parameter）
 
 **方向三：模型結構優化**（效能差異大時才動）
 
@@ -74,6 +76,21 @@ ClaudeAIAssistant/
 | Tighten Big-M | LP relaxation gap 過大，找更緊的 M 上界 |
 | Valid inequalities | 加入不改 feasible region 但收緊 LP bound 的補強 constraint |
 | Warm start | 提供初始可行解給 CPLEX 作為 B&B 起點 |
+
+**Tuning 記錄（方向一掃描多組設定時用）**：用 `Experiment` 套件系統化記錄、比較各組設定，取代人工翻 log。
+
+```csharp
+var exp = new Experiment("proj-tuning", "說明");
+foreach (var (label, tune) in variants) {
+    var config = new CplexConfig { ... }; tune(config);   // 用抽象旋鈕：config.Emphasis / config.Seed ...
+    using var engine = new OptEngine(config); engine.Build();
+    new VariableCreate(d, engine).Build(); new BuildModel(d, engine).Build();
+    exp.AddTrial(Trial.Capture(engine, label, () => engine.Solve()));
+}
+exp.Save();   // → Experiments/proj-tuning.csv + .json（指標：time/gap/bound/node + 收斂軌跡）
+```
+
+> 詳見 CPLEX_API_REFERENCE 第 16 節。每個 Trial 記錄完整設定 + 收斂數據；CSV 給人對照、JSON 給後續 LLM tuning。
 
 ### 預設慣例（不追問，直接按此處理）
 

@@ -34,3 +34,18 @@ ConstraintCount++;
 ```
 
 `AddLHS`/`AddRHS` 為累加；`CreateXxx` 後自動清空，開始下一條。
+
+## 軟限制式（Phase 3 — 使用者明確指示才用）
+
+框架內建軟限制式：自動加彈性變數 + 把 penalty 加進目標式（**不需手動改 Objective**）。
+
+```csharp
+_engine.AddLHS(coeff, var);                 // 同 hard 版先累加 LHS
+_engine.CreateGeSoft(rhs, penalty);         // soft ≥（加 Deficit 變數）
+_engine.CreateLeSoft(rhs, penalty);         // soft ≤（加 Surplus 變數）
+_engine.CreateEqSoft(rhs, penalty, name);   // soft =（加 Delta_Neg/Pos）
+```
+
+- `penalty` 一律從 `Parameter.QTY` 取得，不得 hardcode。
+- 違反量 = 彈性變數解值（`Deficit_*` / `Surplus_*` / `Delta_*`）。
+- 改 soft 後**必須同步更新 `Model.md`**（Hard → Soft），penalty 值寫進 Parameter。

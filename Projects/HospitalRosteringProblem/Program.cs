@@ -9,6 +9,12 @@ namespace MyApp
 
         static void Main(string[] args)
         {
+            // 參數調整實驗：dotnet run -- experiment
+            if (args.Length > 0 && args[0] == "experiment")
+            {
+                ExperimentRunner.Run();
+                return;
+            }
 
             using (RosteringProblem project = new RosteringProblem())
             {

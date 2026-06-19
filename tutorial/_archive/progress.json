@@ -1,0 +1,64 @@
+{
+    "status": "in_progress",
+    "chapters": [{
+            "id": "assets",
+            "title": "共用樣式與導航",
+            "done": true
+        },
+        {
+            "id": "chapter_01",
+            "title": "環境準備與專案結構",
+            "done": false
+        },
+        {
+            "id": "chapter_02",
+            "title": "MILP 建模理論",
+            "done": false
+        },
+        {
+            "id": "chapter_03",
+            "title": "定義變數 Variable",
+            "done": false
+        },
+        {
+            "id": "chapter_04",
+            "title": "目標函數 Objective",
+            "done": false
+        },
+        {
+            "id": "chapter_05",
+            "title": "約束 Constraint",
+            "done": false
+        },
+        {
+            "id": "chapter_06",
+            "title": "建立模型 Model",
+            "done": false
+        },
+        {
+            "id": "chapter_07",
+            "title": "求解器設定 Solver",
+            "done": false
+        },
+        {
+            "id": "chapter_08",
+            "title": "讀取結果 Solution",
+            "done": false
+        },
+        {
+            "id": "chapter_09",
+            "title": "敏感度分析與錯誤處理",
+            "done": false
+        },
+        {
+            "id": "chapter_10",
+            "title": "完整整合範例",
+            "done": false
+        },
+        {
+            "id": "index",
+            "title": "首頁",
+            "done": false
+        }
+    ]
+}

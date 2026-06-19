@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptimFoundation 實戰教學 — 醫院排班 MILP 模型（加權懲罰）</title>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+:root{
+  --bg:#f7f8fb; --panel:#ffffff; --ink:#1c2230; --muted:#5b6577;
+  --line:#e6e9f0; --accent:#4f46e5; --accent2:#0ea5a4; --warn:#d97706; --err:#dc2626;
+  --code-bg:#0f1729; --code-ink:#e6edf3;
+  --kw:#c792ea; --str:#a5d6a7; --com:#6b7a90; --num:#f7c873; --typ:#82aaff;
+  --sb-w:288px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;
+  line-height:1.75; font-size:16px;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* layout */
+.layout{display:flex; align-items:flex-start}
+nav.sidebar{
+  width:var(--sb-w); flex:0 0 var(--sb-w); position:sticky; top:0; height:100vh;
+  overflow-y:auto; background:#fbfbfe; border-right:1px solid var(--line); padding:22px 16px 60px;
+}
+nav .brand{font-weight:800; font-size:18px; letter-spacing:.3px; color:var(--ink); margin:4px 6px 4px}
+nav .brand small{display:block; font-weight:500; font-size:12px; color:var(--muted); margin-top:4px}
+nav ul{list-style:none; margin:14px 0 0; padding:0}
+nav li{margin:1px 0}
+nav a{display:block; padding:6px 10px; border-radius:8px; color:var(--muted); font-size:14px}
+nav a:hover{background:#eef0fb; text-decoration:none; color:var(--ink)}
+nav a.sub{padding-left:24px; font-size:13.5px}
+nav a.active{background:var(--accent); color:#fff}
+main{flex:1 1 auto; min-width:0; max-width:920px; margin:0 auto; padding:0 40px 120px}
+
+/* hero */
+.hero{padding:64px 0 32px; border-bottom:1px solid var(--line)}
+.hero .kicker{color:var(--accent); font-weight:700; letter-spacing:2px; font-size:13px; text-transform:uppercase}
+.hero h1{font-size:38px; line-height:1.2; margin:10px 0 14px; letter-spacing:.5px}
+.hero p.lead{font-size:18px; color:var(--muted); margin:0 0 18px}
+.badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+.badge{background:#eef0fb; color:var(--accent); border:1px solid #dfe2f7; padding:4px 11px; border-radius:999px; font-size:12.5px; font-weight:600}
+
+section{padding-top:48px}
+section > h2{font-size:27px; margin:0 0 6px; padding-bottom:8px; border-bottom:2px solid var(--line)}
+section .secnum{color:var(--accent); font-weight:800; margin-right:8px}
+h3{font-size:20px; margin:34px 0 8px}
+h4{font-size:16px; margin:22px 0 6px; color:#33405c}
+p{margin:12px 0}
+ul,ol{margin:12px 0; padding-left:24px}
+li{margin:5px 0}
+strong{color:#111726}
+hr{border:0; border-top:1px solid var(--line); margin:40px 0}
+
+/* code blocks */
+.codeblock{margin:18px 0; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,41,.12); border:1px solid #1b2740}
+.codehead{display:flex; align-items:center; justify-content:space-between; background:#0b1220; color:#9fb0c8; padding:7px 14px; font-size:12.5px; border-bottom:1px solid #1b2740}
+.codehead .fname{font-family:ui-monospace,Consolas,monospace; color:#cdd9ee}
+.codehead .lang{text-transform:uppercase; letter-spacing:1px; font-weight:700; color:#5e7095}
+.copybtn{background:#1b2740; color:#cdd9ee; border:0; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; font-weight:600}
+.copybtn:hover{background:#2a3a5e}
+.copybtn.done{background:var(--accent2); color:#04201f}
+pre{margin:0; background:var(--code-bg); color:var(--code-ink); padding:16px 18px; overflow-x:auto;
+    font-family:ui-monospace,"Cascadia Code",Consolas,monospace; font-size:13.4px; line-height:1.65; white-space:pre}
+pre code{font-family:inherit}
+.tok-kw{color:var(--kw)} .tok-str{color:var(--str)} .tok-com{color:var(--com); font-style:italic}
+.tok-num{color:var(--num)} .tok-typ{color:var(--typ)}
+
+/* inline code */
+code.ic{background:#eceef6; color:#3b3f7a; padding:1px 6px; border-radius:5px; font-family:ui-monospace,Consolas,monospace; font-size:13.6px}
+
+/* callouts */
+.note{border-radius:10px; padding:14px 16px 14px 18px; margin:18px 0; border-left:5px solid; font-size:15px}
+.note p{margin:6px 0}
+.note.tip{background:#ecfdf5; border-color:var(--accent2)}
+.note.warn{background:#fffbeb; border-color:var(--warn)}
+.note.danger{background:#fef2f2; border-color:var(--err)}
+.note.info{background:#eef2ff; border-color:var(--accent)}
+.note .t{font-weight:800; display:block; margin-bottom:2px}
+
+/* tables */
+table{border-collapse:collapse; width:100%; margin:18px 0; font-size:14.5px; background:var(--panel); border-radius:10px; overflow:hidden; box-shadow:0 1px 2px rgba(15,23,41,.06)}
+th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+th{background:#f1f3fb; font-weight:700; color:#2a3550}
+td code, th code{background:#eceef6; padding:1px 5px; border-radius:4px; font-family:ui-monospace,Consolas,monospace; font-size:13px}
+.matrix td:first-child{font-weight:700; background:#f7f8fd}
+
+/* math display */
+.eqn{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 16px; margin:14px 0; overflow-x:auto}
+
+/* pipeline diagram */
+.pipe{font-family:ui-monospace,Consolas,monospace; background:#0f1729; color:#cdd9ee; border-radius:12px; padding:18px; font-size:13px; line-height:1.7; overflow-x:auto; white-space:pre; margin:18px 0}
+
+/* steps */
+.step{display:flex; gap:14px; margin:10px 0}
+.step .n{flex:0 0 30px; height:30px; width:30px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px}
+.step .c{flex:1}
+
+/* footer */
+footer{margin-top:60px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px}
+
+.toptag{display:inline-block; background:#eef0fb; color:var(--accent); border-radius:6px; padding:1px 8px; font-size:12px; font-weight:700; margin-right:6px}
+
+@media (max-width:1000px){
+  nav.sidebar{display:none}
+  main{padding:0 22px 80px}
+  .hero h1{font-size:30px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">OptimFoundation
+    <small>醫院排班 MILP 實戰 · CPLEX</small>
+  </div>
+  <ul id="toc">
+    <li><a href="#intro">開始之前</a></li>
+    <li><a href="#setup">1 · 環境準備</a></li>
+    <li><a href="#concepts">2 · 框架核心觀念</a></li>
+    <li><a href="#problem">3 · 問題情境：醫院排班</a></li>
+    <li><a href="#modeling">4 · Phase 1：數學建模</a></li>
+    <li><a href="#coding">5 · Phase 2：程式實作</a></li>
+    <li><a class="sub" href="#c-skeleton">5.1 專案骨架</a></li>
+    <li><a class="sub" href="#c-param">5.2 Parameters</a></li>
+    <li><a class="sub" href="#c-dataload">5.3 Dataload</a></li>
+    <li><a class="sub" href="#c-var">5.4 Variables</a></li>
+    <li><a class="sub" href="#c-obj">5.5 Objective</a></li>
+    <li><a class="sub" href="#c-constr">5.6 Constraints</a></li>
+    <li><a class="sub" href="#c-assemble">5.7 組裝與進入點</a></li>
+    <li><a href="#solve">6 · 求解與讀解</a></li>
+    <li><a href="#tuning">7 · Phase 3：進階功能</a></li>
+    <li><a href="#troubleshooting">8 · 常見錯誤排查</a></li>
+    <li><a href="#cheatsheet">9 · API 速查</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<header class="hero" id="intro">
+  <div class="kicker">Mixed-Integer Linear Programming · 護理人員排班</div>
+  <h1>用 OptimFoundation 解一個真實的醫院排班模型</h1>
+  <p class="lead">本教學帶你從一張白紙開始：先把「護理人員月排班」這個現實問題寫成數學模型——硬性的人力需求一定要滿足，其餘像連上六天、夜班接早班、單日休等「不希望發生的情況」則用<strong>指示變數偵測 + 目標式加權懲罰</strong>來軟性避免；再把模型逐條翻譯成 C#，最後用 CPLEX 求出一張罰分最低的班表。</p>
+  <div class="badges">
+    <span class="badge">.NET 8</span>
+    <span class="badge">IBM ILOG CPLEX</span>
+    <span class="badge">OptimFoundation.Cplex</span>
+    <span class="badge">Binary + Continuous</span>
+    <span class="badge">加權懲罰 / 軟性偏好</span>
+    <span class="badge">指示變數</span>
+  </div>
+
+  <div class="note info" style="margin-top:26px">
+    <span class="t">這份教學適合誰</span>
+    <p>會寫基本 C#、但<strong>沒碰過數學最佳化</strong>的人。你不需要先懂線性規劃理論——我們會邊做邊解釋。讀完你會有一個可以直接 <code class="ic">dotnet run</code> 的完整排班專案，並理解 OptimFoundation 的每一個核心 API，以及「如何把一條規則寫成 0/1 指示變數」這個 MILP 建模的關鍵技巧。</p>
+  </div>
+</header>
+
+<!-- ============ 0 流程總覽 ============ -->
+<section>
+  <h3>整體流程一眼看懂</h3>
+  <p>OptimFoundation 的開發哲學是三個階段，<strong>建模與寫程式強力綁定</strong>：先把數學模型定義清楚，程式只是把模型「機械式地」翻譯成 code，最後才視需要調校。</p>
+<div class="pipe">  ┌─────────────┐        ┌──────────────┐        ┌──────────────┐
+  │  Phase 1    │ ─────▶ │   Phase 2    │ ─有需要▶ │   Phase 3    │
+  │  Modeling   │ 強綁定  │   Coding     │         │   Tuning     │
+  │  數學模型    │        │  翻譯成 C#    │         │ 調參/軟化/除錯 │
+  └─────────────┘        └──────────────┘        └──────────────┘
+   Sets / Params           Parameter/                Solver 調參
+   Variables               Variable/                 罰分權重調整
+   Objective               Objective/                IIS 衝突分析
+   Constraints             Constraint/</div>
+  <div class="note warn">
+    <span class="t">框架天條</span>
+    <p>在數學模型確認前，<strong>不要</strong>動手寫任何 <code class="ic">.cs</code>。所有數值（需求人數、罰分權重、跨組別成本…）一律放在 Parameter / Dataload，<strong>禁止</strong>在 Constraint 或 Objective 裡寫死裸數字。這兩條會貫穿整份教學。</p>
+  </div>
+</section>
+
+<!-- ============ 1 環境準備 ============ -->
+<section id="setup">
+  <h2><span class="secnum">1</span>環境準備</h2>
+  <p>你需要三樣東西：.NET 8 SDK、IBM CPLEX 的 DLL，以及 OptimFoundation 的兩個 DLL。</p>
+
+  <h3>1.1 確認 .NET SDK</h3>
+  <div class="codeblock" data-lang="powershell" data-file="PowerShell"><script type="text/plain">
+dotnet --version      # 需要 8.0 以上
+</script></div>
+
+  <h3>1.2 DLL 統一放在 <code class="ic">dlls\</code></h3>
+  <p>所有專案的 DLL <strong>只能</strong>參考同一個來源資料夾 <code class="ic">ClaudeAIAssistant\dlls\</code>，避免版本不一致。需要的五個檔案：</p>
+  <table>
+    <tr><th>DLL</th><th>用途</th></tr>
+    <tr><td><code>ILOG.Concert.dll</code></td><td>CPLEX 建模介面（變數、表達式）</td></tr>
+    <tr><td><code>ILOG.CPLEX.dll</code></td><td>CPLEX 求解器核心</td></tr>
+    <tr><td><code>OptimFoundation.Core.dll</code></td><td><code>VariableBase</code>、<code>ParameterBase</code>、<code>ConstraintBase</code>、<code>CsvCtrl</code>、<code>Logging</code></td></tr>
+    <tr><td><code>OptimFoundation.Cplex.dll</code></td><td><code>OptEngine</code>、<code>CplexConfig</code></td></tr>
+    <tr><td><code>NLog.dll</code></td><td>日誌底層</td></tr>
+  </table>
+  <div class="note tip">
+    <span class="t">為什麼要這樣綁</span>
+    <p><code class="ic">OptimFoundation.Core</code> 與 <code class="ic">OptimFoundation.Cplex</code> 是配對的，升級時必須<strong>一起換</strong>；散落在各專案會出現「Core 是新版、Cplex 是舊版」這種難 debug 的相容性問題。</p>
+  </div>
+
+  <h3>1.3 csproj 參考寫法</h3>
+  <p>專案放在 <code class="ic">Projects\HospitalRostering\</code>，到 <code class="ic">dlls\</code> 的相對路徑是 <code class="ic">..\..\dlls\</code>。新建專案 <code class="ic">HospitalRostering.csproj</code>：</p>
+  <div class="codeblock" data-lang="xml" data-file="HospitalRostering.csproj"><script type="text/plain">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>HospitalRostering</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="ILOG.Concert">
+      <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
+    </Reference>
+    <Reference Include="ILOG.CPLEX">
+      <HintPath>..\..\dlls\ILOG.CPLEX.dll</HintPath>
+    </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\..\dlls\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="OptimFoundation.Core">
+      <HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="OptimFoundation.Cplex">
+      <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
+</script></div>
+  <div class="note warn">
+    <span class="t">路徑算錯是最常見的 build 失敗</span>
+    <p>專案層數變了，<code class="ic">..\..\</code> 也要跟著變。在 <code class="ic">Template_CPLEX\</code> 下是 <code class="ic">..\dlls\</code>，在 <code class="ic">Projects\任意專案\</code> 下是 <code class="ic">..\..\dlls\</code>。</p>
+  </div>
+</section>
+
+<!-- ============ 2 核心觀念 ============ -->
+<section id="concepts">
+  <h2><span class="secnum">2</span>框架核心觀念</h2>
+  <p>動手前先建立一張地圖。OptimFoundation 把 CPLEX 包成幾個你只需要會用的積木。</p>
+
+  <h3>2.1 一個最佳化問題長什麼樣</h3>
+  <p>任何線性最佳化問題都由四個東西組成。先用直覺理解：</p>
+  <table>
+    <tr><th>元素</th><th>白話</th><th>框架對應</th></tr>
+    <tr><td><strong>Sets</strong> 集合</td><td>有哪些東西要決策（哪些員工、哪些日期、哪些班別）</td><td><code>List&lt;string&gt;</code> / <code>List&lt;DateTime&gt;</code></td></tr>
+    <tr><td><strong>Parameters</strong> 參數</td><td>已知的固定數字（每日需求人數、罰分權重、跨組別成本）</td><td><code>Parameter_Xxx : ParameterBase</code></td></tr>
+    <tr><td><strong>Decision Variables</strong> 決策變數</td><td>要求解器幫你決定的未知數（某人某天排哪一班）</td><td><code>VariableB/X_Xxx : VariableBase</code></td></tr>
+    <tr><td><strong>Objective</strong> 目標式</td><td>要最小化或最大化的東西（總罰分）</td><td><code>CreateMinimize()</code> / <code>CreateMaximize()</code></td></tr>
+    <tr><td><strong>Constraints</strong> 限制式</td><td>必須滿足的規則（每天恰排一班、需求要被滿足）</td><td><code>CreateEqual()</code> / <code>CreateLessEqual()</code> 等</td></tr>
+  </table>
+
+  <h3>2.2 三種決策變數 = MILP 的「MI」</h3>
+  <p>MILP（Mixed-Integer Linear Programming）的「Mixed-Integer」就是指變數可以混用連續與整數。框架用<strong>類別名稱前綴</strong>區分，並用不同的 <code class="ic">Build*Vs</code> 建立：</p>
+  <table>
+    <tr><th>前綴</th><th>型別</th><th>建立方法</th><th>本模型用途</th></tr>
+    <tr><td><code>VariableB_</code></td><td>Binary 二元（0 / 1）</td><td><code>BuildBVs&lt;T&gt;()</code></td><td>排班決策 + 違規指示變數</td></tr>
+    <tr><td><code>VariableX_</code></td><td>Continuous 連續（≥ 0）</td><td><code>BuildCVs&lt;T&gt;()</code></td><td>休假不足平均 / 週末休不足的「差距量」</td></tr>
+    <tr><td><code>VariableI_</code></td><td>Integer 整數（≥ 0）</td><td><code>BuildIVs&lt;T&gt;()</code></td><td>（本模型未使用，框架仍支援）</td></tr>
+  </table>
+  <div class="note info">
+    <span class="t">本模型的變數結構</span>
+    <p>核心決策只有一個：<code class="ic">VariableB_ShiftAssign[Date, Employee, Group]</code>——某員工某天是否排某班別（含休假 O）。其餘的二元變數都是<strong>指示變數（indicator）</strong>：用來「偵測」某種不希望的情況有沒有發生（例如連上六天、夜接早），再到目標式被罰分。兩個連續變數則記錄「差了多少」（休假比平均少幾天）。</p>
+  </div>
+
+  <h3>2.3 Pool 機制：AddLHS / AddRHS / CreateXxx</h3>
+  <p>這是整個框架最核心、也最容易誤解的部分。你<strong>不直接</strong>寫出 <code class="ic">3x + 2y ≤ 10</code> 這種式子，而是把一條限制式「分次累加」進一個暫存區（Pool），最後呼叫 <code class="ic">Create*</code> 收尾：</p>
+  <div class="codeblock" data-lang="csharp" data-file="Pool 機制示意"><script type="text/plain">
+// 目標：某員工某天排班數總和 = 1（每天恰一個班別）
+foreach (var g in dataload.Group)
+    engine.AddLHS(1.0, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g });
+engine.AddRHS(1);                                  // 右側常數
+engine.CreateEqual($"Constraint_OneGroup@{d:yyyy_MM_dd}@{e}");  // 收尾：建立 = 限制式並清空 Pool
+</script></div>
+  <p>運作規則有三條，記住就不會出錯：</p>
+  <ol>
+    <li><strong>累加</strong>：每次 <code class="ic">AddLHS</code> / <code class="ic">AddRHS</code> 只是往 Pool 丟一項，可以丟很多次（常用在 <code class="ic">foreach</code> 迴圈裡逐項加總）。</li>
+    <li><strong>收尾即清空</strong>：呼叫 <code class="ic">CreateLessEqual</code> / <code class="ic">CreateGreatEqual</code> / <code class="ic">CreateEqual</code> 後，Pool 自動清空，下一條限制式重新開始。</li>
+    <li><strong>方向不可猜</strong>：數學模型寫 <code class="ic">≤</code> 就用 <code class="ic">CreateLessEqual</code>、<code class="ic">≥</code> 用 <code class="ic">CreateGreatEqual</code>、<code class="ic">=</code> 用 <code class="ic">CreateEqual</code>，禁止翻轉。</li>
+  </ol>
+  <p>框架在 <code class="ic">Create*</code> 時其實是計算 <strong>LHS − RHS</strong> 後再跟常數比較，所以你可以把變數放在右側（移項），這在「指示變數連動」型限制式很好用，稍後每一條都會用到。</p>
+
+  <h3>2.4 OptEngine 的生命週期</h3>
+<div class="pipe">  new OptEngine(config)        建立引擎、套用 CplexConfig
+        │
+        ▼  .Build()             初始化 CPLEX 環境
+        │
+        ▼  BuildBVs/CVs/IVs     建立所有決策變數
+        │
+        ▼  AddLHS/RHS + Create  建立目標式 + 所有限制式
+        │
+        ▼  .Solve()  ──▶ bool   求解；true = 找到 Optimal 或 Feasible 解
+        │
+        ▼  GetObjectiveValue / GetSetVarValues   讀取結果
+        │
+        ▼  .Dispose()           釋放 CPLEX 資源</div>
+</section>
+
+<!-- ============ 3 問題情境 ============ -->
+<section id="problem">
+  <h2><span class="secnum">3</span>問題情境：護理人員月排班</h2>
+  <p>我們要排一張<strong>單月（31 天）的護理班表</strong>。每天每個班別都有固定的人力需求一定要補滿；同時要盡量避免一堆「不健康」的排法。這是一個典型的 <strong>Nurse Rostering（護理排班）</strong>問題，天生適合用「硬約束 + 軟性懲罰」的 MILP 來解。</p>
+
+  <div class="note info">
+    <span class="t">情境</span>
+    <p>某病房有 <strong>16 位護理師</strong>，每天要把每個人排進五種狀態之一：<strong>休(O)、早班(D)、午班(E)、夜班(N)、行政(C)</strong>。每天各工作班別的人數需求一定要剛好補滿。在此前提下，醫院希望<strong>盡量避免</strong>：連上六天班、夜班接早班這類不良順序、做一休一做、跨自己主責的組別支援、某人休假比同儕少太多、週末休得太少…等。每種情況各有一個罰分權重，目標是讓<strong>總罰分最低</strong>。</p>
+  </div>
+
+  <h3>3.1 班別（Group）</h3>
+  <table>
+    <tr><th>代號</th><th>O</th><th>D</th><th>E</th><th>N</th><th>C</th></tr>
+    <tr><td>意義</td><td>休假</td><td>早班</td><td>午班</td><td>夜班</td><td>行政班</td></tr>
+  </table>
+  <p>工作班別集合 \(G^+ = \{D, E, N, C\}\)（不含休假 O）。每天每位員工<strong>恰好</strong>落在 \(G=\{O,D,E,N,C\}\) 其中一個。</p>
+
+  <h3>3.2 員工與主責組別</h3>
+  <p>16 位員工各有一個「主責班別」（平常該上的班）。上到別的工作班別＝<strong>跨組別支援</strong>，要扣分：</p>
+  <table>
+    <tr><th>主責班別</th><th>人數</th><th>員工編號</th></tr>
+    <tr><td>D（早）</td><td>7</td><td>E1 – E7</td></tr>
+    <tr><td>E（午）</td><td>5</td><td>E8 – E12</td></tr>
+    <tr><td>N（夜）</td><td>3</td><td>E13 – E15</td></tr>
+    <tr><td>C（行政）</td><td>1</td><td>E16</td></tr>
+  </table>
+  <div class="note tip">
+    <span class="t">Backup 例外</span>
+    <p>E1 的主責是 D，但被指定 <strong>Backup = C</strong>：他去支援 C 班時<strong>不扣跨組別分</strong>（成本歸 0），去支援 E / N 仍照扣。這示範「同一筆成本資料被特例覆寫」。</p>
+  </div>
+
+  <h3>3.3 每日人力需求 Demand</h3>
+  <table>
+    <tr><th>班別</th><th>D（早）</th><th>E（午）</th><th>N（夜）</th><th>C（行政）</th></tr>
+    <tr><td>每日需求（人）</td><td>4 ~ 5（每天隨機）</td><td>3</td><td>2</td><td>1</td></tr>
+  </table>
+
+  <h3>3.4 不良班別轉換對 R（昨天 → 今天）</h3>
+  <p>某些「昨天班別 → 今天班別」的銜接傷身（例如夜班隔天接早班），列為不良轉換，發生就罰：</p>
+  <table class="matrix">
+    <tr><th>昨天＼今天</th><th>D</th><th>E</th><th>N</th><th>C</th></tr>
+    <tr><td>N（夜）</td><td>✗</td><td>✗</td><td></td><td>✗</td></tr>
+    <tr><td>E（午）</td><td>✗</td><td></td><td>✗</td><td>✗</td></tr>
+    <tr><td>D（早）</td><td></td><td></td><td>✗</td><td></td></tr>
+    <tr><td>C（行政）</td><td></td><td></td><td>✗</td><td></td></tr>
+  </table>
+  <p>✗ 即一筆不良轉換 \((g', g)\in R\)，共 8 對。</p>
+
+  <h3>3.5 罰分權重（純量參數）</h3>
+  <table>
+    <tr><th>權重</th><th>值</th><th>懲罰什麼</th></tr>
+    <tr><td>\(w_1\) OffOneDay</td><td>0.1</td><td>做一休一做（孤立的單日休）</td></tr>
+    <tr><td>\(w_2\) DoubleOffLT2</td><td>0.1</td><td>整月一次「連休 2 天」都排不出來</td></tr>
+    <tr><td>\(w_3\) GroupMismatch</td><td>0.2</td><td>跨組別支援</td></tr>
+    <tr><td>\(w_4\) NightToDay</td><td>0.2</td><td>不良班別轉換</td></tr>
+    <tr><td>\(w_5\) BelowAVG</td><td>0.1</td><td>休假天數低於平均（每差 1 天）</td></tr>
+    <tr><td>\(w_6\) SixDay</td><td>1.0</td><td>連續工作 6 天（最重）</td></tr>
+    <tr><td>\(w_7\) Weekend4Day</td><td>0.1</td><td>週末休假不足 4 天（每差 1 天）</td></tr>
+  </table>
+  <div class="note info">
+    <span class="t">為什麼這題值得用求解器</span>
+    <p>需求一定要補滿（硬約束），但「誰休、誰上夜、怎麼接班」彼此牽動：多排一個人休假，就得有別人補上需求，可能害到別人連上六天。七種罰分互相拉扯，靠人手排幾乎不可能逼近最佳——這正是 MILP 的主場。</p>
+  </div>
+</section>
+
+<!-- ============ 4 數學建模 ============ -->
+<section id="modeling">
+  <h2><span class="secnum">4</span>Phase 1：把問題寫成數學模型</h2>
+  <p>這一步只動筆、不動 code。我們把上面的故事翻成數學符號。<strong>所有符號都用語意名稱</strong>。本模型的精神是：<strong>少數硬約束保證可行，其餘規則靠指示變數 + 目標懲罰軟性逼近。</strong></p>
+
+  <h3>4.1 Sets（集合）</h3>
+  <div class="eqn">$$ E = \{\text{E1},\dots,\text{E16}\} \qquad D = \{\text{1/1},\dots,\text{1/31}\} \qquad G = \{O,D,E,N,C\} \qquad G^{+}=G\setminus\{O\} $$</div>
+  <p>另外有幾個「組合型」集合：不良轉換對 \(R=\{(g',g)\}\)、預排班 \(PA=\{(e,d,g)\}\)、員工 \(e\) 的跨組別班別集合 \(CG_e\)、週末日 \(W\subseteq D\)。</p>
+
+  <h3>4.2 Parameters（已知參數）</h3>
+  <table>
+    <tr><th>符號</th><th>意義</th></tr>
+    <tr><td>\(\text{Demand}_{d,g}\)</td><td>日期 \(d\)、工作班別 \(g\in G^+\) 的人力需求</td></tr>
+    <tr><td>\(\text{AVGOFF}\)</td><td>每位員工的休假天數下限（由資料推算）</td></tr>
+    <tr><td>\(w_1,\dots,w_7\)</td><td>七種違規的罰分權重（見 3.5）</td></tr>
+  </table>
+
+  <h3>4.3 Decision Variables（決策變數）</h3>
+  <div class="eqn">
+  $$ y_{e,d,g} \in \{0,1\} \quad\text{員工 } e \text{ 在 } d \text{ 排班別 } g\ (\text{核心決策}) $$
+  $$ s^{\text{off1}}_{ed},\ s^{\text{six}}_{ed},\ s^{\text{mis}}_{ed},\ s^{\text{ntd}}_{ed},\ s^{\text{dfl}}_{ed} \in \{0,1\} \quad\text{每日違規指示變數} $$
+  $$ s^{\text{dlt}}_{e} \in \{0,1\} \qquad z^{\text{avg}}_{e},\ z^{\text{wkd}}_{e} \ge 0 \quad\text{每人指示 / 差距量} $$
+  </div>
+  <table>
+    <tr><th>變數</th><th>= 1 / &gt; 0 代表</th></tr>
+    <tr><td>\(s^{\text{off1}}_{ed}\)</td><td>員工 \(e\) 在 \(d\) 出現「做一休一做」</td></tr>
+    <tr><td>\(s^{\text{six}}_{ed}\)</td><td>員工 \(e\) 在 \(d\) 達成連續工作 6 天</td></tr>
+    <tr><td>\(s^{\text{mis}}_{ed}\)</td><td>員工 \(e\) 在 \(d\) 跨組別支援</td></tr>
+    <tr><td>\(s^{\text{ntd}}_{ed}\)</td><td>員工 \(e\) 在 \(d\) 發生不良班別轉換</td></tr>
+    <tr><td>\(s^{\text{dfl}}_{ed}\)</td><td>員工 \(e\) 在 \(d\) 形成一段「連休 2 天」</td></tr>
+    <tr><td>\(s^{\text{dlt}}_{e}\)</td><td>員工 \(e\) 整月連一次連休 2 天都沒有</td></tr>
+    <tr><td>\(z^{\text{avg}}_{e}\)</td><td>員工 \(e\) 休假比 AVGOFF 少的天數</td></tr>
+    <tr><td>\(z^{\text{wkd}}_{e}\)</td><td>員工 \(e\) 週末休假比 4 天少的天數</td></tr>
+  </table>
+
+  <h3>4.4 Objective（目標式）</h3>
+  <p>最小化七種違規的加權總和：</p>
+  <div class="eqn">$$ \min\ \sum_{e\in E}\sum_{d\in D}\Big( w_1 s^{\text{off1}}_{ed} + w_6 s^{\text{six}}_{ed} + w_3 s^{\text{mis}}_{ed} + w_4 s^{\text{ntd}}_{ed} \Big) \;+\; \sum_{e\in E}\Big( w_2 s^{\text{dlt}}_{e} + w_5 z^{\text{avg}}_{e} + w_7 z^{\text{wkd}}_{e} \Big) $$</div>
+
+  <h3>4.5 Constraints（限制式）</h3>
+  <p>分三類：<strong>硬約束</strong>（C1–C3，必須滿足）、<strong>指示連動</strong>（C4–C9，把違規「定義」成指示變數）、<strong>差距量</strong>（C10–C11，把不足量灌進連續變數）。</p>
+
+  <h4>C1 — 每人每天恰一個班別（Balance，=）</h4>
+  <div class="eqn">$$ \sum_{g\in G} y_{e,d,g} = 1 \qquad \forall e\in E,\ d\in D $$</div>
+
+  <h4>C2 — 每日各班別人力需求（Balance，=）</h4>
+  <div class="eqn">$$ \sum_{e\in E} y_{e,d,g} = \text{Demand}_{d,g} \qquad \forall d\in D,\ g\in G^{+} $$</div>
+
+  <h4>C3 — 預排班固定（Fixing，=）</h4>
+  <div class="eqn">$$ y_{e,d,g} = 1 \qquad \forall (e,d,g)\in PA $$</div>
+
+  <h4>C4 — 連續工作 6 天指示（滑動視窗，Implication）</h4>
+  <p>令 \(W_6(d)=\{d-5,\dots,d\}\)。員工在這 6 天「一天都沒休」⇔ \(s^{\text{six}}_{ed}=1\)。用上下界兩組式子鎖住：</p>
+  <div class="eqn">
+  $$ s^{\text{six}}_{ed} \le 1 - y_{e,\tau,O} \qquad \forall \tau\in W_6(d) $$
+  $$ s^{\text{six}}_{ed} \ge 1 - \sum_{\tau\in W_6(d)} y_{e,\tau,O} $$
+  </div>
+
+  <h4>C5 — 跨組別支援指示（Implication，≤）</h4>
+  <div class="eqn">$$ y_{e,d,g} \le s^{\text{mis}}_{ed} \qquad \forall e\in E,\ d\in D,\ g\in CG_e $$</div>
+
+  <h4>C6 — 不良班別轉換指示（Implication，≥）</h4>
+  <div class="eqn">$$ s^{\text{ntd}}_{ed} \ge y_{e,d-1,g'} + y_{e,d,g} - 1 \qquad \forall e,\ d,\ (g',g)\in R $$</div>
+
+  <h4>C7 — 做一休一做指示（≥）</h4>
+  <div class="eqn">$$ s^{\text{off1}}_{ed} \ge (1 - y_{e,d-2,O}) + y_{e,d-1,O} + (1 - y_{e,d,O}) - 2 $$</div>
+  <p>三項分別是「前天上班、昨天休、今天上班」，三者同時成立 ⇒ 右側 = 1 ⇒ 強制 \(s^{\text{off1}}=1\)。</p>
+
+  <h4>C8 — 連休 2 天旗標（≥）</h4>
+  <div class="eqn">$$ s^{\text{dfl}}_{ed} \ge y_{e,d,O} + y_{e,d-1,O} + (1 - y_{e,d-2,O}) - 2 $$</div>
+  <p>「今天休、昨天休、前天上班」＝一段剛開始的連休 2 天。（視窗只有 2 天時退化為前兩項。）</p>
+
+  <h4>C9 — 每月至少一次連休 2 天（≥）</h4>
+  <div class="eqn">$$ \sum_{d\in D} s^{\text{dfl}}_{ed} + 2\, s^{\text{dlt}}_{e} \ge 2 \qquad \forall e\in E $$</div>
+  <p>整月若一次連休都排不出（左邊和為 0），就只能讓 \(s^{\text{dlt}}_{e}=1\) 來滿足，並在目標被罰。</p>
+
+  <h4>C10 — 休假不低於平均（差距量，≥）</h4>
+  <div class="eqn">$$ \sum_{d\in D} y_{e,d,O} + z^{\text{avg}}_{e} \ge \text{AVGOFF} \qquad \forall e\in E $$</div>
+
+  <h4>C11 — 週末休假彈性（差距量，≥）</h4>
+  <div class="eqn">$$ z^{\text{wkd}}_{e} \ge 4 - \sum_{d\in W} y_{e,d,O} \qquad \forall e\in E $$</div>
+
+  <table>
+    <tr><th>限制式</th><th>分類</th><th>方向</th><th>框架方法</th></tr>
+    <tr><td>C1 每天一班</td><td>Balance</td><td>=</td><td><code>CreateEqual</code></td></tr>
+    <tr><td>C2 需求</td><td>Balance</td><td>=</td><td><code>CreateEqual</code></td></tr>
+    <tr><td>C3 預排班</td><td>Fixing</td><td>=</td><td><code>CreateEqual</code></td></tr>
+    <tr><td>C4 連六天</td><td>Implication（上下界）</td><td>≤ , ≥</td><td><code>CreateLessEqual</code> + <code>CreateGreatEqual</code></td></tr>
+    <tr><td>C5 跨組別</td><td>Implication</td><td>≤</td><td><code>CreateLessEqual</code>（變數移 RHS）</td></tr>
+    <tr><td>C6 不良轉換</td><td>Implication</td><td>≥</td><td><code>CreateGreatEqual</code>（變數移 RHS）</td></tr>
+    <tr><td>C7 做休做</td><td>Implication</td><td>≥</td><td><code>CreateGreatEqual</code></td></tr>
+    <tr><td>C8 連休旗標</td><td>Implication</td><td>≥</td><td><code>CreateGreatEqual</code></td></tr>
+    <tr><td>C9 至少連休</td><td>Disjunction</td><td>≥</td><td><code>CreateGreatEqual</code></td></tr>
+    <tr><td>C10 低於平均</td><td>Soft / 差距</td><td>≥</td><td><code>CreateGreatEqual</code></td></tr>
+    <tr><td>C11 週末彈性</td><td>Soft / 差距</td><td>≥</td><td><code>CreateGreatEqual</code></td></tr>
+  </table>
+
+  <div class="note warn">
+    <span class="t">確認點</span>
+    <p>到這裡，<strong>模型就定稿了</strong>。Phase 2 只是把上面每一條翻成 code，沒有任何「自由發揮」。如果後面寫 code 時發現模型有歧義，要回來補這份模型，而不是在 code 裡臨時假設。完整數學式見 <code class="ic">Projects\HospitalRosteringProblem\Model\HospitalRostering_Model.md</code>。</p>
+  </div>
+</section>
+
+<!-- ============ 5 程式實作 ============ -->
+<section id="coding">
+  <h2><span class="secnum">5</span>Phase 2：把模型翻譯成 C#</h2>
+  <p>現在開始寫 code。我們嚴格按照數學模型逐條轉譯。每個資料夾對應模型的一個部分。</p>
+</section>
+
+<section id="c-skeleton">
+  <h3>5.1 專案骨架</h3>
+  <p>建立以下資料夾結構。每個資料夾有自己的 namespace（<code class="ic">HospitalRostering.&lt;Folder&gt;</code>）。</p>
+<div class="pipe">HospitalRostering/
+├── HospitalRostering.csproj
+├── Program.cs                       進入點
+├── HospitalRosteringProblem.cs      主問題類別（組裝 + 求解）
+├── Parameter/                       已知參數類別
+│   ├── Parameter_ShiftDemand.cs     每日各班別需求
+│   ├── Parameter_NightToDay.cs      不良轉換對 (g', g)
+│   ├── Parameter_CrossGroup.cs      員工跨組別成本
+│   ├── Parameter_PreAssign.cs       預排班 (e, d, g)
+│   └── Parameter_BackupGroup.cs     Backup 例外
+├── Set/
+│   └── Dataload.cs                  Sets + 參數資料 + 罰分權重 + 結果輸出
+├── Variable/
+│   ├── VariableB_ShiftAssign.cs     y[e,d,g] 核心決策
+│   ├── VariableB_GroupMismatch.cs   s^mis  跨組別指示
+│   ├── VariableB_NightToDay.cs      s^ntd  不良轉換指示
+│   ├── VariableB_Off1Day.cs         s^off1 做休做指示
+│   ├── VariableB_SixDayWork.cs      s^six  連六天指示
+│   ├── VariableB_DoubleOffFlag.cs   s^dfl  連休旗標
+│   ├── VariableB_DoubleOffLT2.cs    s^dlt  整月無連休指示
+│   ├── VariableX_BelowAVG.cs        z^avg  休假不足差距
+│   ├── VariableX_WeekendLT4.cs      z^wkd  週末休不足差距
+│   └── VariableCreate.cs            BuildBVs / BuildCVs
+├── Objective/
+│   └── ObjectiveFunction.cs
+└── Constraint/
+    ├── BuildModel.cs                呼叫各 Constraint 與 Objective
+    ├── Constraint_OneGroup.cs       C1
+    ├── Constraint_FullfillDemand.cs C2
+    ├── Constraint_PreAssign.cs      C3
+    ├── Constraint_SixDayWork.cs     C4
+    ├── Constraint_CrossGroup.cs     C5
+    ├── Constraint_NightToDay.cs     C6
+    ├── Constraint_OffOneDay.cs      C7
+    ├── Constraint_DoubleOffLT2.cs   C8 + C9
+    ├── Constraint_BelowAVG.cs       C10
+    └── Constraint_WeekendLT4.cs     C11</div>
+</section>
+
+<!-- 5.2 Parameters -->
+<section id="c-param">
+  <h3>5.2 Parameters：把「已知數字」變成類別</h3>
+  <p>每個 Parameter 類別繼承 <code class="ic">ParameterBase</code>，欄位用 <code class="ic">{ get; set; }</code> 自動屬性，數值欄位習慣命名 <code class="ic">QTY</code>。多筆同型資料就用 <code class="ic">List&lt;Parameter_Xxx&gt;</code> 裝起來。</p>
+
+  <div class="codeblock" data-lang="csharp" data-file="Parameter/Parameter_ShiftDemand.cs"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Parameter
+{
+    /// <summary>每日各班別人力需求 Demand[d,g]</summary>
+    public class Parameter_ShiftDemand : ParameterBase
+    {
+        public DateTime Date  { get; set; }
+        public string   Group { get; set; } = string.Empty;
+        public double   QTY   { get; set; }   // 需求人數
+    }
+}
+</script></div>
+
+  <div class="codeblock" data-lang="csharp" data-file="Parameter/Parameter_NightToDay.cs"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Parameter
+{
+    /// <summary>不良班別轉換對 (PreGroup → Group)，QTY = 罰分</summary>
+    public class Parameter_NightToDay : ParameterBase
+    {
+        public string PreGroup { get; set; } = string.Empty;   // 昨天班別 g'
+        public string Group    { get; set; } = string.Empty;   // 今天班別 g
+        public double QTY      { get; set; }
+    }
+}
+</script></div>
+
+  <div class="codeblock" data-lang="csharp" data-file="Parameter/Parameter_CrossGroup.cs"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Parameter
+{
+    /// <summary>員工 e 上「非主責」班別 g 的跨組別成本</summary>
+    public class Parameter_CrossGroup : ParameterBase
+    {
+        public string Employee { get; set; } = string.Empty;
+        public string Group    { get; set; } = string.Empty;
+        public double QTY      { get; set; }
+    }
+}
+</script></div>
+
+  <div class="codeblock" data-lang="csharp" data-file="Parameter/Parameter_PreAssign.cs"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Parameter
+{
+    /// <summary>預排班 (e, d, g)：硬性鎖定某人某天上某班</summary>
+    public class Parameter_PreAssign : ParameterBase
+    {
+        public DateTime Date     { get; set; }
+        public string   Employee { get; set; } = string.Empty;
+        public string   Group    { get; set; } = string.Empty;
+    }
+}
+</script></div>
+
+  <div class="codeblock" data-lang="csharp" data-file="Parameter/Parameter_BackupGroup.cs"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Parameter
+{
+    /// <summary>Backup 例外：員工 e 支援 g 班不計跨組別分</summary>
+    public class Parameter_BackupGroup : ParameterBase
+    {
+        public string Employee { get; set; } = string.Empty;
+        public string Group    { get; set; } = string.Empty;
+    }
+}
+</script></div>
+  <div class="note info">
+    <span class="t">二維 / 多鍵參數怎麼存</span>
+    <p>像 \(\text{Demand}_{d,g}\) 這種「矩陣」型參數，框架的做法是<strong>攤平成一筆一筆的 row</strong>：每個 (Date, Group) 組合一筆 <code class="ic">Parameter_ShiftDemand</code>。讀取時用 LINQ 依索引找出對應的那筆（<code class="ic">FirstOrDefault(x =&gt; x.Date == d &amp;&amp; x.Group == g)</code>）。</p>
+  </div>
+</section>
+
+<!-- 5.3 Dataload -->
+<section id="c-dataload">
+  <h3>5.3 Dataload：填入資料、衍生 Sets、放罰分權重</h3>
+  <p>這是整個專案唯一存放「實際數字」的地方。它負責：<strong>產生 Sets</strong>（員工、班別、日期）、<strong>填參數資料</strong>（需求、跨組別成本、不良轉換、預排班）、<strong>放純量罰分權重</strong>，以及求解後的<strong>結果輸出</strong>。</p>
+
+  <div class="codeblock" data-lang="csharp" data-file="Set/Dataload.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Parameter;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Set
+{
+    public class Dataload
+    {
+        // ── 罰分權重（純量參數，禁止寫死在 Constraint/Objective） ──────
+        public double Penalty_OffOneDay     = 0.1;   // w1 做一休一做
+        public double Penalty_DoubleOffLT2  = 0.1;   // w2 整月無連休 2 天
+        public double Penalty_GroupMismatch = 0.2;   // w3 跨組別支援
+        public double Penalty_NightToDay    = 0.2;   // w4 不良班別轉換
+        public double Penalty_BelowAVG      = 0.1;   // w5 休假低於平均
+        public double Penalty_SixDay        = 1.0;   // w6 連續工作 6 天
+        public double Penalty_Weekend4Day   = 0.1;   // w7 週末休不足 4 天
+        public double Penalty_Backup        = 0.0;   // Backup 支援成本
+
+        // ── Sets ──────────────────────────────────────────────────────
+        public List<string>   Employee = new();
+        public List<string>   Group    = new();
+        public List<DateTime> Date     = new();
+
+        // ── Parameters ────────────────────────────────────────────────
+        public List<Parameter_ShiftDemand> parameter_ShiftDemand = new();
+        public List<Parameter_NightToDay>  parameter_NightToDay  = new();
+        public List<Parameter_CrossGroup>  parameter_CrossGroup  = new();
+        public List<Parameter_PreAssign>   parameter_PreAssign   = new();
+        public List<Parameter_BackupGroup> parameter_BackupGroup = new();
+
+        // 班別群組（O 必須在內，代表休假）
+        enum GroupE { O, D, E, N, C }
+
+        public Dataload()
+        {
+            // ① 班別
+            Group.AddRange(Enum.GetNames(typeof(GroupE)));
+
+            // ② 員工：依主責班別人數展開 E1..E16
+            (int Count, string Main)[] empByGroup = [(7, "D"), (5, "E"), (3, "N"), (1, "C")];
+            int totalEmp = empByGroup.Sum(x => x.Count);
+            for (int e = 1; e <= totalEmp; e++) Employee.Add($"E{e}");
+
+            // ③ 跨組別成本：員工上「非主責、非 O」的班別都扣 Penalty_GroupMismatch
+            int idx = 1;
+            foreach (var grp in empByGroup)
+            {
+                var crossGroups = Group.Where(g => g != grp.Main && g != "O").ToList();
+                for (int k = 0; k < grp.Count; k++)
+                {
+                    foreach (var g in crossGroups)
+                        parameter_CrossGroup.Add(new Parameter_CrossGroup
+                        { Employee = $"E{idx}", Group = g, QTY = Penalty_GroupMismatch });
+                    idx++;
+                }
+            }
+
+            // ④ Backup 例外：E1 支援 C 不扣分 → 覆寫該筆成本
+            parameter_BackupGroup.Add(new Parameter_BackupGroup { Employee = "E1", Group = "C" });
+            foreach (var b in parameter_BackupGroup)
+            {
+                var hit = parameter_CrossGroup.FirstOrDefault(x => x.Employee == b.Employee && x.Group == b.Group);
+                if (hit != null) hit.QTY = Penalty_Backup;
+            }
+
+            // ⑤ 不良班別轉換對 (昨天 → 今天)
+            void Bad(string pre, string cur) =>
+                parameter_NightToDay.Add(new Parameter_NightToDay
+                { PreGroup = pre, Group = cur, QTY = Penalty_NightToDay });
+            Bad("N", "D"); Bad("N", "E"); Bad("N", "C");          // 夜 → 早/午/行
+            Bad("E", "D"); Bad("E", "C"); Bad("E", "N");          // 午 → 早/行/夜
+            Bad("D", "N"); Bad("C", "N");                          // 早/行 → 夜
+
+            // ⑥ 排程月份（2026-01）與每日需求
+            int year = 2026, month = 1;
+            int days = DateTime.DaysInMonth(year, month);
+            var rng = new Random(20260101);   // 固定種子，需求可重現
+            for (int day = 1; day <= days; day++)
+            {
+                var d = new DateTime(year, month, day);
+                Date.Add(d);
+                parameter_ShiftDemand.Add(new() { Date = d, Group = "D", QTY = rng.Next(4, 6) }); // 4~5
+                parameter_ShiftDemand.Add(new() { Date = d, Group = "E", QTY = 3 });
+                parameter_ShiftDemand.Add(new() { Date = d, Group = "N", QTY = 2 });
+                parameter_ShiftDemand.Add(new() { Date = d, Group = "C", QTY = 1 });
+            }
+
+            // ⑦ 預排班（硬性鎖定）
+            parameter_PreAssign.Add(new() { Date = new(2026, 1, 1), Employee = "E1", Group = "E" });
+            parameter_PreAssign.Add(new() { Date = new(2026, 1, 1), Employee = "E3", Group = "O" });
+            parameter_PreAssign.Add(new() { Date = new(2026, 1, 2), Employee = "E2", Group = "D" });
+            parameter_PreAssign.Add(new() { Date = new(2026, 1, 2), Employee = "E3", Group = "E" });
+        }
+
+        // ── 結果輸出（求解成功後呼叫） ──────────────────────────────────
+        public void WriteResult(OptEngine engine)
+        {
+            Logging.Info("═══════════════ 月班表（每列一位員工） ═══════════════");
+
+            var assign = engine.GetSetVarValues<VariableB_ShiftAssign>();   // key: 類別@Date@Emp@Group
+            foreach (var e in Employee)
+            {
+                var row = Date.Select(d =>
+                {
+                    var g = Group.FirstOrDefault(gg =>
+                        assign.TryGetValue($"VariableB_ShiftAssign@{d:yyyy-MM-dd}@{e}@{gg}", out var v) && v > 0.5);
+                    return g ?? "?";
+                });
+                Logging.Info($"  {e,-4}: {string.Join(" ", row)}");
+            }
+
+            Logging.Info($"  最小總罰分 = {engine.GetObjectiveValue():F2}");
+            Logging.Info($"  MIP Gap   = {engine.MIPGap:P2}");
+            Logging.Info("══════════════════════════════════════════════════════");
+
+            // 匯出 CSV（Solution/VariableB_ShiftAssign.csv）
+            FolderDir.Solution.CreateFolder();
+            CsvCtrl.SaveSolutionToCSV<VariableB_ShiftAssign>(engine, "HospitalRostering", "USER");
+        }
+    }
+}
+</script></div>
+  <div class="note tip">
+    <span class="t">Sets 怎麼來</span>
+    <p>本模型的 Sets 不是靠手刻清單，而是<strong>在建構子裡程式化產生</strong>：班別由 <code class="ic">enum</code> 取名、員工由主責人數展開、日期由月份天數迴圈。跨組別成本也由「主責人數」自動推導，改人數時資料自動跟著對。</p>
+  </div>
+</section>
+
+<!-- 5.4 Variables -->
+<section id="c-var">
+  <h3>5.4 Variables：宣告所有決策變數</h3>
+  <p>變數類別只放<strong>索引屬性</strong>（不含任何數值欄位）。<strong>屬性宣告順序，必須跟之後 <code class="ic">Build*Vs</code> 傳入 Set 的順序一致</strong>——這是框架用反射組變數名稱的依據，順序錯了之後 <code class="ic">AddLHS</code> 會找不到變數。</p>
+
+  <div class="codeblock" data-lang="csharp" data-file="Variable/VariableB_ShiftAssign.cs"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Variable
+{
+    /// <summary>y[e,d,g]：員工 e 在 d 排班別 g（核心決策）</summary>
+    public class VariableB_ShiftAssign : VariableBase
+    {
+        public DateTime Date     { get; set; }              // ← 順序 1
+        public string   Employee { get; set; } = string.Empty;  // ← 順序 2
+        public string   Group    { get; set; } = string.Empty;  // ← 順序 3
+    }
+}
+</script></div>
+
+  <p>六個「每日違規指示變數」都只用 (Date, Employee) 兩個索引，結構一樣，這裡併在一段示意：</p>
+  <div class="codeblock" data-lang="csharp" data-file="Variable/VariableB_*.cs（每日指示，6 個）"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Variable
+{
+    // s^mis 跨組別支援
+    public class VariableB_GroupMismatch : VariableBase
+    { public DateTime Date { get; set; } public string Employee { get; set; } = string.Empty; }
+
+    // s^ntd 不良班別轉換
+    public class VariableB_NightToDay : VariableBase
+    { public DateTime Date { get; set; } public string Employee { get; set; } = string.Empty; }
+
+    // s^off1 做一休一做
+    public class VariableB_Off1Day : VariableBase
+    { public DateTime Date { get; set; } public string Employee { get; set; } = string.Empty; }
+
+    // s^six 連續工作 6 天
+    public class VariableB_SixDayWork : VariableBase
+    { public DateTime Date { get; set; } public string Employee { get; set; } = string.Empty; }
+
+    // s^dfl 連休 2 天旗標
+    public class VariableB_DoubleOffFlag : VariableBase
+    { public DateTime Date { get; set; } public string Employee { get; set; } = string.Empty; }
+
+    // s^dlt 整月無連休（每人一個，只用 Employee）
+    public class VariableB_DoubleOffLT2 : VariableBase
+    { public string Employee { get; set; } = string.Empty; }
+}
+</script></div>
+
+  <p>兩個連續「差距量」變數，每位員工各一個：</p>
+  <div class="codeblock" data-lang="csharp" data-file="Variable/VariableX_*.cs（差距量，2 個）"><script type="text/plain">
+using OptimFoundation.Core;
+
+namespace HospitalRostering.Variable
+{
+    // z^avg 休假比平均少幾天
+    public class VariableX_BelowAVG : VariableBase
+    { public string Employee { get; set; } = string.Empty; }
+
+    // z^wkd 週末休假比 4 天少幾天
+    public class VariableX_WeekendLT4 : VariableBase
+    { public string Employee { get; set; } = string.Empty; }
+}
+</script></div>
+
+  <p>建立變數時，<code class="ic">Build*Vs&lt;T&gt;()</code> 接收 Set，會自動產生所有組合（笛卡兒積）並命名成 <code class="ic">T@set1@set2@...</code>。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Variable/VariableCreate.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+
+namespace HospitalRostering.Variable
+{
+    public class VariableCreate
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public VariableCreate(Dataload dataload, OptEngine engine)
+        {
+            this.optEngine = engine;
+            this.dataload  = dataload;
+        }
+
+        public void Build()
+        {
+            // 核心決策：每個 (Date, Employee, Group) 一個 y  ← 順序對應屬性順序
+            optEngine.BuildBVs<VariableB_ShiftAssign>(dataload.Date, dataload.Employee, dataload.Group);
+
+            // 每日指示變數（Date × Employee）
+            optEngine.BuildBVs<VariableB_GroupMismatch>(dataload.Date, dataload.Employee);
+            optEngine.BuildBVs<VariableB_NightToDay>   (dataload.Date, dataload.Employee);
+            optEngine.BuildBVs<VariableB_Off1Day>      (dataload.Date, dataload.Employee);
+            optEngine.BuildBVs<VariableB_SixDayWork>   (dataload.Date, dataload.Employee);
+            optEngine.BuildBVs<VariableB_DoubleOffFlag>(dataload.Date, dataload.Employee);
+
+            // 每人指示 / 差距量（Employee）
+            optEngine.BuildBVs<VariableB_DoubleOffLT2>(dataload.Employee);
+            optEngine.BuildCVs<VariableX_BelowAVG>    (dataload.Employee);
+            optEngine.BuildCVs<VariableX_WeekendLT4>  (dataload.Employee);
+
+            Logging.Info($"變數建立完成，共 {optEngine.varCount} 個");
+        }
+    }
+}
+</script></div>
+  <div class="note warn">
+    <span class="t">變數量心裡有數</span>
+    <p>核心變數 <code class="ic">y</code> 就有 31 天 × 16 人 × 5 班 = 2,480 個 0/1 變數，加上指示變數總計約一萬個。這也是為什麼 6.x 會談 <code class="ic">epGap</code> / <code class="ic">timeLimit</code>——不見得每次都要等它證明到 0% 最佳。</p>
+  </div>
+</section>
+
+<!-- 5.5 Objective -->
+<section id="c-obj">
+  <h3>5.5 Objective：加權懲罰目標式</h3>
+  <p>目標式也是用 Pool：把每一個違規指示變數乘上對應罰分 <code class="ic">AddLHS</code> 進去，最後 <code class="ic">CreateMinimize()</code>。<strong>權重一律從 dataload 查，禁止寫死。</strong>沒有任何 RHS——目標式只是一條要被最小化的線性式。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Objective/ObjectiveFunction.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Objective
+{
+    /// <summary>min  Σ(w1·s^off1 + w6·s^six + w3·s^mis + w4·s^ntd) + Σ(w2·s^dlt + w5·z^avg + w7·z^wkd)</summary>
+    public class ObjectiveFunction
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public ObjectiveFunction(Dataload dataload, OptEngine engine)
+        {
+            this.optEngine = engine;
+            this.dataload  = dataload;
+        }
+
+        public void Build()
+        {
+            // ① 每日違規（Date × Employee）
+            dataload.Date.ForEach(d =>
+                dataload.Employee.ForEach(e =>
+                {
+                    optEngine.AddLHS(dataload.Penalty_OffOneDay,     new VariableB_Off1Day      { Date = d, Employee = e });
+                    optEngine.AddLHS(dataload.Penalty_SixDay,        new VariableB_SixDayWork   { Date = d, Employee = e });
+                    optEngine.AddLHS(dataload.Penalty_GroupMismatch, new VariableB_GroupMismatch{ Date = d, Employee = e });
+                    optEngine.AddLHS(dataload.Penalty_NightToDay,    new VariableB_NightToDay   { Date = d, Employee = e });
+                }));
+
+            // ② 每人違規 / 差距量（Employee）
+            dataload.Employee.ForEach(e =>
+            {
+                optEngine.AddLHS(dataload.Penalty_DoubleOffLT2, new VariableB_DoubleOffLT2 { Employee = e });
+                optEngine.AddLHS(dataload.Penalty_BelowAVG,     new VariableX_BelowAVG     { Employee = e });
+                optEngine.AddLHS(dataload.Penalty_Weekend4Day,  new VariableX_WeekendLT4   { Employee = e });
+            });
+
+            optEngine.CreateMinimize();
+            Logging.Info("目標式：min 加權違規總和");
+        }
+    }
+}
+</script></div>
+</section>
+
+<!-- 5.6 Constraints -->
+<section id="c-constr">
+  <h3>5.6 Constraints：每條限制式各一個類別</h3>
+  <p>每條限制式獨立成一個 <code class="ic">Constraint_Xxx</code> 類別、繼承 <code class="ic">ConstraintBase</code>。<code class="ic">ConstraintName</code> 自動取得類別名稱，<code class="ic">ConstraintCount</code> 計數。<strong>限制式名稱務必帶上迴圈索引</strong>（日期、員工、規則…），否則框架會把同名限制式當重複而<strong>略過</strong>。</p>
+
+  <h4>C1 — 每人每天恰一個班別（Balance，=）</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_OneGroup.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C1] Σ_g y[e,d,g] = 1   ∀ e, d</summary>
+    public class Constraint_OneGroup : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_OneGroup(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            dataload.Date.ForEach(d =>
+                dataload.Employee.ForEach(e =>
+                {
+                    dataload.Group.ForEach(g =>
+                        optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
+                    optEngine.AddRHS(1);
+                    optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
+                    ConstraintCount++;
+                }));
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C2 — 每日各班別人力需求（Balance，=）</h4>
+  <p>注意只跑工作班別 \(G^+\)（排除 O），需求先 LINQ 查出再 <code class="ic">AddRHS</code>。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_FullfillDemand.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C2] Σ_e y[e,d,g] = Demand[d,g]   ∀ d, g∈G⁺</summary>
+    public class Constraint_FullfillDemand : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_FullfillDemand(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            dataload.Date.ForEach(d =>
+                dataload.Group.Where(g => g != "O").ToList().ForEach(g =>
+                {
+                    dataload.Employee.ForEach(e =>
+                        optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
+
+                    double demand = dataload.parameter_ShiftDemand
+                                            .FirstOrDefault(x => x.Date == d && x.Group == g)?.QTY ?? 0;
+                    optEngine.AddRHS(demand);
+                    optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{g}");
+                    ConstraintCount++;
+                }));
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C3 — 預排班固定（Fixing，=）</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_PreAssign.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C3] y[e,d,g] = 1   ∀ (e,d,g) ∈ PA</summary>
+    public class Constraint_PreAssign : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_PreAssign(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            dataload.parameter_PreAssign.ForEach(p =>
+            {
+                optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = p.Date, Employee = p.Employee, Group = p.Group });
+                optEngine.AddRHS(1);
+                optEngine.CreateEqual($"{ConstraintName}@{p.Date:yyyy_MM_dd}@{p.Employee}@{p.Group}");
+                ConstraintCount++;
+            });
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C4 — 連續工作 6 天指示（滑動視窗 + 上下界）</h4>
+  <p>這是最能展示「指示變數雙向鎖定」的一條。<strong>上界</strong>：視窗內任一天休假就壓住 \(s^{\text{six}}\le 0\)；<strong>下界</strong>：整個視窗都沒休就頂起 \(s^{\text{six}}\ge 1\)。視窗不足 6 天（月初）直接跳過。各條名稱都帶索引確保唯一。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_SixDayWork.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C4] s^six = 1 ⇔ 視窗 6 天全勤（無休）</summary>
+    public class Constraint_SixDayWork : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_SixDayWork(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            int duration = 6;
+            dataload.Date.ForEach(d =>
+                dataload.Employee.ForEach(e =>
+                {
+                    var window = dataload.Date.Where(sd => d.AddDays(-duration) < sd && sd <= d).ToList();
+                    if (window.Count < duration) return;   // 月初視窗不足，跳過
+
+                    // 上界：s^six ≤ 1 - y[e,τ,O]   （每天一條，名稱帶 τ）
+                    window.ForEach(sd =>
+                    {
+                        optEngine.AddLHS(1, new VariableB_SixDayWork  { Date = d, Employee = e });
+                        optEngine.AddRHS(1);
+                        optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = sd, Employee = e, Group = "O" });
+                        optEngine.CreateLessEqual($"{ConstraintName}_ub@{d:yyyy_MM_dd}@{e}@{sd:MM_dd}");
+                        ConstraintCount++;
+                    });
+
+                    // 下界：s^six ≥ 1 - Σ_τ y[e,τ,O]
+                    optEngine.AddLHS(1, new VariableB_SixDayWork { Date = d, Employee = e });
+                    optEngine.AddRHS(1);
+                    window.ForEach(sd =>
+                        optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = sd, Employee = e, Group = "O" }));
+                    optEngine.CreateGreatEqual($"{ConstraintName}_lb@{d:yyyy_MM_dd}@{e}");
+                    ConstraintCount++;
+                }));
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C5 — 跨組別支援指示（Implication，變數移 RHS）</h4>
+  <p>數學式 \(y_{e,d,g}\le s^{\text{mis}}_{ed}\)：右側是變數，用 <code class="ic">AddRHS(係數, 變數)</code> 放到右側。員工的跨組別班別集合 \(CG_e\) 直接從 <code class="ic">parameter_CrossGroup</code> 篩出來。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_CrossGroup.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C5] y[e,d,g] ≤ s^mis[e,d]   ∀ e, d, g∈CG_e</summary>
+    public class Constraint_CrossGroup : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_CrossGroup(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            dataload.Date.ForEach(d =>
+                dataload.Employee.ForEach(e =>
+                {
+                    var crossGroups = dataload.parameter_CrossGroup.Where(p => p.Employee == e).ToList();
+                    foreach (var cg in crossGroups)
+                    {
+                        optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = cg.Group });
+                        optEngine.AddRHS(1, new VariableB_GroupMismatch { Date = d, Employee = e });
+                        optEngine.CreateLessEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}@{cg.Group}");
+                        ConstraintCount++;
+                    }
+                }));
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C6 — 不良班別轉換指示（Implication，≥）</h4>
+  <p>\(s^{\text{ntd}}_{ed}\ge y_{e,d-1,g'} + y_{e,d,g} - 1\)：兩個變數都移到右側，常數 −1 也用 <code class="ic">AddRHS</code>。逐條規則 \((g',g)\) 帶進名稱。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_NightToDay.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C6] s^ntd[e,d] ≥ y[e,d-1,g'] + y[e,d,g] - 1   ∀ (g',g)∈R</summary>
+    public class Constraint_NightToDay : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_NightToDay(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            int duration = 2;
+            dataload.Date.ForEach(d =>
+                dataload.Employee.ForEach(e =>
+                {
+                    var window = dataload.Date.Where(sd => d.AddDays(-duration) < sd && sd <= d).ToList();
+                    if (window.Count < duration) return;   // 沒有「昨天」可比
+
+                    var preD = d.AddDays(-1);
+                    dataload.parameter_NightToDay.ForEach(rule =>
+                    {
+                        optEngine.AddLHS(1, new VariableB_NightToDay  { Date = d, Employee = e });
+                        optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = preD, Employee = e, Group = rule.PreGroup });
+                        optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d,    Employee = e, Group = rule.Group });
+                        optEngine.AddRHS(-1);
+                        optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}@{rule.PreGroup}_{rule.Group}");
+                        ConstraintCount++;
+                    });
+                }));
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C7 — 做一休一做指示（≥）</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_OffOneDay.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C7] s^off1[e,d] ≥ (1-y[d-2,O]) + y[d-1,O] + (1-y[d,O]) - 2</summary>
+    public class Constraint_OffOneDay : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_OffOneDay(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            int duration = 3;
+            dataload.Date.ForEach(d =>
+                dataload.Employee.ForEach(e =>
+                {
+                    var window = dataload.Date.Where(sd => d.AddDays(-duration) < sd && sd <= d).ToList();
+                    if (window.Count < duration) return;
+
+                    var preD    = d.AddDays(-1);   // 昨天
+                    var prepreD = d.AddDays(-2);   // 前天
+
+                    optEngine.AddLHS(1, new VariableB_Off1Day { Date = d, Employee = e });
+                    // 今天上班 (1 - y[d,O])
+                    optEngine.AddRHS(1);
+                    optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" });
+                    // 昨天休  y[d-1,O]
+                    optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = preD, Employee = e, Group = "O" });
+                    // 前天上班 (1 - y[d-2,O])
+                    optEngine.AddRHS(1);
+                    optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" });
+                    // 常數 -2
+                    optEngine.AddRHS(-(duration - 1));
+
+                    optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
+                    ConstraintCount++;
+                }));
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C8 + C9 — 連休旗標與「整月至少連休一次」（同一類別兩段）</h4>
+  <p>這條把「偵測連休 2 天的旗標 \(s^{\text{dfl}}\)」和「整月加總要求 \(\ge 2\)」放在同一個 <code class="ic">Constraint</code>。視窗 2 天或 3 天分別處理（月初退化）。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_DoubleOffLT2.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C8] 連休旗標 s^dfl ；[C9] Σ_d s^dfl + 2·s^dlt ≥ 2</summary>
+    public class Constraint_DoubleOffLT2 : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_DoubleOffLT2(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            int duration = 3;
+
+            // ── C8：每天的連休旗標 ───────────────────────────────────
+            dataload.Date.ForEach(d =>
+            {
+                var window = dataload.Date.Where(sd => d.AddDays(-duration) < sd && sd <= d).ToList();
+                if (window.Count < 2) return;
+
+                dataload.Employee.ForEach(e =>
+                {
+                    var preD = d.AddDays(-1);
+                    optEngine.AddLHS(1, new VariableB_DoubleOffFlag { Date = d, Employee = e });
+
+                    if (window.Count == 2)
+                    {
+                        // s^dfl ≥ y[d,O] + y[d-1,O] - 1
+                        optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d,    Employee = e, Group = "O" });
+                        optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = preD, Employee = e, Group = "O" });
+                        optEngine.AddRHS(-(2 - 1));
+                    }
+                    else // window.Count == 3
+                    {
+                        var prepreD = d.AddDays(-2);
+                        // s^dfl ≥ y[d,O] + y[d-1,O] + (1 - y[d-2,O]) - 2
+                        optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d,    Employee = e, Group = "O" });
+                        optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = preD, Employee = e, Group = "O" });
+                        optEngine.AddRHS(1);
+                        optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" });
+                        optEngine.AddRHS(-(3 - 1));
+                    }
+                    optEngine.CreateGreatEqual($"{ConstraintName}_a@{d:yyyy_MM_dd}@{e}");
+                    ConstraintCount++;
+                });
+            });
+
+            // ── C9：整月至少一次連休 2 天，否則 s^dlt = 1 ─────────────
+            dataload.Employee.ForEach(e =>
+            {
+                dataload.Date.ForEach(d =>
+                    optEngine.AddLHS(1, new VariableB_DoubleOffFlag { Date = d, Employee = e }));
+                optEngine.AddLHS(2, new VariableB_DoubleOffLT2 { Employee = e });
+                optEngine.AddRHS(2);
+                optEngine.CreateGreatEqual($"{ConstraintName}_b@{e}");
+                ConstraintCount++;
+            });
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+
+  <h4>C10 — 休假不低於平均（差距量，≥）</h4>
+  <p>AVGOFF 由總班次扣掉總需求、平均到每人再保守減 1 算出，是<strong>衍生參數</strong>（在限制式裡算一次即可）。休假天數不足時，<code class="ic">z^avg</code> 補上差距並在目標被罰。</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_BelowAVG.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C10] Σ_d y[e,d,O] + z^avg[e] ≥ AVGOFF   ∀ e</summary>
+    public class Constraint_BelowAVG : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_BelowAVG(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            double totalEmp  = dataload.Employee.Count;
+            double allShift  = dataload.Employee.Count * dataload.Date.Count;
+            double allDemand = dataload.parameter_ShiftDemand.Where(w => w.Group != "O").Sum(s => s.QTY);
+            double AVGOFF    = Math.Floor((allShift - allDemand) / totalEmp) - 1;
+
+            dataload.Employee.ForEach(e =>
+            {
+                dataload.Date.ForEach(d =>
+                    optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
+                optEngine.AddLHS(1, new VariableX_BelowAVG { Employee = e });
+                optEngine.AddRHS(AVGOFF);
+                optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
+                ConstraintCount++;
+            });
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}  (AVGOFF={AVGOFF})");
+        }
+    }
+}
+</script></div>
+
+  <h4>C11 — 週末休假彈性（差距量，≥）</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/Constraint_WeekendLT4.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+
+namespace HospitalRostering.Constraint
+{
+    /// <summary>[C11] z^wkd[e] ≥ 4 - Σ_{d∈週末} y[e,d,O]   ∀ e</summary>
+    public class Constraint_WeekendLT4 : ConstraintBase
+    {
+        private OptEngine optEngine;
+        private Dataload  dataload;
+
+        public Constraint_WeekendLT4(Dataload dataload, OptEngine engine)
+        { this.optEngine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            dataload.Employee.ForEach(e =>
+            {
+                optEngine.AddLHS(1, new VariableX_WeekendLT4 { Employee = e });
+                optEngine.AddRHS(4);
+                dataload.Date
+                        .Where(w => w.DayOfWeek == DayOfWeek.Saturday || w.DayOfWeek == DayOfWeek.Sunday)
+                        .ToList()
+                        .ForEach(d => optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
+                optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
+                ConstraintCount++;
+            });
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+        }
+    }
+}
+</script></div>
+</section>
+
+<!-- 5.7 組裝 -->
+<section id="c-assemble">
+  <h3>5.7 組裝與進入點</h3>
+  <p><code class="ic">BuildModel</code> 是模型建構入口，<strong>只負責呼叫</strong>各 Constraint 與 Objective 的 <code class="ic">Build()</code>，本身不寫任何 <code class="ic">AddLHS</code>。</p>
+  <div class="note warn">
+    <span class="t">順序：先目標、後限制式</span>
+    <p>Objective 必須<strong>先</strong>建立。這是固定的安全順序，之後若想把某條硬約束改成 soft（見 7.2）也才有現成目標式可加 penalty。</p>
+  </div>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint/BuildModel.cs"><script type="text/plain">
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Objective;
+
+namespace HospitalRostering.Constraint
+{
+    public class BuildModel
+    {
+        private OptEngine engine;
+        private Dataload  dataload;
+
+        public BuildModel(Dataload dataload, OptEngine engine)
+        { this.engine = engine; this.dataload = dataload; }
+
+        public void Build()
+        {
+            // ① 先建目標式
+            new ObjectiveFunction(dataload, engine).Build();
+
+            // ② 硬約束
+            new Constraint_FullfillDemand(dataload, engine).Build();   // C2
+            new Constraint_OneGroup      (dataload, engine).Build();   // C1
+            new Constraint_PreAssign     (dataload, engine).Build();   // C3
+
+            // ③ 指示連動 + 差距量
+            new Constraint_SixDayWork    (dataload, engine).Build();   // C4
+            new Constraint_NightToDay    (dataload, engine).Build();   // C6
+            new Constraint_OffOneDay     (dataload, engine).Build();   // C7
+            new Constraint_CrossGroup    (dataload, engine).Build();   // C5
+            new Constraint_BelowAVG      (dataload, engine).Build();   // C10
+            new Constraint_WeekendLT4    (dataload, engine).Build();   // C11
+            new Constraint_DoubleOffLT2  (dataload, engine).Build();   // C8 + C9
+        }
+    }
+}
+</script></div>
+
+  <p>主問題類別 <code class="ic">HospitalRosteringProblem</code> 負責設定 CplexConfig、依序組裝、求解、輸出。<code class="ic">Execute()</code> 必須回傳 <code class="ic">bool</code>。</p>
+  <div class="codeblock" data-lang="csharp" data-file="HospitalRosteringProblem.cs"><script type="text/plain">
+// 數學模型見 Model/HospitalRostering_Model.md
+
+using System.Diagnostics;
+using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using HospitalRostering.Set;
+using HospitalRostering.Variable;
+using HospitalRostering.Constraint;
+
+namespace HospitalRostering
+{
+    public class HospitalRosteringProblem : IDisposable
+    {
+        public OptEngine? optEngine;
+        public Dataload   dataload;
+        public Stopwatch  totalTimer = new Stopwatch();
+
+        public HospitalRosteringProblem()
+        {
+            dataload = new Dataload();
+            Logging.SetLogFileName(GetType().Name);
+        }
+
+        public bool Execute()
+        {
+            totalTimer.Restart();
+
+            // MILP 求解設定：約一萬個 0/1 變數，先求「夠好」再說
+            CplexConfig config = new CplexConfig
+            {
+                epGap       = 0.03,   // 容忍 3% 最佳性誤差
+                timeLimit   = 100,    // 100 秒上限
+                workThreads = 10,
+                mipEmphasis = 1,      // 先強調快速找可行解
+                enableLog   = true,   // 顯示 CPLEX 即時 log
+                exportLP    = true,   // 匯出可讀的 .lp 模型檔
+                exportSol   = true    // 匯出 .sol 解檔
+            };
+
+            optEngine = new OptEngine(config);
+            optEngine.Build();                                  // 初始化 CPLEX
+
+            new VariableCreate(dataload, optEngine).Build();    // 建變數
+            new BuildModel    (dataload, optEngine).Build();    // 建目標 + 限制
+
+            bool ok = optEngine.Solve();                        // 求解
+            if (ok) dataload.WriteResult(optEngine);            // 讀解 + 輸出
+
+            totalTimer.Stop();
+            Logging.Info("整體運作時間:", totalTimer);
+            return ok;
+        }
+
+        public void Dispose() => optEngine?.Dispose();
+    }
+}
+</script></div>
+
+  <div class="codeblock" data-lang="csharp" data-file="Program.cs"><script type="text/plain">
+using OptimFoundation.Core;
+using HospitalRostering;
+
+using (var problem = new HospitalRosteringProblem())
+{
+    bool ok = problem.Execute();
+    Logging.Info(ok ? "求解成功" : "未找到可行解");
+}
+</script></div>
+</section>
+
+<!-- ============ 6 求解 ============ -->
+<section id="solve">
+  <h2><span class="secnum">6</span>求解與讀解</h2>
+  <h3>6.1 執行</h3>
+  <div class="codeblock" data-lang="powershell" data-file="PowerShell"><script type="text/plain">
+cd Projects\HospitalRostering
+dotnet run
+</script></div>
+
+  <h3>6.2 範例輸出</h3>
+  <p>CPLEX 會 log 求解過程，最後印出我們在 <code class="ic">WriteResult</code> 排版的班表。每列一位員工、每欄一天（範例只截前 10 天，數值以求解器輸出為準）：</p>
+  <div class="codeblock" data-lang="text" data-file="Console（範例，截前 10 天）"><script type="text/plain">
+═══════════════ 月班表（每列一位員工） ═══════════════
+  E1  : E  D  D  O  D  D  N  O  D  D ...
+  E2  : D  D  O  D  D  N  O  D  D  E ...
+  E3  : O  E  D  D  N  O  D  D  D  O ...
+  ...
+  E16 : C  C  C  O  C  C  O  C  C  C ...
+  最小總罰分 = 3.40
+  MIP Gap   = 2.71 %
+══════════════════════════════════════════════════════
+</script></div>
+  <p>解讀：每天每個工作班別的人數都剛好補滿（硬約束 C1/C2/C3），求解器在此前提下盡量壓低七種違規的加權和。總罰分 3.4 多半來自難以完全避免的少數連六天 / 跨組別支援；<code class="ic">Gap 2.71%</code> 表示已落在我們設定的 <code class="ic">epGap = 0.03</code> 內即停止。</p>
+
+  <h3>6.3 讀解 API 一覽</h3>
+  <table>
+    <tr><th>需求</th><th>API</th></tr>
+    <tr><td>目標函數值（總罰分）</td><td><code>engine.GetObjectiveValue()</code></td></tr>
+    <tr><td>某型別所有解值（含完整變數名稱）</td><td><code>engine.GetSetVarValues&lt;VariableB_ShiftAssign&gt;()</code></td></tr>
+    <tr><td>依型別名稱取解</td><td><code>engine.GetSolution("VariableB_ShiftAssign")</code></td></tr>
+    <tr><td>取單一變數值</td><td><code>engine.GetVariableValue("VariableB_ShiftAssign@2026-01-01@E1@E")</code></td></tr>
+    <tr><td>只取連續 / 整數 / 二元解</td><td><code>GetCVSolution()</code> / <code>GetIVSolution()</code> / <code>GetBVSolution()</code></td></tr>
+    <tr><td>最佳 bound</td><td><code>engine.BestObjValue</code></td></tr>
+    <tr><td>最佳性誤差</td><td><code>engine.MIPGap</code></td></tr>
+    <tr><td>求解狀態</td><td><code>engine.Status</code>（<code>Optimal</code> / <code>Feasible</code> / <code>Infeasible</code>…）</td></tr>
+    <tr><td>匯出 CSV</td><td><code>CsvCtrl.SaveSolutionToCSV&lt;T&gt;(engine, "DataId", "User")</code></td></tr>
+  </table>
+  <div class="note tip">
+    <span class="t">變數名稱格式</span>
+    <p>解的 key 是 <code class="ic">類別名@索引1@索引2@...</code>，例如 <code class="ic">VariableB_ShiftAssign@2026-01-01@E1@E</code>。用 <code class="ic">kv.Key.Split('@')</code> 拆出索引；<code class="ic">DateTime</code> 索引會格式化成 <code class="ic">yyyy-MM-dd</code>。</p>
+  </div>
+  <div class="note danger">
+    <span class="t">不存在的方法</span>
+    <p>別用 <code class="ic">GetVarSol()</code>、<code class="ic">GetSetVarSol&lt;T&gt;()</code>、<code class="ic">CsvCtrl.SaveToCSV()</code>——這些<strong>不在</strong>框架裡。正確的是 <code class="ic">GetSetVarValues&lt;T&gt;</code> 與 <code class="ic">SaveSolutionToCSV</code>。</p>
+  </div>
+
+  <h3>6.4 看不懂答案？匯出 LP 檔</h3>
+  <p>設 <code class="ic">exportLP = true</code> 後，<code class="ic">Model/</code> 會多一個 <code class="ic">.lp</code> 檔，裡面是人類可讀的完整模型（目標式、每條限制式）。當你懷疑某條指示變數的方向或係數寫錯時，打開 <code class="ic">.lp</code> 搜尋該變數名（如 <code class="ic">VariableB_SixDayWork</code>）對照數學模型，是最快的除錯法。</p>
+</section>
+
+<!-- ============ 7 Tuning ============ -->
+<section id="tuning">
+  <h2><span class="secnum">7</span>Phase 3：進階功能與調校</h2>
+  <p>模型能解之後，才談這些。三個你最常用到的進階功能：solver 調參、罰分權重 / soft constraint、IIS 衝突分析。</p>
+
+  <h3>7.1 Solver 調參（不動模型）</h3>
+  <p>透過 <code class="ic">CplexConfig</code> 調整求解策略，模型一個字都不用改：</p>
+  <table>
+    <tr><th>欄位</th><th>作用</th><th>什麼時候調</th></tr>
+    <tr><td><code>epGap</code></td><td>MIP 最佳性誤差容忍（如 0.03 = 3%）</td><td>排班這種大模型求不完 → 調大換速度</td></tr>
+    <tr><td><code>timeLimit</code></td><td>求解秒數上限，到時取目前最佳解</td><td>要求「夠好就好、別等太久」</td></tr>
+    <tr><td><code>mipEmphasis</code></td><td>1=找可行解 / 2=證明最佳 / 3=路徑最佳</td><td>先求可行用 1；要保證最佳用 2</td></tr>
+    <tr><td><code>workThreads</code></td><td>平行執行緒數</td><td>大問題開多核加速</td></tr>
+    <tr><td><code>polishAfterTime</code></td><td>幾秒後啟動解拋光</td><td>想在時限內讓解更好</td></tr>
+    <tr><td><code>randomSeed</code></td><td>隨機種子</td><td>要重現完全相同的求解路徑</td></tr>
+    <tr><td><code>exportLP / exportMPS / exportSol</code></td><td>匯出模型 / 解檔</td><td>除錯、跨工具驗證</td></tr>
+    <tr><td><code>enableLog</code></td><td>是否即時顯示 CPLEX log</td><td>批次跑多題時關掉保持安靜</td></tr>
+  </table>
+
+  <h3>7.2 調權重就是調偏好；硬約束也能軟化</h3>
+  <p>本模型的「軟性偏好」其實已經內建——七個 <code class="ic">Penalty_*</code> 就是旋鈕。把 <code class="ic">Penalty_SixDay</code> 從 1.0 拉到 5.0，求解器就會更努力避免連上六天，代價是別處（如跨組別）可能多一點。<strong>不用改任何限制式</strong>，只改 Dataload 的權重。</p>
+  <p>反過來，目前的<strong>硬約束</strong>（C2 需求）若資料設成不可能滿足，模型會 infeasible。此時可把它軟化：框架的 <code class="ic">CreateEqSoft</code> 會自動加入正負偏差變數 \(\Delta^+,\Delta^-\) 並把偏差量乘 penalty 計入目標——「人力盡量補滿、真的補不到才短缺」：</p>
+  <div class="codeblock" data-lang="csharp" data-file="Constraint_FullfillDemand.cs（soft 版）"><script type="text/plain">
+double demand  = dataload.parameter_ShiftDemand
+                         .FirstOrDefault(x => x.Date == d && x.Group == g)?.QTY ?? 0;
+double penalty = 100;   // 每短缺 1 人的罰金，需 >> 其它罰分才有意義
+
+dataload.Employee.ForEach(e =>
+    optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
+
+// 硬：optEngine.AddRHS(demand); optEngine.CreateEqual($"...");
+// 軟：允許偏離 demand，偏差量進目標式被罰
+optEngine.CreateEqSoft(demand, penalty, $"{ConstraintName}@{d:yyyy_MM_dd}@{g}");
+</script></div>
+  <div class="note warn">
+    <span class="t">兩個前提</span>
+    <p>① 呼叫 soft 方法前，<strong>目標式必須已建立</strong>（penalty 會加進現有目標）。② penalty 要明顯大於正常罰分權重，否則求解器會「寧可付罰金也不補人」。</p>
+  </div>
+
+  <h3>7.3 IIS 衝突分析：模型 infeasible 怎麼辦</h3>
+  <p>排班模型最容易 infeasible 的點是<strong>需求與預排班打架</strong>：例如某天 D 班需求 5 人，卻把太多人預排成 O 或別班，使得湊不滿 5 人。<code class="ic">Solve()</code> 偵測到 <code class="ic">Infeasible</code> 時會自動跑 CPLEX 的 <strong>IIS（Irreducible Infeasible Set）</strong>，找出「最小的互相矛盾限制式集合」。你只要讀回來：</p>
+  <div class="codeblock" data-lang="csharp" data-file="HospitalRosteringProblem.cs（節錄）"><script type="text/plain">
+bool ok = optEngine.Solve();
+
+if (!ok && optEngine.Status == SolveStatus.Infeasible)
+{
+    var conflicts = optEngine.GetConflictConstraints();
+    Logging.Info($"衝突限制式（共 {conflicts.Count} 條）：");
+    conflicts.ForEach(name => Logging.Info($"  - {name}"));
+    // 同時會在 IIS/ 資料夾產生 *_IIS_*.ilp，可用 CPLEX 工具開啟
+}
+</script></div>
+  <div class="codeblock" data-lang="text" data-file="Console（範例）"><script type="text/plain">
+[OptEngine] Status=Infeasible
+衝突限制式（共 3 條）：
+  - Constraint_FullfillDemand@2026_01_01@D
+  - Constraint_PreAssign@2026_01_01@E3@O
+  - Constraint_OneGroup@2026_01_01@E3
+</script></div>
+  <p>IIS 直接告訴你：1/1 的 D 班需求、E3 被預排成 O、以及「每人每天一班」這三條湊在一起無解。對策：放寬該日需求、移除衝突的預排班、或把 C2 改成 7.2 的 soft constraint。<strong>注意</strong>：若改了模型語意（例如加 slack 變數），數學模型文件也要同步更新。</p>
+
+  <div class="note info">
+    <span class="t">三種調校方向的取捨</span>
+    <p><strong>調 solver</strong>：最便宜，不動模型，先試。<strong>調權重 / 軟化限制</strong>：要改變偏好強度或讓 over-constrained 模型有解時用。<strong>改模型結構</strong>（收緊指示變數、對稱性破除、warm start）：只有在效能差很多時才動，因為改動最大、風險最高。</p>
+  </div>
+</section>
+
+<!-- ============ 8 排查 ============ -->
+<section id="troubleshooting">
+  <h2><span class="secnum">8</span>常見錯誤排查</h2>
+  <p>每個問題用「錯誤訊息 → 原因 → 解法」三段呈現。</p>
+
+  <h4>① AddLHS / AddRHS 找不到變數</h4>
+  <table>
+    <tr><th>錯誤訊息</th><td><code>KeyNotFoundException: AddLHS: 找不到變數 'VariableB_ShiftAssign@E1@2026-01-01@D'</code></td></tr>
+    <tr><th>原因</th><td>變數類別<strong>屬性宣告順序</strong>與 <code class="ic">BuildBVs</code> 傳入 Set 順序不一致；名稱組成了 <code class="ic">@E1@日期@D</code> 而非 <code class="ic">@日期@E1@D</code>。也可能是該變數根本沒被 <code class="ic">Build*Vs</code> 建立。</td></tr>
+    <tr><th>解法</th><td>確認屬性順序＝<code class="ic">Build*Vs</code> 的 Set 順序（本例 <code class="ic">Date</code> → <code class="ic">Employee</code> → <code class="ic">Group</code>）；確認 <code class="ic">VariableCreate</code> 有建這個變數。</td></tr>
+  </table>
+
+  <h4>② 限制式被靜默略過（最容易踩）</h4>
+  <table>
+    <tr><th>症狀</th><td>限制式數量比預期少，某條規則沒生效，但沒有報錯。例如 C6 不良轉換、C5 跨組別只生效了一部分。</td></tr>
+    <tr><th>原因</th><td>框架以「限制式名稱」去重。本模型在 <code class="ic">foreach rule</code> / <code class="ic">foreach 視窗日</code> 內若名稱沒帶上 rule 或日期索引，第 2 圈起會被當重複而跳過。</td></tr>
+    <tr><th>解法</th><td>名稱一律帶足所有迴圈索引：C6 用 <code class="ic">@{rule.PreGroup}_{rule.Group}</code>、C5 用 <code class="ic">@{cg.Group}</code>、C4 上界用 <code class="ic">@{sd:MM_dd}</code>。</td></tr>
+  </table>
+
+  <h4>③ 指示變數沒被頂起來（罰分恆為 0）</h4>
+  <table>
+    <tr><th>症狀</th><td>明明排了連六天，<code class="ic">s^six</code> 卻是 0、目標沒被罰。</td></tr>
+    <tr><th>原因</th><td>只寫了上界（<code class="ic">s ≤ ...</code>）沒寫下界（<code class="ic">s ≥ ...</code>）。指示變數若只有上界，求解器會「自由地讓它 = 0」來逃避罰分。</td></tr>
+    <tr><th>解法</th><td>「定義違規」型指示變數通常要<strong>下界</strong>（C6/C7/C8 都是 ≥）把它頂起；C4 因為要雙向鎖定才同時需要上界與下界。</td></tr>
+  </table>
+
+  <h4>④ 求解回傳 Infeasible</h4>
+  <table>
+    <tr><th>症狀</th><td><code>Solve()</code> 回傳 <code class="ic">false</code>，<code class="ic">Status == Infeasible</code>。</td></tr>
+    <tr><th>原因</th><td>硬約束互相矛盾：常見是某日某班需求湊不滿（人都被預排走了），或方向寫反。</td></tr>
+    <tr><th>解法</th><td>呼叫 <code class="ic">GetConflictConstraints()</code> 拿 IIS 衝突集合（見 7.3）；對照 <code class="ic">.lp</code> 檢查方向與係數；必要時把需求軟化。</td></tr>
+  </table>
+
+  <h4>⑤ 目標式沒生效 / 解恆為 0</h4>
+  <table>
+    <tr><th>症狀</th><td>目標值是 0，或求解很快但班表明顯亂排。</td></tr>
+    <tr><th>原因</th><td>呼叫 <code class="ic">CreateMinimize()</code> 前 Pool 是空的（忘了 <code class="ic">AddLHS</code>），或所有 <code class="ic">Penalty_*</code> 都設成 0。</td></tr>
+    <tr><th>解法</th><td>確認 <code class="ic">ObjectiveFunction.Build()</code> 的 <code class="ic">AddLHS</code> 緊接在 <code class="ic">CreateMinimize()</code> 之前、中間沒別的 <code class="ic">Create*</code> 把 Pool 清掉；確認權重不全為 0。</td></tr>
+  </table>
+
+  <h4>⑥ Build 失敗：找不到 DLL / 型別</h4>
+  <table>
+    <tr><th>錯誤訊息</th><td><code>error CS0246: 找不到型別或命名空間名稱 'OptEngine'</code> / 參考警告 HintPath 無效</td></tr>
+    <tr><th>原因</th><td>csproj 的 <code class="ic">HintPath</code> 相對路徑層數算錯，或 <code class="ic">dlls\</code> 缺檔。</td></tr>
+    <tr><th>解法</th><td><code class="ic">Projects\專案\</code> 下用 <code class="ic">..\..\dlls\</code>；確認五個 DLL 都在；namespace 用 <code class="ic">OptimFoundation.Cplex</code> 與 <code class="ic">OptimFoundation.Core</code>。</td></tr>
+  </table>
+
+  <h4>⑦ 求解慢到天荒地老</h4>
+  <table>
+    <tr><th>症狀</th><td>跑很久、Gap 卡在某個百分比下不來。</td></tr>
+    <tr><th>原因</th><td>排班是大型 0/1 問題，要求證明到 0% 最佳很貴。</td></tr>
+    <tr><th>解法</th><td>放寬 <code class="ic">epGap</code>（如 0.03）、設 <code class="ic">timeLimit</code>、<code class="ic">mipEmphasis = 1</code> 先求可行解；班表「夠好」通常就能用。</td></tr>
+  </table>
+</section>
+
+<!-- ============ 9 速查 ============ -->
+<section id="cheatsheet">
+  <h2><span class="secnum">9</span>API 速查</h2>
+
+  <h4>建立變數</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Cheat Sheet"><script type="text/plain">
+engine.BuildBVs<VariableB_T>(setA, setB, setC);       // 二元 [0,1]
+engine.BuildCVs<VariableX_T>(setA);                    // 連續，預設 [0, +∞)
+engine.BuildCVs<VariableX_T>(lb, ub, setA);            // 連續，自訂界限
+engine.BuildIVs<VariableI_T>(setA, setB);              // 整數
+</script></div>
+
+  <h4>Pool：限制式</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Cheat Sheet"><script type="text/plain">
+engine.AddLHS(coef, new VariableB_T { ... });   // 左側加變數項
+engine.AddLHS(constant);                          // 左側加常數
+engine.AddRHS(value);                             // 右側常數
+engine.AddRHS(coef, new VariableB_T { ... });     // 右側變數（移項）
+
+engine.CreateLessEqual ($"Name@{idx}");           // ≤
+engine.CreateGreatEqual($"Name@{idx}");           // ≥
+engine.CreateEqual     ($"Name@{idx}");           // =
+engine.CreateRange(lb, ub, $"Name@{idx}");        // lb ≤ Σlhs ≤ ub
+</script></div>
+
+  <h4>Pool：目標式</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Cheat Sheet"><script type="text/plain">
+foreach (...) engine.AddLHS(penalty, new VariableB_T { ... });
+engine.CreateMinimize();   // 或 engine.CreateMaximize();
+</script></div>
+
+  <h4>Soft constraint</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Cheat Sheet"><script type="text/plain">
+if (engine.SupportsSoftConstraints)
+{
+    engine.CreateEqSoft(rhs, penalty, "Name@idx");   // 加 Δ⁺/Δ⁻ 偏差 + 罰金
+    engine.CreateLeSoft(rhs, penalty);               // penalty 法
+    engine.CreateGeSoft(rhs, penalty);
+}
+</script></div>
+
+  <h4>求解與讀解</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Cheat Sheet"><script type="text/plain">
+engine.Build();
+bool ok = engine.Solve();
+
+double obj = engine.GetObjectiveValue();
+var    sol = engine.GetSetVarValues<VariableB_ShiftAssign>();   // Dictionary<完整名, 值>
+double v   = engine.GetVariableValue("VariableB_ShiftAssign@2026-01-01@E1@D");
+double gap = engine.MIPGap;
+var    st  = engine.Status;                            // SolveStatus
+
+if (!ok && st == SolveStatus.Infeasible)
+    var conflict = engine.GetConflictConstraints();    // IIS
+
+FolderDir.Solution.CreateFolder();
+CsvCtrl.SaveSolutionToCSV<VariableB_ShiftAssign>(engine, "DataId", "User");
+engine.Dispose();
+</script></div>
+
+  <h4>CplexConfig 常用欄位</h4>
+  <div class="codeblock" data-lang="csharp" data-file="Cheat Sheet"><script type="text/plain">
+new CplexConfig {
+    epGap = 0.03, timeLimit = 100, workThreads = 10,
+    mipEmphasis = 1,          // 1 找可行 / 2 證最佳
+    enableLog = true,
+    exportLP = true, exportSol = true, exportMPS = false
+};
+</script></div>
+</section>
+
+<footer>
+  <p><strong>OptimFoundation 實戰教學</strong> — 護理人員月排班 MILP 範例。涵蓋核心排班決策 + 指示變數、Pool 機制、變數移項、滑動視窗、上下界雙向鎖定指示變數、加權懲罰目標式、soft constraint、IIS 衝突分析、CplexConfig 調參。參考實作：<code class="ic">Projects\HospitalRosteringProblem\</code>。</p>
+  <p>下一步建議：把這個專案實際建出來跑一次；調 <code class="ic">Penalty_SixDay</code> 觀察連六天怎麼變少；故意把某天需求設到湊不滿，看 7.3 的 IIS 怎麼指出衝突。</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  const KEYWORDS = ('public|private|protected|internal|abstract|sealed|static|readonly|class|interface|enum|struct|' +
+    'void|var|new|return|if|else|for|foreach|in|while|switch|case|break|continue|using|namespace|' +
+    'override|virtual|this|base|null|true|false|params|get|set|throw|try|catch|finally|out|ref|' +
+    'int|double|bool|string|object|long|float|decimal').split('|').join('|');
+
+  const RE = new RegExp(
+    '(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)' +          // 1 comment
+    '|(@?\\$?"(?:\\\\.|[^"\\\\])*")' +                  // 2 string
+    '|\\b(' + KEYWORDS + ')\\b' +                       // 3 keyword
+    '|\\b([A-Z][A-Za-z0-9_]*)\\b' +                     // 4 type-ish (UpperCamel)
+    '|\\b(\\d[\\d_]*\\.?\\d*)\\b',                      // 5 number
+    'g');
+
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function highlight(raw) {
+    const escaped = esc(raw);
+    return escaped.replace(RE, function (m, c, str, kw, typ, num) {
+      if (c)   return '<span class="tok-com">' + c + '</span>';
+      if (str) return '<span class="tok-str">' + str + '</span>';
+      if (kw)  return '<span class="tok-kw">' + kw + '</span>';
+      if (typ) return '<span class="tok-typ">' + typ + '</span>';
+      if (num) return '<span class="tok-num">' + num + '</span>';
+      return m;
+    });
+  }
+
+  // 建構每個 code block
+  document.querySelectorAll('.codeblock').forEach(function (block) {
+    const tpl  = block.querySelector('script[type="text/plain"]');
+    const lang = block.getAttribute('data-lang') || 'text';
+    const file = block.getAttribute('data-file') || '';
+    const raw  = (tpl ? tpl.textContent : '').replace(/^\n/, '').replace(/\s+$/, '');
+
+    const head = document.createElement('div');
+    head.className = 'codehead';
+    head.innerHTML = '<span class="fname">' + esc(file) + '</span>' +
+                     '<span style="display:flex;gap:10px;align-items:center">' +
+                     '<span class="lang">' + esc(lang) + '</span>' +
+                     '<button class="copybtn" type="button">複製</button></span>';
+
+    const pre  = document.createElement('pre');
+    const code = document.createElement('code');
+    if (lang === 'csharp') {
+      code.innerHTML = highlight(raw);
+    } else {
+      code.textContent = raw;   // 其他語言只做安全跳脫，不上色
+    }
+    pre.appendChild(code);
+
+    block.innerHTML = '';
+    block.appendChild(head);
+    block.appendChild(pre);
+
+    const btn = head.querySelector('.copybtn');
+    btn.addEventListener('click', function () {
+      navigator.clipboard.writeText(raw).then(function () {
+        btn.textContent = '已複製';
+        btn.classList.add('done');
+        setTimeout(function () { btn.textContent = '複製'; btn.classList.remove('done'); }, 1400);
+      });
+    });
+  });
+
+  // Scrollspy：高亮目前章節
+  const links = Array.from(document.querySelectorAll('#toc a'));
+  const map = {};
+  links.forEach(function (a) {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+  const targets = Object.keys(map).map(function (id) { return document.getElementById(id); });
+
+  function onScroll() {
+    let current = null;
+    const y = window.scrollY + 120;
+    targets.forEach(function (t) { if (t.offsetTop <= y) current = t.id; });
+    links.forEach(function (a) { a.classList.remove('active'); });
+    if (current && map[current]) map[current].classList.add('active');
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>

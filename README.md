@@ -33,11 +33,11 @@ ClaudeAIAssistant/
 
 ## 環境需求
 
-| 項目 | 版本 |
-|------|------|
-| .NET | 8.0 |
-| IBM CPLEX | 22.1.1 |
-| IDE | Visual Studio 2022 / Rider |
+| 項目      | 版本                       |
+| --------- | -------------------------- |
+| .NET      | 8.0                        |
+| IBM CPLEX | 22.1.1                     |
+| IDE       | Visual Studio 2022 / Rider |
 
 > DLL 已預置於 `dlls/`，不需另行安裝 NuGet 套件。
 
@@ -125,12 +125,12 @@ return ok;
 
 ## 練習題目
 
-| 專案 | 類型 | 問題描述 |
-|------|------|---------|
-| [GlassFactory](Projects/GlassFactory/) | LP | 玻璃工廠 — 在加熱 / 冷卻機產能限制下，最大化生產利潤 |
-| [SandwichProduction](Projects/SandwichProduction/) | LP | 早餐店 — 在有限食材庫存下，最大化三明治生產收益 |
-| [ClinicVitamin](Projects/ClinicVitamin/) | MIP | 診所 — 在維生素原料限制下，最大化藥品生產利潤 |
-| [HospitalRosteringProblem](Projects/HospitalRosteringProblem/) | MIP | 醫院排班 — 滿足每日人力需求，最小化排班違規懲罰 |
+| 專案                                                           | 類型 | 問題描述                                             |
+| -------------------------------------------------------------- | ---- | ---------------------------------------------------- |
+| [GlassFactory](Projects/GlassFactory/)                         | LP   | 玻璃工廠 — 在加熱 / 冷卻機產能限制下，最大化生產利潤 |
+| [SandwichProduction](Projects/SandwichProduction/)             | LP   | 早餐店 — 在有限食材庫存下，最大化三明治生產收益      |
+| [ClinicVitamin](Projects/ClinicVitamin/)                       | MIP  | 診所 — 在維生素原料限制下，最大化藥品生產利潤        |
+| [HospitalRosteringProblem](Projects/HospitalRosteringProblem/) | MIP  | 醫院排班 — 滿足每日人力需求，最小化排班違規懲罰      |
 
 ---
 
@@ -150,9 +150,9 @@ return ok;
 
 ## 參考文件
 
-| 文件 | 說明 |
-|------|------|
-| [CPLEX_API_REFERENCE.md](CPLEX_API_REFERENCE.md) | OptimFoundation 完整 API 參考（含速查卡） |
-| [CLAUDE.md](CLAUDE.md) | AI 操作規範與限制 |
-| [Foundation/README.md](Foundation/README.md) | OptimFoundation 框架說明 |
-| [Template_CPLEX/CLAUDE.md](Template_CPLEX/CLAUDE.md) | 框架語法詳細範例 |
+| 文件                                                 | 說明                                      |
+| ---------------------------------------------------- | ----------------------------------------- |
+| [CPLEX_API_REFERENCE.md](CPLEX_API_REFERENCE.md)     | OptimFoundation 完整 API 參考（含速查卡） |
+| [CLAUDE.md](CLAUDE.md)                               | AI 操作規範與限制                         |
+| [Foundation/README.md](Foundation/README.md)         | OptimFoundation 框架說明                  |
+| [Template_CPLEX/CLAUDE.md](Template_CPLEX/CLAUDE.md) | 框架語法詳細範例                          |
