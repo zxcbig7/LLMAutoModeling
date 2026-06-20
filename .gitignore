@@ -1,0 +1,71 @@
+# ─────────────────────────────────────────────
+# Build output
+# OptimFoundation 求解輸出（Logs/ Sols/ Models/ IISs/ Solution/
+# Experiments/）都寫到 AppDomain.BaseDirectory = bin/ 底下，
+# 所以這條已一併涵蓋跑完才產生的求解資料夾。
+# ─────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+publish/
+
+# ─────────────────────────────────────────────
+# NuGet（dotnet restore 會還原，不需進版控）
+# 注意：共用依賴 dlls/ 刻意「保留」——各 csproj 用
+# <HintPath>..\..\dlls\*.dll</HintPath> 參照，故不在此 ignore。
+# ─────────────────────────────────────────────
+packages/
+*.nupkg
+.nuget/
+
+# ─────────────────────────────────────────────
+# Visual Studio / IDE
+# ─────────────────────────────────────────────
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ─────────────────────────────────────────────
+# CPLEX / 求解器「跑完才產生」的檔（保險：即使輸出到 bin 以外）
+# 不用裸資料夾名（Models/、Data/）以免誤殺 source。
+# ─────────────────────────────────────────────
+*.lp
+*.mps
+*.sol
+*.mst
+*.sav
+*.ilp
+cplex.log
+gurobi.log
+
+# ─────────────────────────────────────────────
+# Logs / Temp / Backup
+# ─────────────────────────────────────────────
+*.log
+logs/
+*.bak
+*.tmp
+*.orig
+*.swp
+
+# ─────────────────────────────────────────────
+# 機密（避免把金鑰 push 出去）
+# ─────────────────────────────────────────────
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# ─────────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
