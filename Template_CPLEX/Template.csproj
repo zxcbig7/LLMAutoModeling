@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- ★ 複製本範本到 Projects/MyProject/ 後，務必改下面兩處相對路徑（都會多一層）：
+         · DLL HintPath：   ..\dlls\                              →  ..\..\dlls\
+         · generator 參考： ..\Projects\OptimModeling.Generators\ →  ..\OptimModeling.Generators\
+       （本檔路徑是為 Template_CPLEX 自身位置設定、可原地 build；複製後不改這兩處會編不過。）-->
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>

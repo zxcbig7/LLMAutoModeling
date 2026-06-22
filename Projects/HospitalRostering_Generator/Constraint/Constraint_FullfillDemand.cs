@@ -21,7 +21,21 @@ namespace HospitalRostering_Generator.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C2，係數取自 dataload.parameter_ShiftDemand。
+                dataload.Date.ForEach(d =>
+                {
+                    dataload.Group.Where(g => g != "O").ToList().ForEach(g =>
+                    {
+                        dataload.Employee.ForEach(e =>
+                            optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
+
+                        double demand = dataload.parameter_ShiftDemand
+                            .FirstOrDefault(x => x.Date == d && x.Group == g)?.QTY ?? 0;
+                        optEngine.AddRHS(demand);
+                        optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{g}");
+                        ConstraintCount++;
+                    });
+                });
+
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }

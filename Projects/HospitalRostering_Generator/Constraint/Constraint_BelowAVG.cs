@@ -21,8 +21,23 @@ namespace HospitalRostering_Generator.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C10，AVGOFF 由 dataload 推算。
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+                // AVGOFF：(總可排時段 - 總工作需求) / 人數，向下取整再保留 1 天彈性
+                double totalEmp  = dataload.Employee.Count;
+                double allShift  = dataload.Employee.Count * dataload.Date.Count;
+                double allDemand = dataload.parameter_ShiftDemand.Where(w => w.Group != "O").Sum(s => s.QTY);
+                double avgOff    = Math.Floor((allShift - allDemand) / totalEmp) - 1;
+
+                dataload.Employee.ForEach(e =>
+                {
+                    dataload.Date.ForEach(d =>
+                        optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
+                    optEngine.AddLHS(1, new VariableX_BelowAVG { Employee = e });
+                    optEngine.AddRHS(avgOff);
+                    optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
+                    ConstraintCount++;
+                });
+
+                Logging.Info($"[{ConstraintName}] {ConstraintCount}  (AVGOFF={Math.Floor((allShift - allDemand) / totalEmp) - 1})");
             }
             catch (Exception) { throw; }
         }

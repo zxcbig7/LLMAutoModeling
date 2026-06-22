@@ -21,7 +21,27 @@ namespace HospitalRostering_Generator.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C6，R 取自 dataload.parameter_NightToDay。
+                const int duration = 2;
+                dataload.Date.ForEach(d =>
+                {
+                    dataload.Employee.ForEach(e =>
+                    {
+                        var window = dataload.Date.Where(sd => d.AddDays(-duration) < sd && sd <= d).ToList();
+                        if (window.Count < duration) return;
+
+                        var preD = d.AddDays(-1);
+                        dataload.parameter_NightToDay.ForEach(rule =>
+                        {
+                            optEngine.AddLHS(1, new VariableB_NightToDay { Date = d, Employee = e });
+                            optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = preD, Employee = e, Group = rule.PreGroup });
+                            optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d,    Employee = e, Group = rule.Group });
+                            optEngine.AddRHS(-1);
+                            optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}@{rule.PreGroup}_{rule.Group}");
+                            ConstraintCount++;
+                        });
+                    });
+                });
+
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }

@@ -7,7 +7,8 @@ namespace HospitalRostering_Manual.Objective
 {
     /// <summary>
     /// 目標式：最小化七種違規的加權總和（見 Model/HospitalRostering_Model.md §Objective）。
-    /// 與 HospitalRostering_Generator 的 ObjectiveFunction 邏輯相同。
+    /// min Σ_{e,d}(w1·s^off1 + w6·s^six + w3·s^mis + w4·s^ntd) + Σ_e(w2·s^dlt + w5·z^avg + w7·z^wkd)
+    /// 與 HospitalRostering_Generator 的 ObjectiveFunction 內容逐行相同。
     /// </summary>
     public class ObjectiveFunction
     {
@@ -24,10 +25,28 @@ namespace HospitalRostering_Manual.Objective
         {
             try
             {
-                // TODO（逐步實作）：依 Penalty_* 權重累加 7 個違規項（s^off1/s^six/s^mis/s^ntd/s^dlt/z^avg/z^wkd）
-                //                  係數一律來自 dataload.Penalty_*，禁止寫死裸數字。
+                // 每日 × 每人的違規指示變數（w1/w6/w3/w4）
+                dataload.Date.ForEach(d =>
+                {
+                    dataload.Employee.ForEach(e =>
+                    {
+                        optEngine.AddLHS(dataload.Penalty_OffOneDay,     new VariableB_Off1Day      { Date = d, Employee = e }); // w1
+                        optEngine.AddLHS(dataload.Penalty_SixDay,        new VariableB_SixDayWork   { Date = d, Employee = e }); // w6
+                        optEngine.AddLHS(dataload.Penalty_GroupMismatch, new VariableB_GroupMismatch{ Date = d, Employee = e }); // w3
+                        optEngine.AddLHS(dataload.Penalty_NightToDay,    new VariableB_NightToDay   { Date = d, Employee = e }); // w4
+                    });
+                });
+
+                // 每人層級（w2/w5/w7）
+                dataload.Employee.ForEach(e =>
+                {
+                    optEngine.AddLHS(dataload.Penalty_DoubleOffLT2, new VariableB_DoubleOffLT2 { Employee = e }); // w2
+                    optEngine.AddLHS(dataload.Penalty_BelowAVG,     new VariableX_BelowAVG     { Employee = e }); // w5
+                    optEngine.AddLHS(dataload.Penalty_Weekend4Day,  new VariableX_WeekendLT4   { Employee = e }); // w7
+                });
+
                 optEngine.CreateMinimize();
-                Logging.Info("目標函數建構完成（stub）");
+                Logging.Info("目標函數建構完成");
             }
             catch (Exception) { throw; }
         }

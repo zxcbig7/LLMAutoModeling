@@ -96,7 +96,7 @@ ProjectName/
 | `Constraint/` | `Constraint_*` + `BuildModel` | `Proj.Constraint` | `claudemdTemplate/Constraint` |
 | `Model/` | 數學模型 `.md` | — | `claudemdTemplate/Model` |
 
-### 4.2 composition root：Program.cs（唯一，不手寫 XxxProblem）
+### 4.2 composition root：Program.cs（預設 Fluent OptModel；手寫 XxxProblem 為後路）
 
 ```csharp
 using System.Linq;
@@ -165,7 +165,7 @@ dotnet run -- experiment      →  掃多組 CplexConfig  →  Experiments/<name
 
 - **QTY 天條**：所有數值來自 `Parameter.QTY`，任何地方不得裸數字。
 - **命名**：變數型別由 `Build*Vs<T>` 決定，前綴只是約定（`B`→BVs、`I`→IVs、`X`→CVs）；Parameter/Variable 只宣告 properties、無建構子、用 object initializer；數值欄位固定 `public double QTY` 放最後。
-- **composition 唯一**：Fluent `OptModel`，不手寫 `XxxProblem.Execute()`。
+- **建模兩軸（預設）**：① class 用 `[OptVar]`/`[OptParam]` source generator ② composition 用 Fluent `OptModel`。手寫 class + `XxxProblem.Execute()` 為後路（需逐行掌控時）。兩架構並排見 `tutorial/index.html` §5.8、`Projects/HospitalRostering_Generator`（預設）vs `Projects/HospitalRostering_Manual`（後路）。
 - **資料夾/namespace**：`Set/Variable/Parameter/Objective/Constraint/Model` + `ProjectName.*`（廢 `Data/`、`Constraints/`、`VariablesClass/`、`SandBox`）。
 - **建模 step 共用**：`VariableCreate` / `BuildModel` 同時供 solve 與 experiment。
 

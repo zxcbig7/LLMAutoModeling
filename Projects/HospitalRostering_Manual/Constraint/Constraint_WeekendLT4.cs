@@ -21,7 +21,18 @@ namespace HospitalRostering_Manual.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C11，W = 週末日集合。
+                dataload.Employee.ForEach(e =>
+                {
+                    optEngine.AddLHS(1, new VariableX_WeekendLT4 { Employee = e });
+                    optEngine.AddRHS(4);
+                    dataload.Date
+                        .Where(w => w.DayOfWeek == DayOfWeek.Saturday || w.DayOfWeek == DayOfWeek.Sunday)
+                        .ToList()
+                        .ForEach(d => optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
+                    optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
+                    ConstraintCount++;
+                });
+
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }

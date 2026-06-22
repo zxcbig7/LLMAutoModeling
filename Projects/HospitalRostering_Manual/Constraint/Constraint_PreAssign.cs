@@ -21,7 +21,14 @@ namespace HospitalRostering_Manual.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C3，固定 dataload.parameter_PreAssign。
+                dataload.parameter_PreAssign.ForEach(p =>
+                {
+                    optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = p.Date, Employee = p.Employee, Group = p.Group });
+                    optEngine.AddRHS(1);
+                    optEngine.CreateEqual($"{ConstraintName}@{p.Date:yyyy_MM_dd}@{p.Employee}@{p.Group}");
+                    ConstraintCount++;
+                });
+
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }

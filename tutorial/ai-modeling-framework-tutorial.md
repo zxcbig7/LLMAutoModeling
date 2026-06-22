@@ -119,7 +119,7 @@ ProjectName/
 └── Program.cs                 唯一進入點（Fluent OptModel；solve / experiment 雙模式）
 ```
 
-> 資料夾命名以 master `claudemdTemplate/` 為準。舊版 `Data/`→`Set/`、`VariablesClass/`→`Variable/`、`Constraints/`→`Constraint/`，且不再有手寫的 `XxxProblem.cs`（composition 改用框架的 Fluent `OptModel`）。
+> 資料夾命名以 master `claudemdTemplate/` 為準。舊版 `Data/`→`Set/`、`VariablesClass/`→`Variable/`、`Constraints/`→`Constraint/`。**預設**用框架的 Fluent `OptModel` + `[OptVar]`/`[OptParam]` source generator；手寫 `XxxProblem.cs` + 手寫 class 為**後路**（兩架構並排見 `tutorial/index.html` §5.8、`Projects/HospitalRostering_Manual`）。
 
 ### 類別命名與建構慣例
 
@@ -212,7 +212,7 @@ optEngine.BuildBVs<VariableB_ShiftAssign>(dataload.Date, dataload.Employee, data
 optEngine.BuildCVs<VariableX_BelowAVG>(dataload.Employee);
 ```
 
-composition root 用框架內建的 Fluent `OptModel`（**不再手寫 `XxxProblem.Execute()`**）：
+composition root **預設**用框架內建的 Fluent `OptModel`（手寫 `XxxProblem.Execute()` 為後路，見 `Projects/HospitalRostering_Manual`）：
 
 ```csharp
 // Program.cs — 唯一進入點

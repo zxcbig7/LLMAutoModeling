@@ -21,7 +21,18 @@ namespace HospitalRostering_Generator.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C1，見 Model/HospitalRostering_Model.md。
+                dataload.Date.ForEach(d =>
+                {
+                    dataload.Employee.ForEach(e =>
+                    {
+                        dataload.Group.ForEach(g =>
+                            optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
+                        optEngine.AddRHS(1);
+                        optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
+                        ConstraintCount++;
+                    });
+                });
+
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }

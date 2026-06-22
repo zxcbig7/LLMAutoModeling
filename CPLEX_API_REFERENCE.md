@@ -157,6 +157,18 @@ public class Parameter_ShiftDemand : ParameterBase
 
 > ★ **string 屬性務必初始化為 `= string.Empty;`** — 否則 nullable C# (`<Nullable>enable</Nullable>`) 會出 CS8618 警告。
 
+💡 **預設改用 source generator**：上面的手寫 class 是「後路」。框架附 `AutoSetsGenerator`，可用一行 attribute 取代整段樣板（編譯期生成相同的 `: VariableBase`/`: ParameterBase` + 屬性 + QTY + 建構子）：
+
+```csharp
+using OptimModeling;   // 注意 namespace 是 OptimModeling
+
+[OptVar(VarType.Continuous, "SandwichType")]        public partial class VariableX_Sandwich { }
+[OptParam("Date:DateTime", "Group")]                public partial class Parameter_ShiftDemand { }
+[OptParam("Employee", "Group", HasValue = false)]   public partial class Parameter_PreAssign { }   // 純 key，無 QTY
+```
+
+csproj 需以 analyzer 掛入 `OptimModeling.Generators`。詳見 `tutorial/` §5.4+ 與 `claudemdTemplate/Variable`、`claudemdTemplate/Parameter`；可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`）。
+
 ### 為何不需要寫建構子
 
 `VariableBuilder.GetCtor()` 自動偵測（優先序）：
@@ -219,6 +231,8 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
 
 > ★ **抽象旋鈕 vs camelCase 欄位**：兩者指向同一設定（`config.Seed = 7` 等同 `config.randomSeed = 7`）。
 > 用抽象旋鈕（`ITunableConfig`）寫的 tuning code 可跨 Cplex / Gurobi / Solver；用 camelCase 欄位則是 CPLEX 專屬。
+>
+> ★ **上面是常用欄位的代表性子集，非全部**。CPLEX 專屬的切割族（`gomoryCuts`/`coverCuts`/`cliqueCuts`/`mirCuts`/`flowCoverCuts`）、`probe`、`parallelMode`、`numericalEmphasis`、`cutsFactor`、`treeMemoryLimit`、`detTimeLimit`、`epAGap`、`epInt` 等，連同各自的 CPLEX `Param.*` 路徑與取值範圍，**完整對照表見 [`truning/CLAUDE.md`](truning/CLAUDE.md) §6.2**。
 
 **標準寫法**：
 

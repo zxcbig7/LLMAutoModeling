@@ -21,7 +21,29 @@ namespace HospitalRostering_Manual.Constraint
         {
             try
             {
-                // TODO（逐步實作）：實作 C7（前天上班、昨天休、今天上班）。
+                const int duration = 3;
+                dataload.Date.ForEach(d =>
+                {
+                    dataload.Employee.ForEach(e =>
+                    {
+                        var window = dataload.Date.Where(sd => d.AddDays(-duration) < sd && sd <= d).ToList();
+                        if (window.Count < duration) return;
+
+                        var preD    = d.AddDays(-1); // 昨天
+                        var prepreD = d.AddDays(-2); // 前天
+
+                        optEngine.AddLHS(1, new VariableB_Off1Day { Date = d, Employee = e });
+                        optEngine.AddRHS(1);
+                        optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d,       Employee = e, Group = "O" }); // (1 - 今天休)
+                        optEngine.AddRHS(1,  new VariableB_ShiftAssign { Date = preD,    Employee = e, Group = "O" }); // 昨天休
+                        optEngine.AddRHS(1);
+                        optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" }); // (1 - 前天休)
+                        optEngine.AddRHS(-(duration - 1));
+                        optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
+                        ConstraintCount++;
+                    });
+                });
+
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }

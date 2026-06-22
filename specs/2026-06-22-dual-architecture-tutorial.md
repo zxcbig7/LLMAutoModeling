@@ -1,14 +1,16 @@
 ---
 title: 用兩章教學對比「手動架構」與「Generator + 注入 Action 架構」，並以同一份醫院排班模型各建一個可跑專案 + 同組 tuning
-status: approved
+status: implementing
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 modules: [tutorial-docs, csharp-projects, tuning-harness, docs-claudemd]
 scope: CPLEX only
 supersedes_decision: 2026-06-21-claudeai-spec-refresh（部分推翻：由「唯一 OptModel pattern」改為「雙 pattern 並存，AI 預設偏好 Generator 版」）
 ---
 
 # 雙架構教學：同一份醫院排班模型，手動 vs Generator+注入 Action
+
+> **進度（2026-06-23，implementing）**：兩專案 `HospitalRostering_Generator` / `_Manual` 已**完整實作**（Dataload 含固定 seed、ObjectiveFunction、10 條 Constraint、VariableCreate、BuildModel、雙模式 Program/ExperimentRunner）。建模碼 14/14 經正規化 diff 確認兩專案等價（僅 generator 註解差異）。教學 §5.8 雙架構對照章、CLAUDE.md/README/Template 全部對齊。**唯一待辦：使用者本機 build + 跑 CPLEX 驗證**（此環境無 DLL/msbuild）；驗證通過後依待刪清單 §F 移除 `_new`。
 
 ## Summary
 

@@ -49,7 +49,7 @@ ClaudeAIAssistant/
 ## 快速開始
 
 1. **複製範本**：把 `Template_CPLEX/` 複製到 `Projects/MyProject/`
-2. **確認 HintPath**：`csproj` 中 DLL 路徑指向 `..\..\dlls\`；generator analyzer 指向 `..\OptimModeling.Generators\`
+2. **改 `csproj` 兩處相對路徑**（複製後都會多一層，不改會編不過）：DLL HintPath `..\dlls\` → `..\..\dlls\`；generator 參考 `..\Projects\OptimModeling.Generators\` → `..\OptimModeling.Generators\`（範本 csproj 開頭也有此提示）
 3. **先寫數學模型**：在 `Model/MyProject_Model.md` 完成 Sets/Parameters/Variables/Objective/Constraints（確認前不寫 `.cs`）
 4. **再翻譯成 code**：變數/參數預設用 `[OptVar]`/`[OptParam]` 宣告
 5. **執行**：
