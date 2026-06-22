@@ -1,13 +1,11 @@
-using OptimFoundation.Core;
+using OptimModeling;
 
 namespace Template.Parameter
 {
-    /// <summary>三鍵參數：A × B × C → QTY</summary>
-    public class Parameter_ABC : ParameterBase
-    {
-        public string   A   { get; set; } = string.Empty;
-        public string   B   { get; set; } = string.Empty;
-        public DateTime C   { get; set; }
-        public double   QTY { get; set; }
-    }
+    /// <summary>
+    /// 三鍵參數：A × B × C → QTY。body（A/B/C/QTY + 無參數 ctor + params object[] ctor）
+    /// 全由 AutoSetsGenerator 依 [OptParam] 生成；純 key（無 QTY）參數設 HasValue = false。
+    /// </summary>
+    [OptParam("A", "B", "C:DateTime")]
+    public partial class Parameter_ABC { }
 }

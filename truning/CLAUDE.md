@@ -1,356 +1,258 @@
-# ClaudeAIAssistant — OptimFoundation CPLEX 專案
+# CPLEX 數學模型 Tuning 策略
 
-## 專案結構
+本文件提供 CPLEX Solver 加速求解的系統性方法，適用於 LP / IP / MILP。
+所有「Solver 層」設定都對應 OptimFoundation 的 `CplexConfig` 欄位（單一來源），
+由 `OptEngine.Configuration()` 接線到 CPLEX。欄位 `null` = 用 CPLEX 預設，tuning 時只設要動的。
 
-```text
-ClaudeAIAssistant/
-├── dlls/                           ← ★ 所有 DLL 唯一來源（天條）
-│   ├── ILOG.Concert.dll
-│   ├── ILOG.CPLEX.dll
-│   ├── NLog.dll
-│   ├── OptimFoundation.Core.dll
-│   └── OptimFoundation.Cplex.dll
-│
-├── Template_CPLEX/                 ← 框架使用範本（參考用）
-│   └── ...
-│
-└── Projects/                       ← 所有實際題目專案放這裡
-    └── GlassFactory/
-        └── ...
-```
+> **黃金順序**：先做「模型優化」（結構、變數型態、邊界、對稱性），再做「參數優化」（solver 旋鈕）。
+> 模型改一刀的效益通常遠大於調十個參數。
+> **不變式**：tuning 不得移項 / 改號 / 翻轉比較方向 / 四捨五入數值 —— 只改求解策略，不改數學意義。
 
 ---
 
-## ★ 開發流程天條（Phase Gate）
+## 1. 模型設計與架構優化（最高優先）
 
-> 框架精神：**(Modeling ──強力綁定──▶ Coding) ──有需要才做──▶ Tuning**
->
-> **禁止在使用者明確確認數學模型前產生任何 `.cs` 檔。**
-> **任何不清楚的術語或題目描述，禁止猜測，必須追問後才繼續。**
+### 1.1 變數型態選擇
 
-### 三階段流程
+原則：**盡可能使用自由度最高（求解最容易）的變數類型**。求解難度 CV ≪ IV < BV。
 
-#### Phase 1 — Modeling（只輸出 Model.md）
+| 型態    | 鬆弛後                       | 求解難度 | Foundation 建立 API          | 何時用                               |
+| ------- | ---------------------------- | -------- | ---------------------------- | ------------------------------------ |
+| CV 連續 | 本身即 LP，無分支            | 最低     | `BuildCVs<VariableX_*>(...)` | 量、流量、比例等可分割量             |
+| IV 整數 | 需分支定界                   | 中       | `BuildIVs<VariableY_*>(...)` | 數量（台數、批次）等不可分割但範圍大 |
+| BV 二元 | 需分支，且常引發對稱與弱鬆弛 | 最高     | `BuildBVs<VariableY_*>(...)` | 是/否決策、選址、開關                |
 
-- 收到新題目 → 只產出 `Model\MyProject_Model.md`，禁止同時建立任何 `.cs`
-- 模型必須完整涵蓋：問題描述 → Sets → Parameters → Decision Variables → Objective → Constraints
-- 專有名詞參照 `Model\Glossary.md`；有不清楚的術語 → 追問，不得自行詮釋
-- 所有歧義必須在此階段釐清（見下方確認清單）
-- 等待使用者明確說「**開始實作**」或「**模型確認**」
+何時可用連續變數替代離散變數：
+- 二元僅用於表示「是否超過某閾值」，且閾值可由連續量 + 約束表達時。
+- 可用 Big-M 線性化、且後續對連續解取整不影響可行性時。
+- 問題本質為網路流 / 指派且具備 totally unimodular 結構 —— LP 鬆弛即得整數解，直接用 CV。
 
-#### Phase 2 — Coding（純機械轉譯，強力綁定 Phase 1）
+### 1.2 模型精簡化
 
-- Coding 是將 Model.md 逐條翻譯為程式碼，不允許任何自行詮釋
-- 若發現 Model.md 有任何歧義 → 立即停止，回 Phase 1 補充模型，禁止自行假設後繼續
-- 命名、架構、係數來源全部依 CLAUDE.md 規則，無例外
+目標：用更少的變數與限制式表達相同問題，縮小搜尋空間。
+- **聚合限制式**：將多條同型限制式合併（e.g. 逐項上界 → 一條總量上界）。
+- **移除冗餘限制式**：刪掉被其他限制式涵蓋（dominated）的式子。
+- **緊湊上下界**：給變數設更嚴格的 `lb` / `ub`（`BuildCVs<>(lb, ub, ...)`），直接收斂 LP 鬆弛、減少分支。
+- **Big-M 取最小可行值**：M 過大會使 LP 鬆弛鬆散、節點爆增；取問題上界即可。
 
-#### Phase 3 — Tuning（有需要才做，使用者明確指示）
+> 模型精簡屬「modeling 層」，在 Stage 4（AML）重塑，不在 solver 旋鈕處理。
 
-- 僅在使用者提出後才進行，不主動建議
-- Tuning 變更若影響模型語意（新增 slack variable、新增 constraint）→ 必須同步更新 Model.md
+### 1.3 初始解（Warm Start）
 
-**方向一：Solver 設定**（不動模型，調 CPLEX 參數）
+效果：提供高品質初始可行解 → 快速建立 incumbent（上/下限）→ 大幅減少 B&B node 數、提早剪枝。
 
-| 參數 | 用途 |
-| --- | --- |
-| `EpGap` | MIP 最優性誤差容忍，調大換速度 |
-| `TiLim` | 時間上限，強制停止取目前最佳解 |
-| `MIPEmphasis` | 切換策略：找可行解 / 證明最優 / 最佳 bound |
-| Thread count | 平行化 |
-| Presolve / Cuts | 開關 Gomory、clique 等 cut generation |
+產生初始解的方法：Relax-and-Fix、縮小問題規模求子問題、啟發式（貪婪 / 局部搜尋）、線性鬆弛後修復。
 
-**方向二：IIS → Soft Constraint**（模型 infeasible 時的標準流程）
+> ⚠️ **Foundation 現況**：尚未提供注入 MIP start 的公開 API（見 §5 需補清單）。
+> 在現有介面下，等效手段是讓 CPLEX 自己快速找好 incumbent：
+> `mipEmphasis=1`（重可行解）、`rinsHeur`（RINS 啟發式頻率）、`HeuristicEffort`（提高啟發式投入）。
+> Relax-and-Fix 等需在 modeling 層自行實作。
 
-1. 執行 CPLEX IIS，找出最小衝突 constraint 集合
-2. 把該 constraint 改用框架內建的軟限制式 API（自動加彈性變數 + penalty）：
-   - `engine.CreateLeSoft(rhs, penalty)` / `CreateGeSoft(rhs, penalty)` / `CreateEqSoft(rhs, penalty, name)`
-   - 用法同 hard 版：先 `AddLHS(...)` 再 `CreateXxSoft(...)`（見 CPLEX_API_REFERENCE 6.5）
-3. 違反量 = 彈性變數解值，可 `GetVariableValue("Deficit_...")` 查
-4. Model.md 同步標記該 constraint 從 Hard 改為 Soft（penalty 值寫進 Parameter）
+### 1.4 對稱性消除
 
-**方向三：模型結構優化**（效能差異大時才動）
-
-| 手段 | 時機 |
-| --- | --- |
-| Symmetry breaking | 多個等價解存在（如員工互換），大幅縮減 B&B 搜索空間 |
-| Tighten Big-M | LP relaxation gap 過大，找更緊的 M 上界 |
-| Valid inequalities | 加入不改 feasible region 但收緊 LP bound 的補強 constraint |
-| Warm start | 提供初始可行解給 CPLEX 作為 B&B 起點 |
-
-**Tuning 記錄（方向一掃描多組設定時用）**：用 `Experiment` 套件系統化記錄、比較各組設定，取代人工翻 log。
-
-```csharp
-var exp = new Experiment("proj-tuning", "說明");
-foreach (var (label, tune) in variants) {
-    var config = new CplexConfig { ... }; tune(config);   // 用抽象旋鈕：config.Emphasis / config.Seed ...
-    using var engine = new OptEngine(config); engine.Build();
-    new VariableCreate(d, engine).Build(); new BuildModel(d, engine).Build();
-    exp.AddTrial(Trial.Capture(engine, label, () => engine.Solve()));
-}
-exp.Save();   // → Experiments/proj-tuning.csv + .json（指標：time/gap/bound/node + 收斂軌跡）
-```
-
-> 詳見 CPLEX_API_REFERENCE 第 16 節。每個 Trial 記錄完整設定 + 收斂數據；CSV 給人對照、JSON 給後續 LLM tuning。
-
-### 預設慣例（不追問，直接按此處理）
-
-| 項目 | 預設行為 |
-| --- | --- |
-| Index domain 邊界 | Dataset 已清洗，LINQ 直接篩選，不需額外確認 |
-| 參數未定義的組合 | 填入不影響模型的合理預設值（通常為 0 或略過該 constraint） |
-| Soft vs Hard constraint | 預設設計為 Hard constraint；放鬆為 penalty 屬 Phase 3，不在 Phase 1 討論 |
-| Big-M 值 | 視模型需求自行判斷合理上界，不另行追問 |
-| 目標函數方向 | 使用者描述模型時必然包含；若真的沒提才追問 |
-
-### 仍需 Phase 1 明確確認的項目
-
-| 歧義類型 | 需確認的問題 |
-| --- | --- |
-| Linearization 選擇 | OR/AND 邏輯約束有多種等價 formulation，效能差異大，需指定 |
-| Time boundary | 時間序列是否有 wrap-around（最後一天連接第一天）？ |
-| 任何不熟悉的術語 | 參照 Glossary.md；找不到定義 → 必須追問 |
+問題存在大量對稱排列時，Solver 會探索大量等價分支。技巧：
+- **打斷對稱性**：對等價變數加排序限制式（e.g. `x_1 ≥ x_2 ≥ … ≥ x_n`）。
+- **連結 / bridge 限制式**：為等價變數建立順序或 lexicographic 關聯。
+- **CPLEX symmetry presolve**：`Param.Preprocessing.Symmetry`（-1 自動…5 積極）—— **Foundation 尚未提供旋鈕**（見 §5）。
 
 ---
 
-## ★ DLL 參考規則（天條）
+## 2. CPLEX Solver 參數 Tuning（次優先）
 
-> **所有專案的 DLL 一律參考 `ClaudeAIAssistant\dlls\`，禁止使用其他路徑。**
+下列每項都對應一個 `CplexConfig` 欄位；括號為 CPLEX 參數與預設行為。
 
-### csproj HintPath 計算方式
+### 2.1 執行緒控制
+- `workThreads`（`Param.Threads`，Foundation 預設 32）。實測選最快設定，候選：核心數、核心數-1、核心數-2。
+- `parallelMode`（`Param.Parallel`，-1 機會式 / 0 自動 / 1 決定論）。要可重現實驗 → 1。
 
-| 專案位置 | 到 `dlls\` 的相對路徑 |
-| --- | --- |
-| `ClaudeAIAssistant\Template_CPLEX\` | `..\dlls\Xxx.dll` |
-| `ClaudeAIAssistant\Projects\MyProject\` | `..\..\dlls\Xxx.dll` |
+### 2.2 節點選擇策略
+- `nodeSelect`（`Param.MIP.Strategy.NodeSelect`）：0 DFS / 1 best-bound（預設）/ 2 best-estimate / 3 交替 best-estimate。
+- 求**最佳解 / 收 gap** → best-bound 或 best-estimate；**急著找可行解** → DFS（0）。
 
-### csproj 標準寫法
+### 2.3 分支策略
+- `varSel`（`Param.MIP.Strategy.VariableSelect`）：-1 min-infeas / 0 自動 / 1 max-infeas / 2 pseudo cost / 3 strong branching / 4 pseudo reduced cost。難題收斂慢 → 試 strong branching（3，較貴但分支更準）。
+- `branchDir`（`Param.MIP.Strategy.Branch`）：-1 向下 / 0 自動 / 1 向上。
+- `diveType`（`Param.MIP.Strategy.Dive`）：0 自動 / 1 傳統 / 2 探測 / 3 引導。
+- `mipSearch`（`Param.MIP.Strategy.Search`）：0 自動 / 1 傳統 B&C / 2 動態 B&C。
 
-**Template_CPLEX（`..\dlls\`）：**
+### 2.4 切割平面（Cuts）
+每族取值 -1 關 / 0 自動 / 1..3 漸積極；總量由 `cutsFactor`、`cutPasses` 控制。
+- 已接線：`gomoryCuts`（Gomory）、`coverCuts`（Covers）、`cliqueCuts`（團切割 Cliques）、`mirCuts`（MIR）、`flowCoverCuts`（Flow covers）。
+- **改善 gap** 時優先加切割（gomory / mir / cover）；切割過多反而拖慢根節點 → 用 `cutsFactor` 收斂。
+- **零一半切割（ZeroHalf）、Disjunctive、Implied bound 等 Foundation 尚未提供**（見 §5）。
 
-```xml
-<ItemGroup>
-  <Reference Include="ILOG.Concert">
-    <HintPath>..\dlls\ILOG.Concert.dll</HintPath>
-  </Reference>
-  <Reference Include="ILOG.CPLEX">
-    <HintPath>..\dlls\ILOG.CPLEX.dll</HintPath>
-  </Reference>
-  <Reference Include="NLog">
-    <HintPath>..\dlls\NLog.dll</HintPath>
-  </Reference>
-  <Reference Include="OptimFoundation.Core">
-    <HintPath>..\dlls\OptimFoundation.Core.dll</HintPath>
-  </Reference>
-  <Reference Include="OptimFoundation.Cplex">
-    <HintPath>..\dlls\OptimFoundation.Cplex.dll</HintPath>
-  </Reference>
-</ItemGroup>
-```
+### 2.5 優先級規則（Branching Priority）
+為關鍵整數變數設較高分支優先級，指導 Solver 優先分支。
+> ⚠️ **Foundation 尚未提供** priority / order 注入 API（見 §5）。目前只能間接以 `varSel` 影響分支選擇。
 
-**Projects\MyProject（`..\..\dlls\`）：**
+### 2.6 Tolerance 與停止條件
+- `epGap`（`Param.MIP.Tolerances.MIPGap`，預設 1e-4）相對 gap；`epAGap`（`AbsMIPGap`）絕對 gap。
+- `epInt`（`MIP.Tolerances.Integrality`）整數容差；`epOpt` / `epRHS`（Simplex 最佳性 / 可行性容差，預設 1e-6）。
+- `timeLimit`（`Param.TimeLimit`，牆鐘秒）/ `detTimeLimit`（`DetTimeLimit`，決定論 ticks，實驗可重現首選）。
+- `nodeLimit`（`MIP.Limits.Nodes`）/ `intSolLimit`（`MIP.Limits.Solutions`，找到 N 個整數解即停）。
+- `numericalEmphasis`（`Emphasis.Numerical`）數值不穩時開。
 
-```xml
-<ItemGroup>
-  <Reference Include="ILOG.Concert">
-    <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
-  </Reference>
-  <Reference Include="ILOG.CPLEX">
-    <HintPath>..\..\dlls\ILOG.CPLEX.dll</HintPath>
-  </Reference>
-  <Reference Include="NLog">
-    <HintPath>..\..\dlls\NLog.dll</HintPath>
-  </Reference>
-  <Reference Include="OptimFoundation.Core">
-    <HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath>
-  </Reference>
-  <Reference Include="OptimFoundation.Cplex">
-    <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
-  </Reference>
-</ItemGroup>
-```
+### 2.7 預處理（Presolve）
+- `PreIndicator` / `Presolve`（`Param.Preprocessing.Presolve`，bool 開關）。一般保持開啟；只有 debug 模型才關。
+- 進階 presolve（Aggregator、NumPass、Symmetry、Reduce…）**Foundation 尚未提供**（見 §5）。
+
+### 2.8 記憶體與節點檔
+- `workMemory`（`IntParam.WorkMem`，MB，預設 2048）。
+- `treeMemoryLimit`（`MIP.Limits.TreeMemory`，MB）+ `nodeFileInd`（`MIP.Strategy.File`，0 不存 / 1 記憶體壓縮（預設）/ 2 磁碟 / 3 磁碟壓縮）。
+- ⚠️ **Gotcha**：`Configuration()` 在設定 `workMemory` 時會強制 `MIP.Strategy.File=0`。若要「記憶體爆 → 溢寫節點檔」，需在設 `workMemory` **之後**再設 `nodeFileInd=2/3`，否則被覆蓋為 0。
+
+### 2.9 純 LP（Simplex / Barrier）
+- `algorithm`（`RootAlgorithm`）：0 自動 / 1 primal / 2 dual / 3 network / 4 barrier / 5 sifting / 6 concurrent。大型 LP 試 barrier（4）。
+- `NodeAlgorithm`（`IntParam.NodeAlg`）子問題 LP 演算法。
+- `simplexIterLimit`（`Simplex.Limits.Iterations`）/ `barrierAlgorithm`（`Barrier.Algorithm`）。
 
 ---
 
-## 框架概述
+## 3. 進階技術（Foundation 缺口，需擴充 DLL 才能用）
 
-OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線性規劃（ILP / MIP）**模型。
-詳細語法見 `Template_CPLEX\CLAUDE.md`。
+> 以下三項皆需在 `OptEngine` 暴露 callback / start 注入點才能使用；目前內部僅有私有
+> `MIPInfoCallback`（軌跡擷取），無公開 heuristic / lazy / start hook。
 
-### 每個 Projects\MyProject 的標準結構
+### 3.1 自動參數優化（CPLEX Tuning Tool）
+`Cplex.TuneParam()` 讓 CPLEX 自動搜尋參數組合。Foundation 未封裝 → 需補（見 §5）。
 
-```text
-Projects\MyProject\
-├── MyProject.csproj
-├── Program.cs
-├── MyProblem.cs                    ← 主類別（一行注解指向 Model/）
-│
-├── Model\                          ← 純數學模型（Markdown，無程式碼）
-│   ├── MyProject_Model.md          ← Sets / Parameters / Variables / Objective / Constraints
-│   └── Glossary.md                 ← 專有名詞定義（Phase 1 建立，不清楚的術語追問後補入）
-│
-├── Data\                           ← Sets 定義（由 Parameters 衍生）+ Dataload
-│   └── Dataload.cs
-│
-├── Parameter\                      ← ★ 天條：必須存在，Parameter 類別（ParameterBase 子類別）
-│   └── Parameter_Xxx.cs
-│
-├── Variable\                       ← Variable 類別定義 + VariableCreate
-│   ├── VariableB_Xxx.cs            ← Binary 變數（VariableBase 子類別）
-│   ├── VariableX_Xxx.cs            ← Continuous 變數
-│   └── VariableCreate.cs           ← BuildBVs / BuildCVs 呼叫
-│
-├── Objective\                      ← 目標函數
-│   └── ObjectiveFunction.cs
-│
-└── Constraint\                     ← 限制式 + 模型建構入口
-    ├── BuildModel.cs
-    └── Constraint_Xxx.cs
-```
+### 3.2 啟發式回調（Heuristic Callbacks）
+在 B&B 過程插入自訂啟發式以更快得到 incumbent。需暴露 `HeuristicCallback`。
 
-`Model\MyProject_Model.md` 標準章節：**問題描述 → Sets → Parameters → Decision Variables → Objective → Constraints**
-
-> ★ **天條**：`Parameter\` 資料夾必須存在，Sets 由 Parameters 衍生（`=> parameter_Xxx.Select(...).ToList()`）。
->
-> ★ **天條：禁止 Hardcode**：模型所有數值（係數、容量、比例等）一律定義在 `Parameter` 類別的 `QTY` 欄位，透過 `Dataload` helper 取得。`Constraint` / `Objective` 程式碼中不得出現任何裸數字，即使題目只提到少數幾個數值也必須參數化。
-
-### ★ 命名對應規則（天條）
-
-**Model.md 符號命名：**
-
-- 所有 Sets、Parameters、Variables、Constraints 必須使用語意名稱
-- 禁止使用無意義符號：`i`、`j`、`k`、`x`、`y`、`z`、`t`（單一字母）
-- 正確範例：`GlassType`、`Machine`、`ProductionQty`、`Assign_{Employee,Date}`
-
-**程式碼命名必須直接對應 Model.md 符號：**
-
-| Model.md 符號 | 程式碼類別名稱 |
-| --- | --- |
-| `Produce_{GlassType}` | `VariableX_Production` |
-| `Assign_{Employee,Date}` | `VariableB_Assign` |
-| `Capacity_{GlassType}` constraint | `Constraint_Capacity` |
-| `DemandQty` parameter | `Parameter_Demand`（欄位 `QTY`） |
-
-對應原則：取模型符號的語意核心，去掉 index 下標，轉 PascalCase。
-
-### ★ BuildModel 架構規則（天條）
-
-- 每一類 constraint 獨立一個 `Constraint_Xxx.cs`，對應 Model.md 的一條或一組邏輯相關的 constraints
-- `BuildModel.cs` 只負責呼叫各 Constraint class 的 `Build()` 方法，**禁止**在 BuildModel.cs 內直接寫 `AddLHS` / `AddRHS`
-- `ObjectiveFunction.cs` 同理，Objective 邏輯全部在此，BuildModel 只呼叫它
-
-### Namespace 規則
-
-| 資料夾 | Namespace |
-| -------- | ----------- |
-| `Data\` | `MyProject.Data` |
-| `Parameter\` | `MyProject.Parameter` |
-| `Variable\` | `MyProject.Variable` |
-| `Objective\` | `MyProject.Objective` |
-| `Constraint\` | `MyProject.Constraint` |
-| 根目錄 | `MyProject` |
-
-### 執行流程
-
-```csharp
-// Program.cs
-using (var problem = new MyProblem())
-{
-    bool ok = problem.Execute();   // ★ 天條：必須接收 bool 回傳值
-}
-
-// MyProblem.Execute() → 必須回傳 bool
-public bool Execute()
-{
-    optEngine = new OptEngine(config);
-    optEngine.Build();
-    new VariableCreate(dataload, optEngine).Build();   // 1. 建變數
-    new BuildModel(dataload, optEngine).Build();        // 2. 建模型（目標 + 限制）
-    bool ok = optEngine.Solve();                        // 3. 求解 ★ 必須接收回傳值
-    // CSV 輸出預設不呼叫，使用者說「輸出 CSV」時才加入：
-    // if (ok) { FolderDir.Solution.CreateFolder(); CsvCtrl.SaveSolutionToCSV<VariableX_Xxx>(optEngine, "ProjectName", "USER"); }
-    return ok;
-}
-```
+### 3.3 Lazy Constraints / User Cuts
+延遲生成大量潛在限制式（e.g. 子迴路消除）。需暴露 `LazyConstraintCallback` / `UserCutCallback`。
 
 ---
 
-## 限制式語法速查
+## 4. Tuning 流程建議
 
-```csharp
-// LHS 累加變數
-optEngine.AddLHS(coefficient, new VariableB_Xxx { Set1 = s1, Set2 = s2 });
+1. **基準測量**：無 tuning，僅設 `timeLimit`（或 `detTimeLimit` 求可重現），記錄 obj / gap / 時間 / nodes。
+2. **模型優化優先於參數優化**（§1 → §2）。
+3. **單一變數測試**：一次只改一個旋鈕，與基準比。
+4. **疊加有效組合**：保留有改進者，逐步疊加。
+5. **記錄實驗**：每次記 obj、gap、wall/det 時間、node 數、變更項。
+6. **迭代改進**：有改進就更新基準。
 
-// RHS 設定（常數 or 含變數）
-optEngine.AddRHS(value);
-optEngine.AddRHS(coefficient, new VariableB_Xxx { ... });  // 移項用
-
-// 建立約束（名稱格式：ConstraintName@index1@index2）
-optEngine.CreateEqual($"{ConstraintName}@{s1}@{s2}");
-optEngine.CreateLessEqual($"{ConstraintName}@{s1}");
-optEngine.CreateGreatEqual($"{ConstraintName}@{s1}");
-ConstraintCount++;
 ```
+基準 → 單一測試 → 篩選有效 → 疊加組合 → 若有改進則更新基準
+```
+
+> 可重現性：固定 `randomSeed` + `parallelMode=1`（決定論）+ 用 `detTimeLimit`，否則多執行緒計時不可比。
 
 ---
 
-## 目標函數
+## 4.5 用 ExperimentRunner 實際跑掃描（可執行架構）
 
-```csharp
-optEngine.AddLHS(penaltyWeight, new VariableX_Slack { Item = i });
-optEngine.CreateMinimize();  // 或 CreateMaximize()
+§4 的流程已可直接執行——每個專案標配 `ExperimentRunner.cs`：
+
 ```
+dotnet run -- experiment
+```
+
+即掃描多組 `CplexConfig`，用框架的 `Trial.Capture` 記錄「完整設定快照 + 收斂數據」（CPLEX 自動含收斂軌跡），`Experiment.Save()` 落地 `Experiments/<name>.csv + .json`。
+
+- **掃描單位**：`(label, Action<CplexConfig> tune)` 陣列——baseline + 每次只動一個旋鈕（呼應 §4 步驟 3「單一變數測試」）。
+- **抽象旋鈕**（跨引擎，`ITunableConfig`）：`config.Emphasis / Seed / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / MemoryLimitMb`。
+- **CPLEX 專屬欄位**：直接設 camelCase 欄位 `varSel / nodeSelect / workThreads / gomoryCuts / mirCuts / …`（§6.2 對照表）。
+- **每 Trial 用全新 Dataload + engine**，避免狀態跨 Trial 污染；掃描時 `enableLog=false`、關 export 以加速；`timeLimit` 確保每 Trial 收斂。
+- **可重現**：固定 `randomSeed` + `parallelMode=1`（決定論）+ 用 `detTimeLimit`（§4 末）。
+- **讀回累積**：`Experiment.Load(name)`（同名實驗 append、以 RunAt+Label 去重）。
+
+樣板與完整規範見 `claudemdTemplate/Experiment/CLAUDE.md`。
+
+> 黃金順序不變：先在 Stage 4（AML）做模型優化（§1），再用此 runner 掃 solver 旋鈕（§2）。模型一刀的效益通常遠大於調十個參數。
 
 ---
 
-## ★ 解取得 API（基於 Foundation 原始碼）
+## 5. Foundation 尚未提供、需補的 tuning 接口
 
-> **天條**：API 呼叫永遠基於 `Foundation\` 原始碼定義，禁止動到 Foundation。
+> 動 `CplexConfig` / `OptEngine` 屬改 OptimFoundation DLL → **Core + Cplex DLL 必須一起 rebuild 並更新到使用端**。
 
-### 變數名稱格式（`ModelElementBase.ToString()`）
+| 缺口                       | CPLEX 對應                                        | 影響的策略      | 建議補法                              |
+| -------------------------- | ------------------------------------------------- | --------------- | ------------------------------------- |
+| MIP start / 初始解注入     | `Cplex.AddMIPStart` / `SetVectors`                | §1.3 初始解     | `OptEngine.SetMIPStart(dict)`         |
+| 分支優先級                 | `Cplex.SetPriority` / order file                  | §2.5 優先級規則 | `OptEngine.SetBranchPriority(var, p)` |
+| Symmetry presolve          | `Param.Preprocessing.Symmetry`                    | §1.4 對稱性     | 加 `int? symmetry` 欄位               |
+| ZeroHalf 切割              | `Param.MIP.Cuts.ZeroHalfCut`                      | §2.4 切割       | 加 `int? zeroHalfCuts`                |
+| Disjunctive / Implied 切割 | `Param.MIP.Cuts.Disjunctive` / `Implied`          | §2.4 切割       | 加對應欄位                            |
+| 進階 presolve              | `Preprocessing.Aggregator` / `NumPass` / `Reduce` | §2.7 預處理     | 加對應欄位                            |
+| 記憶體 emphasis            | `Param.Emphasis.MemUsage`                         | §2.8 記憶體     | 加 `bool? memoryEmphasis`             |
+| 自動調參                   | `Cplex.TuneParam`                                 | §3.1            | `OptEngine.AutoTune()`                |
+| Heuristic callback         | `Cplex.HeuristicCallback`                         | §3.2            | 暴露 callback 註冊點                  |
+| Lazy / user cut callback   | `LazyConstraintCallback` / `UserCutCallback`      | §3.3            | 暴露 callback 註冊點                  |
 
-```text
-ClassName@prop1@prop2@...
-DateTime 屬性格式：@yyyy-MM-dd
-```
+---
 
-範例：
+## 6. 快速參考表
 
-- `VariableX_Production { GlassType = "Regular" }` → `"VariableX_Production@Regular"`
-- `VariableB_Assign { Employee = "E1", Date = 2026-01-01 }` → `"VariableB_Assign@E1@2026-01-01"`
+### 6.1 按目標分類（皆為「正確性 gate 通過後」才做）
 
-### 取解方法
+| 目標           | 優先 | 建議動作（Foundation 欄位）                                                            |
+| -------------- | ---- | -------------------------------------------------------------------------------------- |
+| 加速求解       | 1st  | 模型精簡 / 緊湊邊界 / 連續變數替代 / 對稱性消除（modeling 層）                         |
+| 加速求解       | 2nd  | 實測篩 `workThreads` → 切割（`gomoryCuts`/`mirCuts`）→ `nodeSelect`                    |
+| 改善 GAP       | 1st  | 加切割 → `nodeSelect=1`（best-bound）→ 收 `epGap` / `mipEmphasis=2`                    |
+| 找可行解       | 1st  | `nodeSelect=0`（DFS）→ `intSolLimit` / `nodeLimit` → 放寬 `epGap` → `mipEmphasis=1`    |
+| timeout 但正確 | —    | 提 `timeLimit` / `mipEmphasis=1` / 開 `parallelMode`；仍 timeout → 回 §1 reformulation |
+| 記憶體爆       | —    | `treeMemoryLimit` + `nodeFileInd=2/3`（注意 §2.8 gotcha 順序）                         |
+| 數值不穩       | —    | `numericalEmphasis=true`                                                               |
+| 可重現實驗     | —    | `parallelMode=1` + 固定 `randomSeed` + `detTimeLimit`                                  |
 
-```csharp
-// ① 目標函數值
-double obj = engine.GetObjectiveValue();
+> 執行緒測試：依前一輪結果選最快設定（核心數 / 核心數-1 / 核心數-2）。
 
-// ② 所有變數解值（Dictionary<string, double>，key = 完整變數名稱）
-var sol = engine.GetSetVarValues<VariableX_Production>();
-// → {"VariableX_Production@Regular": 60.0, "VariableX_Production@Tempered": 0.0}
+### 6.2 Solver 參數查詢（CPLEX ↔ Foundation 對照）
 
-// ③ 依型別名稱取解（同 GetSetVarValues，但用字串型別名）
-var sol2 = engine.GetSolution("VariableX_Production");
+✅ = Foundation 已提供且已接線；❌ = 需補（見 §5）。
 
-// ④ 解出特定變數值（傳完整變數名稱）
-double v = engine.GetVariableValue("VariableX_Production@Regular");
-
-// ⑤ 從 dictionary 解析 label
-foreach (var kvp in sol)
-{
-    string label = kvp.Key.Split('@').Last();  // "Regular"
-    double value = kvp.Value;
-}
-
-// ⑥ 存 CSV → Solution/VariableName.csv
-// ★ 必須先 CreateFolder()！ProjFolder 建構子在編譯版 DLL 不自動建目錄。
-FolderDir.Solution.CreateFolder();
-CsvCtrl.SaveSolutionToCSV<VariableX_Production>(engine, "GlassFactory", "USER");
-```
-
-### 禁止使用的方法（不存在於 Foundation）
-
-```csharp
-// ✗ engine.GetVarSol(...)       → 不存在
-// ✗ engine.GetSetVarSol<T>()    → 不存在
-// ✗ CsvCtrl.SaveToCSV<T>(...)   → 不存在（正確：SaveSolutionToCSV）
-```
+| 參數                | CPLEX                                             | Foundation 欄位               | 可設值 / 預設                |
+| ------------------- | ------------------------------------------------- | ----------------------------- | ---------------------------- |
+| 執行緒數            | `Param.Threads`                                   | ✅ `workThreads`               | 整數，預設 32                |
+| 平行模式            | `Param.Parallel`                                  | ✅ `parallelMode`              | -1 機會 / 0 自動 / 1 決定論  |
+| 限制式讀取上限      | `Param.Read.Constraints`                          | ✅ `rowRead`                   | 整數，預設 30000             |
+| 工作記憶體 (MB)     | `IntParam.WorkMem`                                | ✅ `workMemory`                | 預設 2048（會強制 File=0）   |
+| 樹記憶體上限 (MB)   | `Param.MIP.Limits.TreeMemory`                     | ✅ `treeMemoryLimit`           | MB                           |
+| 節點檔策略          | `Param.MIP.Strategy.File`                         | ✅ `nodeFileInd`               | 0 / 1(預設) / 2 / 3          |
+| 節點選擇            | `Param.MIP.Strategy.NodeSelect`                   | ✅ `nodeSelect`                | 0 DFS / 1 best-bound / 2 / 3 |
+| 分支變數選擇        | `Param.MIP.Strategy.VariableSelect`               | ✅ `varSel`                    | -1 / 0 / 1 / 2 / 3 / 4       |
+| 分支方向            | `Param.MIP.Strategy.Branch`                       | ✅ `branchDir`                 | -1 下 / 0 自動 / 1 上        |
+| 潛降策略            | `Param.MIP.Strategy.Dive`                         | ✅ `diveType`                  | 0 / 1 / 2 / 3                |
+| 搜尋模式            | `Param.MIP.Strategy.Search`                       | ✅ `mipSearch`                 | 0 / 1 / 2                    |
+| 探測強度            | `Param.MIP.Strategy.Probe`                        | ✅ `probe`                     | -1..3                        |
+| RINS 頻率           | `Param.MIP.Strategy.RINSHeur`                     | ✅ `rinsHeur`                  | -1 關 / 0 自動 / N           |
+| 啟發式投入          | `Param.MIP.Strategy.HeuristicEffort`              | ✅ `HeuristicEffort`           | 倍率                         |
+| 解析模式 (emphasis) | `Param.Emphasis.MIP`                              | ✅ `mipEmphasis`               | 0..4                         |
+| 數值穩定            | `Param.Emphasis.Numerical`                        | ✅ `numericalEmphasis`         | bool                         |
+| Cut 數量倍數        | `Param.MIP.Limits.CutsFactor`                     | ✅ `cutsFactor`                | 倍率                         |
+| Cut 回合數          | `Param.MIP.Limits.CutPasses`                      | ✅ `cutPasses`                 | -1 / 0 / N                   |
+| Gomory 切割         | `Param.MIP.Cuts.Gomory`                           | ✅ `gomoryCuts`                | -1 / 0 / 1..3                |
+| 覆蓋切割            | `Param.MIP.Cuts.Covers`                           | ✅ `coverCuts`                 | -1 / 0 / 1..3                |
+| 團切割              | `Param.MIP.Cuts.Cliques`                          | ✅ `cliqueCuts`                | -1 / 0 / 1..3                |
+| MIR 切割            | `Param.MIP.Cuts.MIRCut`                           | ✅ `mirCuts`                   | -1 / 0 / 1..3                |
+| Flow cover 切割     | `Param.MIP.Cuts.FlowCovers`                       | ✅ `flowCoverCuts`             | -1 / 0 / 1..3                |
+| 零一半切割          | `Param.MIP.Cuts.ZeroHalfCut`                      | ❌ 需補                        | -1 / 0 / 1..2                |
+| Disjunctive 切割    | `Param.MIP.Cuts.Disjunctive`                      | ❌ 需補                        | -1 / 0 / 1..3                |
+| MIP Gap (相對)      | `Param.MIP.Tolerances.MIPGap`                     | ✅ `epGap`                     | 預設 1e-4                    |
+| MIP Gap (絕對)      | `Param.MIP.Tolerances.AbsMIPGap`                  | ✅ `epAGap`                    | 數值                         |
+| 整數容差            | `Param.MIP.Tolerances.Integrality`                | ✅ `epInt`                     | 數值                         |
+| 最佳性容差          | `Param.Simplex.Tolerances.Optimality`             | ✅ `epOpt`                     | 預設 1e-6                    |
+| 可行性容差          | `Param.Simplex.Tolerances.Feasibility`            | ✅ `epRHS`                     | 預設 1e-6                    |
+| 時間限制 (牆鐘)     | `Param.TimeLimit`                                 | ✅ `timeLimit`                 | 秒                           |
+| 決定論時間          | `Param.DetTimeLimit`                              | ✅ `detTimeLimit`              | ticks                        |
+| 計時方式            | `Param.ClockType`                                 | ✅ `clockType`                 | 1 CPU / 2 wall               |
+| 節點上限            | `Param.MIP.Limits.Nodes`                          | ✅ `nodeLimit`                 | 整數                         |
+| 整數解上限          | `Param.MIP.Limits.Solutions`                      | ✅ `intSolLimit`               | 整數                         |
+| Solution polishing  | `Param.MIP.PolishAfter.Time`                      | ✅ `polishAfterTime`           | 秒                           |
+| 隨機種子            | `Param.RandomSeed`                                | ✅ `randomSeed`                | 整數                         |
+| 預處理 (presolve)   | `Param.Preprocessing.Presolve`                    | ✅ `PreIndicator` / `Presolve` | bool                         |
+| Root 演算法         | `IntParam.RootAlgorithm`                          | ✅ `algorithm`                 | 0..6                         |
+| 節點 LP 演算法      | `IntParam.NodeAlg`                                | ✅ `NodeAlgorithm`             | 0..6                         |
+| Simplex 迭代上限    | `Param.Simplex.Limits.Iterations`                 | ✅ `simplexIterLimit`          | 整數                         |
+| Barrier 演算法      | `Param.Barrier.Algorithm`                         | ✅ `barrierAlgorithm`          | 0..3                         |
+| Symmetry presolve   | `Param.Preprocessing.Symmetry`                    | ❌ 需補                        | -1..5                        |
+| 進階 presolve       | `Preprocessing.Aggregator` / `NumPass` / `Reduce` | ❌ 需補                        | 整數                         |
+| 記憶體 emphasis     | `Param.Emphasis.MemUsage`                         | ❌ 需補                        | bool                         |
+| 分支優先級          | `Cplex.SetPriority` / order file                  | ❌ 需補                        | 整數 / 檔                    |
+| MIP start           | `Cplex.AddMIPStart` / `SetVectors`                | ❌ 需補                        | 解向量                       |
+| 自動調參            | `Cplex.TuneParam`                                 | ❌ 需補                        | API                          |
+| Heuristic callback  | `Cplex.HeuristicCallback`                         | ❌ 需補                        | callback                     |
+| Lazy / user cut     | `LazyConstraintCallback` / `UserCutCallback`      | ❌ 需補                        | callback                     |

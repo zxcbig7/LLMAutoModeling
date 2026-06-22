@@ -181,31 +181,33 @@ OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線
 ```text
 Projects\MyProject\
 ├── MyProject.csproj
-├── Program.cs
-├── MyProblem.cs                    ← 主類別（一行注解指向 Model/）
+├── Program.cs                      ← 唯一進入點（solve / experiment 雙模式）
+├── ExperimentRunner.cs             ← 參數掃描（tuning）
 │
 ├── Model\                          ← 純數學模型（Markdown，無程式碼）
 │   ├── MyProject_Model.md          ← Sets / Parameters / Variables / Objective / Constraints
 │   └── Glossary.md                 ← 專有名詞定義（Phase 1 建立，不清楚的術語追問後補入）
 │
-├── Data\                           ← Sets 定義（由 Parameters 衍生）+ Dataload
+├── Set\                            ← Dataload（Sets 由 Parameters 衍生）+ WriteToCSV
 │   └── Dataload.cs
 │
-├── Parameter\                      ← ★ 天條：必須存在，Parameter 類別（ParameterBase 子類別）
+├── Parameter\                      ← ★ 天條：必須存在，Parameter 類別（預設 [OptParam] 生成）
 │   └── Parameter_Xxx.cs
 │
-├── Variable\                       ← Variable 類別定義 + VariableCreate
-│   ├── VariableB_Xxx.cs            ← Binary 變數（VariableBase 子類別）
-│   ├── VariableX_Xxx.cs            ← Continuous 變數
-│   └── VariableCreate.cs           ← BuildBVs / BuildCVs 呼叫
+├── Variable\                       ← Variable 類別 + VariableCreate
+│   ├── VariableB_Xxx.cs            ← Binary（預設 [OptVar] 生成，後路手寫 : VariableBase）
+│   ├── VariableX_Xxx.cs            ← Continuous
+│   └── VariableCreate.cs           ← BuildBVs / BuildCVs 呼叫（兩模式共用）
 │
 ├── Objective\                      ← 目標函數
 │   └── ObjectiveFunction.cs
 │
 └── Constraint\                     ← 限制式 + 模型建構入口
-    ├── BuildModel.cs
+    ├── BuildModel.cs               ← 只呼叫各 Constraint.Build()（兩模式共用）
     └── Constraint_Xxx.cs
 ```
+
+> 建模方式預設用 source generator（`[OptVar]`/`[OptParam]`）+ Fluent `OptModel`；需逐行掌控時才退回手寫 class + `XxxProblem.Execute()`。資料夾規則單一來源見 `claudemdTemplate/`，可運作範例見 `Projects/HospitalRostering_Generator`（預設）與 `Projects/HospitalRostering_Manual`（手寫後路）。
 
 `Model\MyProject_Model.md` 標準章節：**問題描述 → Sets → Parameters → Decision Variables → Objective → Constraints**
 
@@ -242,35 +244,32 @@ Projects\MyProject\
 
 | 資料夾 | Namespace |
 | -------- | ----------- |
-| `Data\` | `MyProject.Data` |
+| `Set\` | `MyProject.Set` |
 | `Parameter\` | `MyProject.Parameter` |
 | `Variable\` | `MyProject.Variable` |
 | `Objective\` | `MyProject.Objective` |
 | `Constraint\` | `MyProject.Constraint` |
 | 根目錄 | `MyProject` |
 
-### 執行流程
+### 執行流程（預設：Fluent OptModel 雙模式）
 
 ```csharp
-// Program.cs
-using (var problem = new MyProblem())
-{
-    bool ok = problem.Execute();   // ★ 天條：必須接收 bool 回傳值
-}
+// Program.cs — 唯一進入點：solve / experiment 兩模式
+if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }   // dotnet run -- experiment
 
-// MyProblem.Execute() → 必須回傳 bool
-public bool Execute()
+var dataload = new Dataload();
+using (var m = new OptModel("MyProject")
+    .UseConfig(() => new CplexConfig { epGap = 0.03, timeLimit = 300, workThreads = 8 })
+    .AddVariables(e => new VariableCreate(dataload, e).Build())   // 注入建變數 Action
+    .AddModel(e => new BuildModel(dataload, e).Build())          // 注入建目標+限制 Action
+    .OnSolved(e => dataload.WriteToCSV(e)))
 {
-    optEngine = new OptEngine(config);
-    optEngine.Build();
-    new VariableCreate(dataload, optEngine).Build();   // 1. 建變數
-    new BuildModel(dataload, optEngine).Build();        // 2. 建模型（目標 + 限制）
-    bool ok = optEngine.Solve();                        // 3. 求解 ★ 必須接收回傳值
-    // CSV 輸出預設不呼叫，使用者說「輸出 CSV」時才加入：
-    // if (ok) { FolderDir.Solution.CreateFolder(); CsvCtrl.SaveSolutionToCSV<VariableX_Xxx>(optEngine, "ProjectName", "USER"); }
-    return ok;
+    bool ok = m.Execute();   // 框架負責 build/solve/dispose 與計時
 }
 ```
+
+- `VariableCreate` / `BuildModel` 由 solve 與 experiment（`ExperimentRunner`）兩模式共用，模型不重複。
+- **後路（手寫 composition）**：需逐行掌控引擎生命週期時，才手寫 `MyProblem : IDisposable` 的 `Execute()`（`new OptEngine` → `Build` → `VariableCreate/BuildModel` → `Solve` → 回傳 bool）。完整示範見 `Projects/HospitalRostering_Manual`。
 
 ---
 
@@ -302,9 +301,9 @@ optEngine.CreateMinimize();  // 或 CreateMaximize()
 
 ---
 
-## ★ 解取得 API（基於 Foundation 原始碼）
+## ★ 解取得 API（基於 OptimFoundation 公開 API）
 
-> **天條**：API 呼叫永遠基於 `Foundation\` 原始碼定義，禁止動到 Foundation。
+> **天條**：API 呼叫一律對照 `CPLEX_API_REFERENCE.md` 與 `dlls/` 內編譯版 OptimFoundation 的公開簽名；框架本體唯讀，需擴充一律在專案端寫 helper，不得改框架。
 
 ### 變數名稱格式（`ModelElementBase.ToString()`）
 

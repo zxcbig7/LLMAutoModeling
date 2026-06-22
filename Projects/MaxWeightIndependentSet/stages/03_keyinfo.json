@@ -1,0 +1,31 @@
+{
+  "sets": {
+    "V": "節點集合 (vertices)",
+    "E": "邊集合 (edges)，E ⊆ V × V，無向，存為有序對 (i, j) with i<j"
+  },
+  "parameters": {
+    "w_i": "節點 i 的權重 (double, >= 0)"
+  },
+  "variables": {
+    "x_i": "二元：1 = 節點 i 選入獨立集，0 = 不選"
+  },
+  "objective": {
+    "sense": "maximize",
+    "expr": "sum_{i in V} w_i * x_i"
+  },
+  "constraints": [
+    {
+      "name": "EdgeConflict",
+      "for": "every (i,j) in E",
+      "expr": "x_i + x_j <= 1",
+      "type": "UB"
+    }
+  ],
+  "instance": {
+    "nodeCount": 175,
+    "edgeProbability": 0.12,
+    "seed": 42,
+    "weightRange": "[1, 100] 整數",
+    "note": "G(n,p) 隨機圖，固定種子 → 完全可重現"
+  }
+}

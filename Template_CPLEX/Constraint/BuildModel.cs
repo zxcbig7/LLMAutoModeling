@@ -33,6 +33,8 @@ namespace Template.Constraint
                 new Constraint_GreatEqual(dataload, engine).Build();
                 new Constraint_Window(dataload, engine).Build();
                 new Constraint_VarOnRHS(dataload, engine).Build();
+                new Constraint_Range(dataload, engine).Build();    // CreateRange 區間限制式
+                new Constraint_Soft(dataload, engine).Build();     // 軟性限制式（penalty 自動入目標）
             }
             catch (Exception) { throw; }
         }

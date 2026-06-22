@@ -1,0 +1,9 @@
+﻿RunAt,Label,Solver,Seed,Emphasis,FeasibilityTol,OptimalityTol,RootAlgorithm,Presolve,HeuristicEffort,MemoryLimitMb,TimeLimit,MipGap,Threads,Status,ObjectiveValue,BestBound,ResultGap,WallTimeMs,NodeCount,IterationCount,VarCount,ConstraintCount,Note
+2026-06-21 19:55:50,baseline-emphasis1,Cplex,,1,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,9930.3776,,,250,9275,
+2026-06-21 19:56:23,emphasis0-balanced,Cplex,,0,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,32626.7879,,,250,9275,
+2026-06-21 19:56:38,emphasis2-optimality,Cplex,,2,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,14949.945,,,250,9275,
+2026-06-21 19:56:51,emphasis3-bestbound,Cplex,,3,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,13575.678,,,250,9275,
+2026-06-21 19:57:04,clique-aggressive,Cplex,,0,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,12966.1678,,,250,9275,
+2026-06-21 19:57:39,probe-aggressive,Cplex,,0,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,34693.8813,,,250,9275,
+2026-06-21 19:57:52,clique+probe,Cplex,,0,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,12966.6858,,,250,9275,
+2026-06-21 19:58:19,deterministic-seed,Cplex,20260621,0,1E-06,1E-06,,,,2048,300,1E-09,8,Optimal,1332,1332,0,27019.4718,,,250,9275,

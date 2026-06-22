@@ -39,6 +39,10 @@ namespace Template.Variable
                 // Continuous — 2 sets
                 optEngine.BuildCVs<VariableX_AB>(dataload.SetA, dataload.SetB);
 
+                // Integer — 1 set，界限 [0, 10]（BuildIVs 界限 overload）
+                optEngine.BuildIVs<VariableI_A>(0, 10, dataload.SetA);
+                // 連續界限版同理：optEngine.BuildCVs<VariableX_A>(0, 100, dataload.SetA);
+
                 Logging.Info($"Variables created: {optEngine.varCount}");
             }
             catch (Exception) { throw; }

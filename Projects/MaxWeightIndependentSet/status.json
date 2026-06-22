@@ -1,0 +1,7 @@
+{
+  "projectName": "MaxWeightIndependentSet",
+  "projectType": "IP",
+  "completed": ["00", "01", "02", "03", "04", "04b", "05", "06", "07", "07b", "08", "09", "10", "11", "12", "13"],
+  "current": "done",
+  "note": "NP-hard 範例：Max Weighted Independent Set。Code 單一來源在 csharp/（未重複複製到 stages/05-13）。tuning sweep 在 csharp/Project/ExperimentRunner.cs，落地 Experiments/mwis-tuning.csv+json。"
+}

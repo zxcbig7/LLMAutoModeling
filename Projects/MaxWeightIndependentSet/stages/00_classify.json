@@ -1,0 +1,5 @@
+{
+  "problemType": "IP",
+  "reason": "所有決策變數皆為二元 x_i ∈ {0,1}，無連續變數，故為純整數規劃 (Integer Program)。Max Weighted Independent Set 為經典 NP-hard 問題。",
+  "cplexDefaults": { "mipEmphasis": 1, "timeLimit": 1800 }
+}

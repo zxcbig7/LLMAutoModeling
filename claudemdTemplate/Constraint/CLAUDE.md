@@ -35,6 +35,19 @@ ConstraintCount++;
 
 `AddLHS`/`AddRHS` 為累加；`CreateXxx` 後自動清空，開始下一條。
 
+## 區間限制式（Range）
+
+`lb ≤ Σ係數·var ≤ ub` 用單一窗口建立，不要拆成兩條 `≤` / `≥`：
+
+```csharp
+_engine.AddLHS(coeff, var);              // 先累加 LHS（只用 LHS，RHS 不適用）
+_engine.CreateRange(lb, ub, $"...");     // lb ≤ LHS ≤ ub，建完自動清空
+ConstraintCount++;
+```
+
+- `lb` / `ub` 一律從 `Parameter.QTY` 取得，不得 hardcode。
+- 只吃 LHS 累加項（`AddRHS` 不參與 Range）；常數項 `AddLHS(const)` 會併入界限平移。
+
 ## 軟限制式（Phase 3 — 使用者明確指示才用）
 
 框架內建軟限制式：自動加彈性變數 + 把 penalty 加進目標式（**不需手動改 Objective**）。

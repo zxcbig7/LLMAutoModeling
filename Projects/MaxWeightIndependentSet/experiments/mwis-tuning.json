@@ -1,0 +1,3551 @@
+{
+  "name": "mwis-tuning",
+  "description": "MWIS solver-層 tuning：掃 mipEmphasis / clique cuts / probe / 決定論，比較 WallTime/Nodes/Gap",
+  "createdAt": "2026-06-21T19:55:40.4813992+08:00",
+  "trials": [
+    {
+      "label": "baseline-emphasis1",
+      "runAt": "2026-06-21T19:55:50.4942295+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 1,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 1,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": null,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": null,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 1,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 9930.3776,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 173.0625,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 654.6551,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 1047.7195,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1398.3049,
+            "objective": 1332,
+            "bound": 2215.8179132446016,
+            "gap": 0.6635269618952967
+          },
+          {
+            "timeMs": 1619.5377,
+            "objective": 1332,
+            "bound": 2153.83529615466,
+            "gap": 0.6169934655815305
+          },
+          {
+            "timeMs": 1844.3613,
+            "objective": 1332,
+            "bound": 2131.0739395180503,
+            "gap": 0.5999053599984913
+          },
+          {
+            "timeMs": 2055.5076,
+            "objective": 1332,
+            "bound": 2131.0739395180503,
+            "gap": 0.5999053599984913
+          },
+          {
+            "timeMs": 2280.5838,
+            "objective": 1332,
+            "bound": 2131.0739395180503,
+            "gap": 0.5999053599984913
+          },
+          {
+            "timeMs": 2546.2112,
+            "objective": 1332,
+            "bound": 2131.0739395180503,
+            "gap": 0.5999053599984913
+          },
+          {
+            "timeMs": 2819.6875,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 3076.6918,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 3372.8839,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 3660.3348,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 4037.5573,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 4350.6218,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 4573.9484,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 4780.21,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 5035.9379,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 5273.2016,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 5496.0262,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 5742.0114,
+            "objective": 1332,
+            "bound": 2114.4339587210907,
+            "gap": 0.5874128819226966
+          },
+          {
+            "timeMs": 5955.8059,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 6330.9342,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 6630.3882,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 6985.8014,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 7326.9535,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 7657.6114,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 7867.9249,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 8181.2548,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 8543.0635,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 8933.5235,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 9152.8012,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 9436.5575,
+            "objective": 1332,
+            "bound": 2067.3058715351117,
+            "gap": 0.5520314350863788
+          },
+          {
+            "timeMs": 9822.8547,
+            "objective": 1332,
+            "bound": 1649.0183886762472,
+            "gap": 0.23800179330046803
+          }
+        ]
+      }
+    },
+    {
+      "label": "emphasis0-balanced",
+      "runAt": "2026-06-21T19:56:23.1624949+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 0,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": null,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": null,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 32626.7879,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 175.1518,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 688.2819,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 1101.7394,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1408.7485,
+            "objective": 1332,
+            "bound": 2215.8179132446016,
+            "gap": 0.6635269618952967
+          },
+          {
+            "timeMs": 1617.3425,
+            "objective": 1332,
+            "bound": 2198.167582251436,
+            "gap": 0.6502759626511796
+          },
+          {
+            "timeMs": 1915.5333,
+            "objective": 1332,
+            "bound": 2190.1829025306265,
+            "gap": 0.6442814583562778
+          },
+          {
+            "timeMs": 2451.7226,
+            "objective": 1332,
+            "bound": 2179.6718146486583,
+            "gap": 0.6363902512376837
+          },
+          {
+            "timeMs": 2755.851,
+            "objective": 1332,
+            "bound": 2172.0044494945037,
+            "gap": 0.6306339710919223
+          },
+          {
+            "timeMs": 2968.8799,
+            "objective": 1332,
+            "bound": 2165.841894572908,
+            "gap": 0.6260074283579922
+          },
+          {
+            "timeMs": 3177.8571,
+            "objective": 1332,
+            "bound": 2143.6055145386895,
+            "gap": 0.6093134493533248
+          },
+          {
+            "timeMs": 3416.3233,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 3824.8456,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 4330.9797,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4542.5038,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4767.7947,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4972.8462,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5179.5327,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5402.4374,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5616.1976,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5859.0216,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6148.5405,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6416.3904,
+            "objective": 1332,
+            "bound": 1810.4240825061097,
+            "gap": 0.359177239118674
+          },
+          {
+            "timeMs": 6737.0635,
+            "objective": 1332,
+            "bound": 1775.191535149855,
+            "gap": 0.33272637774010644
+          },
+          {
+            "timeMs": 7056.9456,
+            "objective": 1332,
+            "bound": 1731.7587692512207,
+            "gap": 0.3001191961345275
+          },
+          {
+            "timeMs": 7394.024,
+            "objective": 1332,
+            "bound": 1693.6955494486926,
+            "gap": 0.2715432052917909
+          },
+          {
+            "timeMs": 7754.3779,
+            "objective": 1332,
+            "bound": 1673.3084041743004,
+            "gap": 0.2562375406713775
+          },
+          {
+            "timeMs": 8099.8053,
+            "objective": 1332,
+            "bound": 1640.1776953851404,
+            "gap": 0.23136463617501296
+          },
+          {
+            "timeMs": 8461.938,
+            "objective": 1332,
+            "bound": 1616.4140075235155,
+            "gap": 0.21352402967229286
+          },
+          {
+            "timeMs": 12956.5021,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 13282.9598,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 13862.0107,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 14099.4523,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 14612.1207,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 14873.6921,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 15254.7032,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 15483.0703,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 15731.3274,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16032.4078,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16262.9032,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16551.3577,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16817.2495,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17060.7116,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17423.8158,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17712.2655,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17966.123,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18187.1054,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18454.3244,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18690.0179,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18944.7503,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 19207.1672,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 19486.3167,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 19755.3844,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 21920.3854,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 22148.3383,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 22387.8275,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 22630.8368,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 22901.0568,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 23127.4375,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 23468.2552,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 23728.9825,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24069.0805,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24410.6353,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24626.8495,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 25029.1206,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 25258.8126,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 25629.8325,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26029.5605,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26250.2431,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26476.0082,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26877.2613,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 27097.1914,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 27332.2063,
+            "objective": 1332,
+            "bound": 1597.8218630268552,
+            "gap": 0.19956596323335982
+          },
+          {
+            "timeMs": 27560.055,
+            "objective": 1332,
+            "bound": 1585.708686545287,
+            "gap": 0.19047198689584682
+          },
+          {
+            "timeMs": 27833.2192,
+            "objective": 1332,
+            "bound": 1572.0736189465492,
+            "gap": 0.18023544965955796
+          },
+          {
+            "timeMs": 28057.0674,
+            "objective": 1332,
+            "bound": 1562.0020840569828,
+            "gap": 0.1726742372800041
+          },
+          {
+            "timeMs": 28326.7761,
+            "objective": 1332,
+            "bound": 1552.3402395015194,
+            "gap": 0.16542060022635346
+          },
+          {
+            "timeMs": 28603.0591,
+            "objective": 1332,
+            "bound": 1539.6006783694024,
+            "gap": 0.15585636514218232
+          },
+          {
+            "timeMs": 28913.7071,
+            "objective": 1332,
+            "bound": 1529.5488335100638,
+            "gap": 0.14830993506760431
+          },
+          {
+            "timeMs": 29246.6668,
+            "objective": 1332,
+            "bound": 1517.071060596002,
+            "gap": 0.1389422376846758
+          },
+          {
+            "timeMs": 29526.697,
+            "objective": 1332,
+            "bound": 1504.3811389841273,
+            "gap": 0.12941526950759338
+          },
+          {
+            "timeMs": 29757.2545,
+            "objective": 1332,
+            "bound": 1493.358169008619,
+            "gap": 0.12113976652297807
+          },
+          {
+            "timeMs": 30030.0852,
+            "objective": 1332,
+            "bound": 1481.6740497352487,
+            "gap": 0.11236790520663471
+          },
+          {
+            "timeMs": 30316.5166,
+            "objective": 1332,
+            "bound": 1467.7687950302047,
+            "gap": 0.10192852479744334
+          },
+          {
+            "timeMs": 30658.4031,
+            "objective": 1332,
+            "bound": 1447.6414302207704,
+            "gap": 0.08681789055612743
+          },
+          {
+            "timeMs": 30907.8479,
+            "objective": 1332,
+            "bound": 1437.7480105643426,
+            "gap": 0.07939039832157258
+          },
+          {
+            "timeMs": 31171.8271,
+            "objective": 1332,
+            "bound": 1424.091130732735,
+            "gap": 0.06913748553508123
+          },
+          {
+            "timeMs": 31404.6357,
+            "objective": 1332,
+            "bound": 1412.1604038829266,
+            "gap": 0.06018048339558604
+          },
+          {
+            "timeMs": 31618.2398,
+            "objective": 1332,
+            "bound": 1402.7093187663702,
+            "gap": 0.05308507414892258
+          },
+          {
+            "timeMs": 31852.56,
+            "objective": 1332,
+            "bound": 1389.5456836286787,
+            "gap": 0.04320246518669249
+          },
+          {
+            "timeMs": 32087.1254,
+            "objective": 1332,
+            "bound": 1378.434860084055,
+            "gap": 0.03486100606910766
+          },
+          {
+            "timeMs": 32293.7163,
+            "objective": 1332,
+            "bound": 1368.7363698257416,
+            "gap": 0.027579857226530644
+          },
+          {
+            "timeMs": 32501.4044,
+            "objective": 1332,
+            "bound": 1356.6709280431166,
+            "gap": 0.01852171775008618
+          }
+        ]
+      }
+    },
+    {
+      "label": "emphasis2-optimality",
+      "runAt": "2026-06-21T19:56:38.1657064+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 2,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 2,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": null,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": null,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 2,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 14949.945,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 177.7552,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 680.3281,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 1096.3229,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1434.9446,
+            "objective": 1332,
+            "bound": 2215.8179132446016,
+            "gap": 0.6635269618952967
+          },
+          {
+            "timeMs": 1684.5923,
+            "objective": 1332,
+            "bound": 2198.167582251436,
+            "gap": 0.6502759626511796
+          },
+          {
+            "timeMs": 2027.2212,
+            "objective": 1332,
+            "bound": 2190.1829025306265,
+            "gap": 0.6442814583562778
+          },
+          {
+            "timeMs": 2552.5579,
+            "objective": 1332,
+            "bound": 2179.6718146486583,
+            "gap": 0.6363902512376837
+          },
+          {
+            "timeMs": 2822.9154,
+            "objective": 1332,
+            "bound": 2172.0044494945037,
+            "gap": 0.6306339710919223
+          },
+          {
+            "timeMs": 3095.6071,
+            "objective": 1332,
+            "bound": 2165.841894572908,
+            "gap": 0.6260074283579922
+          },
+          {
+            "timeMs": 3518.309,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 3936.8823,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 4448.1929,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4662.7248,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4909.4638,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5163.2841,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5461.518,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5707.181,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5968.0264,
+            "objective": 1332,
+            "bound": 1921.871775830297,
+            "gap": 0.4428466785512408
+          },
+          {
+            "timeMs": 6292.6096,
+            "objective": 1332,
+            "bound": 1883.3930400647516,
+            "gap": 0.41395873878732
+          },
+          {
+            "timeMs": 6494.6064,
+            "objective": 1332,
+            "bound": 1844.3567987962867,
+            "gap": 0.3846522513485347
+          },
+          {
+            "timeMs": 6706.7806,
+            "objective": 1332,
+            "bound": 1844.3567987962867,
+            "gap": 0.3846522513485347
+          },
+          {
+            "timeMs": 6950.9147,
+            "objective": 1332,
+            "bound": 1786.710100787156,
+            "gap": 0.3413739495398813
+          },
+          {
+            "timeMs": 7162.8184,
+            "objective": 1332,
+            "bound": 1729.7070071590952,
+            "gap": 0.29857883420350245
+          },
+          {
+            "timeMs": 7426.5737,
+            "objective": 1332,
+            "bound": 1716.357585385527,
+            "gap": 0.28855674578490853
+          },
+          {
+            "timeMs": 7635.4838,
+            "objective": 1332,
+            "bound": 1675.1320848426733,
+            "gap": 0.25760667030228795
+          },
+          {
+            "timeMs": 7875.1246,
+            "objective": 1332,
+            "bound": 1666.2899943798059,
+            "gap": 0.25096846424908464
+          },
+          {
+            "timeMs": 8312.4342,
+            "objective": 1332,
+            "bound": 1608.3366700133108,
+            "gap": 0.20745996247244
+          },
+          {
+            "timeMs": 8564.4102,
+            "objective": 1332,
+            "bound": 1595.7398025572309,
+            "gap": 0.19800285477268098
+          },
+          {
+            "timeMs": 8779.2533,
+            "objective": 1332,
+            "bound": 1586.557461635708,
+            "gap": 0.19110920543219886
+          },
+          {
+            "timeMs": 9026.1367,
+            "objective": 1332,
+            "bound": 1574.603356699245,
+            "gap": 0.18213465217659675
+          },
+          {
+            "timeMs": 9285.499,
+            "objective": 1332,
+            "bound": 1563.938046037096,
+            "gap": 0.17412766218999892
+          },
+          {
+            "timeMs": 9501.7642,
+            "objective": 1332,
+            "bound": 1553.9929118610235,
+            "gap": 0.16666134524099607
+          },
+          {
+            "timeMs": 9736.6865,
+            "objective": 1332,
+            "bound": 1545.3165356699637,
+            "gap": 0.16014754930176256
+          },
+          {
+            "timeMs": 10013.6399,
+            "objective": 1332,
+            "bound": 1535.2690393860535,
+            "gap": 0.1526043839234521
+          },
+          {
+            "timeMs": 10288.8403,
+            "objective": 1332,
+            "bound": 1524.8765199654817,
+            "gap": 0.14480219216626672
+          },
+          {
+            "timeMs": 10522.8965,
+            "objective": 1332,
+            "bound": 1513.6263318318443,
+            "gap": 0.1363561049788518
+          },
+          {
+            "timeMs": 10783.0798,
+            "objective": 1332,
+            "bound": 1506.1247833622183,
+            "gap": 0.1307243118334874
+          },
+          {
+            "timeMs": 11104.8482,
+            "objective": 1332,
+            "bound": 1492.7962548631135,
+            "gap": 0.12071790905638247
+          },
+          {
+            "timeMs": 11481.3356,
+            "objective": 1332,
+            "bound": 1483.7438007208584,
+            "gap": 0.11392177231294821
+          },
+          {
+            "timeMs": 11755.7245,
+            "objective": 1332,
+            "bound": 1471.6600107391341,
+            "gap": 0.10484985791225498
+          },
+          {
+            "timeMs": 12064.6854,
+            "objective": 1332,
+            "bound": 1454.7850296794518,
+            "gap": 0.09218095321279471
+          },
+          {
+            "timeMs": 12337.6236,
+            "objective": 1332,
+            "bound": 1441.5151006704725,
+            "gap": 0.08221854404689512
+          },
+          {
+            "timeMs": 12626.6137,
+            "objective": 1332,
+            "bound": 1429.1821245165625,
+            "gap": 0.07295955294035672
+          },
+          {
+            "timeMs": 12869.756,
+            "objective": 1332,
+            "bound": 1419.561707161684,
+            "gap": 0.06573701738864664
+          },
+          {
+            "timeMs": 13096.7144,
+            "objective": 1332,
+            "bound": 1410.0626063620984,
+            "gap": 0.05860556033190134
+          },
+          {
+            "timeMs": 13366.1288,
+            "objective": 1332,
+            "bound": 1396.4795181790305,
+            "gap": 0.04840804668095019
+          },
+          {
+            "timeMs": 13638.3545,
+            "objective": 1332,
+            "bound": 1386.438593797973,
+            "gap": 0.04086981516364032
+          },
+          {
+            "timeMs": 13866.2768,
+            "objective": 1332,
+            "bound": 1377.8270800364478,
+            "gap": 0.03440471474207534
+          },
+          {
+            "timeMs": 14069.2305,
+            "objective": 1332,
+            "bound": 1369.4660130430375,
+            "gap": 0.028127637419695706
+          },
+          {
+            "timeMs": 14286.1981,
+            "objective": 1332,
+            "bound": 1361.2494284554411,
+            "gap": 0.021959030371951165
+          },
+          {
+            "timeMs": 14526.1047,
+            "objective": 1332,
+            "bound": 1352.1027275711635,
+            "gap": 0.015092137816187711
+          },
+          {
+            "timeMs": 14741.034,
+            "objective": 1332,
+            "bound": 1342.9138976123497,
+            "gap": 0.00819361682608777
+          }
+        ]
+      }
+    },
+    {
+      "label": "emphasis3-bestbound",
+      "runAt": "2026-06-21T19:56:51.7621289+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 3,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 3,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": null,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": null,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 3,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 13575.678,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 183.637,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 730.718,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 1200.6667,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1601.0901,
+            "objective": 1332,
+            "bound": 2198.167582251436,
+            "gap": 0.6502759626511796
+          },
+          {
+            "timeMs": 2137.7584,
+            "objective": 1332,
+            "bound": 2191.0175757671095,
+            "gap": 0.644908089915199
+          },
+          {
+            "timeMs": 2409.7215,
+            "objective": 1332,
+            "bound": 2181.2249253884584,
+            "gap": 0.6375562502915875
+          },
+          {
+            "timeMs": 2799.3598,
+            "objective": 1332,
+            "bound": 2165.841894572908,
+            "gap": 0.6260074283579922
+          },
+          {
+            "timeMs": 3232.5673,
+            "objective": 1332,
+            "bound": 2159.660552477557,
+            "gap": 0.6213667811392602
+          },
+          {
+            "timeMs": 3600.5487,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 4010.7082,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4617.6263,
+            "objective": 1332,
+            "bound": 1866.7827550739623,
+            "gap": 0.40148855486030194
+          },
+          {
+            "timeMs": 4832.0829,
+            "objective": 1332,
+            "bound": 1866.7827550739623,
+            "gap": 0.40148855486030194
+          },
+          {
+            "timeMs": 5079.3206,
+            "objective": 1332,
+            "bound": 1866.7827550739623,
+            "gap": 0.40148855486030194
+          },
+          {
+            "timeMs": 5365.122,
+            "objective": 1332,
+            "bound": 1866.7827550739623,
+            "gap": 0.40148855486030194
+          },
+          {
+            "timeMs": 5642.3008,
+            "objective": 1332,
+            "bound": 1866.7827550739623,
+            "gap": 0.40148855486030194
+          },
+          {
+            "timeMs": 5961.6446,
+            "objective": 1332,
+            "bound": 1866.7827550739623,
+            "gap": 0.40148855486030194
+          },
+          {
+            "timeMs": 6274.6146,
+            "objective": 1332,
+            "bound": 1853.856061751885,
+            "gap": 0.3917838301440283
+          },
+          {
+            "timeMs": 6816.9969,
+            "objective": 1332,
+            "bound": 1780.8220478767266,
+            "gap": 0.3369534893969166
+          },
+          {
+            "timeMs": 7017.11,
+            "objective": 1332,
+            "bound": 1780.8220478767266,
+            "gap": 0.3369534893969166
+          },
+          {
+            "timeMs": 7350.2907,
+            "objective": 1332,
+            "bound": 1750.8157519062552,
+            "gap": 0.3144262401698376
+          },
+          {
+            "timeMs": 7672.5733,
+            "objective": 1332,
+            "bound": 1721.8120796952599,
+            "gap": 0.29265171148290586
+          },
+          {
+            "timeMs": 8098.9982,
+            "objective": 1332,
+            "bound": 1681.1185211905074,
+            "gap": 0.2621009918847456
+          },
+          {
+            "timeMs": 8370.0781,
+            "objective": 1332,
+            "bound": 1636.3757669486872,
+            "gap": 0.2285103355470453
+          },
+          {
+            "timeMs": 8956.9694,
+            "objective": 1332,
+            "bound": 1589.2091077495375,
+            "gap": 0.19309993074288148
+          },
+          {
+            "timeMs": 9260.4481,
+            "objective": 1332,
+            "bound": 1556.1921149411924,
+            "gap": 0.16831239860448613
+          },
+          {
+            "timeMs": 9510.0061,
+            "objective": 1332,
+            "bound": 1556.1921149411924,
+            "gap": 0.16831239860448613
+          },
+          {
+            "timeMs": 9923.2863,
+            "objective": 1332,
+            "bound": 1488.7852384886592,
+            "gap": 0.11770663550198752
+          },
+          {
+            "timeMs": 10126.2698,
+            "objective": 1332,
+            "bound": 1488.7852384886592,
+            "gap": 0.11770663550198752
+          },
+          {
+            "timeMs": 10401.2493,
+            "objective": 1332,
+            "bound": 1455.1470380911928,
+            "gap": 0.09245273129968737
+          },
+          {
+            "timeMs": 10748.1722,
+            "objective": 1332,
+            "bound": 1438.835505879291,
+            "gap": 0.080206836245708
+          },
+          {
+            "timeMs": 10952.1093,
+            "objective": 1332,
+            "bound": 1428.0204583119032,
+            "gap": 0.07208743116508709
+          },
+          {
+            "timeMs": 11196.7048,
+            "objective": 1332,
+            "bound": 1416.7785689409786,
+            "gap": 0.06364757428000921
+          },
+          {
+            "timeMs": 11621.1081,
+            "objective": 1332,
+            "bound": 1408.3926318262645,
+            "gap": 0.05735182569538946
+          },
+          {
+            "timeMs": 11878.2332,
+            "objective": 1332,
+            "bound": 1397.5302078396862,
+            "gap": 0.049196852732493475
+          },
+          {
+            "timeMs": 12146.292,
+            "objective": 1332,
+            "bound": 1389.1915217253525,
+            "gap": 0.04293657787188301
+          },
+          {
+            "timeMs": 12379.7986,
+            "objective": 1332,
+            "bound": 1381.7212022574947,
+            "gap": 0.03732822992304129
+          },
+          {
+            "timeMs": 12608.9679,
+            "objective": 1332,
+            "bound": 1376.4914196262596,
+            "gap": 0.03340196668637856
+          },
+          {
+            "timeMs": 12844.9008,
+            "objective": 1332,
+            "bound": 1368.0981779911858,
+            "gap": 0.02710073422761495
+          },
+          {
+            "timeMs": 13070.7332,
+            "objective": 1332,
+            "bound": 1361.323841846843,
+            "gap": 0.022014896281411952
+          },
+          {
+            "timeMs": 13303.5386,
+            "objective": 1332,
+            "bound": 1351.522055761629,
+            "gap": 0.014656198019239862
+          },
+          {
+            "timeMs": 13510.597,
+            "objective": 1332,
+            "bound": 1340.087730271949,
+            "gap": 0.006071869573534914
+          }
+        ]
+      }
+    },
+    {
+      "label": "clique-aggressive",
+      "runAt": "2026-06-21T19:57:04.7647659+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 0,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": null,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": 2,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 12966.1678,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 160.4474,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 635.0672,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 971.2655,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1295.775,
+            "objective": 1332,
+            "bound": 2215.8179132446016,
+            "gap": 0.6635269618952967
+          },
+          {
+            "timeMs": 1509.6299,
+            "objective": 1332,
+            "bound": 2198.167582251436,
+            "gap": 0.6502759626511796
+          },
+          {
+            "timeMs": 1842.3309,
+            "objective": 1332,
+            "bound": 2190.1829025306265,
+            "gap": 0.6442814583562778
+          },
+          {
+            "timeMs": 2077.5534,
+            "objective": 1332,
+            "bound": 2182.650751145293,
+            "gap": 0.6386266900489707
+          },
+          {
+            "timeMs": 2395.7973,
+            "objective": 1332,
+            "bound": 2179.6718146486583,
+            "gap": 0.6363902512376837
+          },
+          {
+            "timeMs": 2702.8383,
+            "objective": 1332,
+            "bound": 2172.0044494945037,
+            "gap": 0.6306339710919223
+          },
+          {
+            "timeMs": 2924.3164,
+            "objective": 1332,
+            "bound": 2165.841894572908,
+            "gap": 0.6260074283579922
+          },
+          {
+            "timeMs": 3167.1245,
+            "objective": 1332,
+            "bound": 2143.6055145386895,
+            "gap": 0.6093134493533248
+          },
+          {
+            "timeMs": 3438.1839,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 3877.8926,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 4368.4184,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4572.0606,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4785.7268,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5045.287,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5338.5416,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5617.8059,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5904.3243,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6211.4045,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6531.2328,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6868.2506,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 7078.5055,
+            "objective": 1332,
+            "bound": 1750.9588392870573,
+            "gap": 0.3145336631283978
+          },
+          {
+            "timeMs": 7415.5562,
+            "objective": 1332,
+            "bound": 1716.6398808398628,
+            "gap": 0.28876867930918465
+          },
+          {
+            "timeMs": 7641.7038,
+            "objective": 1332,
+            "bound": 1700.7375722488316,
+            "gap": 0.27683000919579875
+          },
+          {
+            "timeMs": 8020.2953,
+            "objective": 1332,
+            "bound": 1678.7434495295959,
+            "gap": 0.26031790505222957
+          },
+          {
+            "timeMs": 8232.0301,
+            "objective": 1332,
+            "bound": 1661.2505040644742,
+            "gap": 0.24718506311144853
+          },
+          {
+            "timeMs": 8649.1825,
+            "objective": 1332,
+            "bound": 1633.3274341371048,
+            "gap": 0.2262217974002118
+          },
+          {
+            "timeMs": 8865.4149,
+            "objective": 1332,
+            "bound": 1617.5761694415955,
+            "gap": 0.21439652360478537
+          },
+          {
+            "timeMs": 9295.8444,
+            "objective": 1332,
+            "bound": 1594.1795174988467,
+            "gap": 0.196831469593714
+          },
+          {
+            "timeMs": 9509.9989,
+            "objective": 1332,
+            "bound": 1584.3437131543649,
+            "gap": 0.1894472320978573
+          },
+          {
+            "timeMs": 9743.0577,
+            "objective": 1332,
+            "bound": 1567.5849252966268,
+            "gap": 0.17686555953198882
+          },
+          {
+            "timeMs": 9957.9327,
+            "objective": 1332,
+            "bound": 1561.1096585297937,
+            "gap": 0.17200424814547785
+          },
+          {
+            "timeMs": 10208.6157,
+            "objective": 1332,
+            "bound": 1548.1405092442992,
+            "gap": 0.16226764958279502
+          },
+          {
+            "timeMs": 10637.6242,
+            "objective": 1332,
+            "bound": 1528.7572274082022,
+            "gap": 0.1477156361923329
+          },
+          {
+            "timeMs": 11015.5663,
+            "objective": 1332,
+            "bound": 1509.7988219762358,
+            "gap": 0.13348259908124807
+          },
+          {
+            "timeMs": 11344.4854,
+            "objective": 1332,
+            "bound": 1488.3305021111325,
+            "gap": 0.11736524182516576
+          },
+          {
+            "timeMs": 11626.8544,
+            "objective": 1332,
+            "bound": 1469.856829635852,
+            "gap": 0.10349611834522639
+          },
+          {
+            "timeMs": 11915.9202,
+            "objective": 1332,
+            "bound": 1445.6695453620393,
+            "gap": 0.08533749651804115
+          },
+          {
+            "timeMs": 12118.7096,
+            "objective": 1332,
+            "bound": 1429.9877450129807,
+            "gap": 0.07356437313286285
+          },
+          {
+            "timeMs": 12368.1896,
+            "objective": 1332,
+            "bound": 1408.0479134466732,
+            "gap": 0.057093028113113724
+          },
+          {
+            "timeMs": 12576.2819,
+            "objective": 1332,
+            "bound": 1390.4482758621575,
+            "gap": 0.043880086983598444
+          },
+          {
+            "timeMs": 12793.3016,
+            "objective": 1332,
+            "bound": 1369.377320199382,
+            "gap": 0.028061051200735116
+          }
+        ]
+      }
+    },
+    {
+      "label": "probe-aggressive",
+      "runAt": "2026-06-21T19:57:39.4756711+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 0,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": 3,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": null,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 34693.8813,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 192.8107,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 671.6724,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 1042.5348,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1347.4959,
+            "objective": 1332,
+            "bound": 2215.8179132446016,
+            "gap": 0.6635269618952967
+          },
+          {
+            "timeMs": 1567.1977,
+            "objective": 1332,
+            "bound": 2198.167582251436,
+            "gap": 0.6502759626511796
+          },
+          {
+            "timeMs": 1882.438,
+            "objective": 1332,
+            "bound": 2190.1829025306265,
+            "gap": 0.6442814583562778
+          },
+          {
+            "timeMs": 2453.2568,
+            "objective": 1332,
+            "bound": 2179.6718146486583,
+            "gap": 0.6363902512376837
+          },
+          {
+            "timeMs": 2832.9351,
+            "objective": 1332,
+            "bound": 2172.0044494945037,
+            "gap": 0.6306339710919223
+          },
+          {
+            "timeMs": 3108.669,
+            "objective": 1332,
+            "bound": 2165.841894572908,
+            "gap": 0.6260074283579922
+          },
+          {
+            "timeMs": 3527.9175,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 3969.1225,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 4480.4027,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4696.9705,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4916.2946,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5157.2188,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5409.8134,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5651.2761,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5888.1213,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6160.8235,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6487.4901,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6802.1369,
+            "objective": 1332,
+            "bound": 1810.4240825061097,
+            "gap": 0.359177239118674
+          },
+          {
+            "timeMs": 7159.9779,
+            "objective": 1332,
+            "bound": 1775.191535149855,
+            "gap": 0.33272637774010644
+          },
+          {
+            "timeMs": 7486.3212,
+            "objective": 1332,
+            "bound": 1731.7587692512207,
+            "gap": 0.3001191961345275
+          },
+          {
+            "timeMs": 7854.8685,
+            "objective": 1332,
+            "bound": 1693.6955494486926,
+            "gap": 0.2715432052917909
+          },
+          {
+            "timeMs": 8077.8862,
+            "objective": 1332,
+            "bound": 1673.827253945792,
+            "gap": 0.25662706752685166
+          },
+          {
+            "timeMs": 8453.5681,
+            "objective": 1332,
+            "bound": 1651.4042805546458,
+            "gap": 0.23979300341938573
+          },
+          {
+            "timeMs": 8851.365,
+            "objective": 1332,
+            "bound": 1627.4583896352565,
+            "gap": 0.22181560783425996
+          },
+          {
+            "timeMs": 9054.8167,
+            "objective": 1332,
+            "bound": 1616.4140075235155,
+            "gap": 0.21352402967229286
+          },
+          {
+            "timeMs": 13840.246,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 14173.7684,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 14778.8597,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 15005.5101,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 15598.989,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 15875.6023,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16099.4526,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16300.5336,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16550.9504,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 16811.0079,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17098.696,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17384.428,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17702.2616,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 17988.5584,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18286.6939,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18690.1579,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 18999.8412,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 19306.2774,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 19569.7658,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 19873.8373,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 20142.0381,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 20448.9168,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 20711.2152,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 21001.1242,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 21290.9458,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 23582.2118,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 23803.4476,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24050.707,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24260.1489,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24527.929,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 24896.8581,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 25216.8553,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 25489.6319,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 25842.4929,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26214.5566,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26444.4906,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26664.6809,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 26933.0751,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 27190.7417,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 27581.3601,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 27791.8592,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 28011.8303,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 28294.5807,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 28536.7,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 28779.1992,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 29000.2042,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 29267.8697,
+            "objective": 1332,
+            "bound": 1602.2136547648956,
+            "gap": 0.20286310417783435
+          },
+          {
+            "timeMs": 29490.1051,
+            "objective": 1332,
+            "bound": 1597.8218630268552,
+            "gap": 0.19956596323335982
+          },
+          {
+            "timeMs": 29720.0537,
+            "objective": 1332,
+            "bound": 1585.708686545287,
+            "gap": 0.19047198689584682
+          },
+          {
+            "timeMs": 30033.6504,
+            "objective": 1332,
+            "bound": 1572.0736189465492,
+            "gap": 0.18023544965955796
+          },
+          {
+            "timeMs": 30275.035,
+            "objective": 1332,
+            "bound": 1562.0020840569828,
+            "gap": 0.1726742372800041
+          },
+          {
+            "timeMs": 30534.5537,
+            "objective": 1332,
+            "bound": 1552.3402395015194,
+            "gap": 0.16542060022635346
+          },
+          {
+            "timeMs": 30818.0207,
+            "objective": 1332,
+            "bound": 1539.6006783694024,
+            "gap": 0.15585636514218232
+          },
+          {
+            "timeMs": 31087.9264,
+            "objective": 1332,
+            "bound": 1529.5488335100638,
+            "gap": 0.14830993506760431
+          },
+          {
+            "timeMs": 31356.5714,
+            "objective": 1332,
+            "bound": 1517.071060596002,
+            "gap": 0.1389422376846758
+          },
+          {
+            "timeMs": 31642.2829,
+            "objective": 1332,
+            "bound": 1504.3811389841273,
+            "gap": 0.12941526950759338
+          },
+          {
+            "timeMs": 31854.0814,
+            "objective": 1332,
+            "bound": 1493.358169008619,
+            "gap": 0.12113976652297807
+          },
+          {
+            "timeMs": 32136.5789,
+            "objective": 1332,
+            "bound": 1481.6740497352487,
+            "gap": 0.11236790520663471
+          },
+          {
+            "timeMs": 32415.2045,
+            "objective": 1332,
+            "bound": 1467.7687950302047,
+            "gap": 0.10192852479744334
+          },
+          {
+            "timeMs": 32729.9698,
+            "objective": 1332,
+            "bound": 1447.6414302207704,
+            "gap": 0.08681789055612743
+          },
+          {
+            "timeMs": 32964.9653,
+            "objective": 1332,
+            "bound": 1437.7480105643426,
+            "gap": 0.07939039832157258
+          },
+          {
+            "timeMs": 33226.96,
+            "objective": 1332,
+            "bound": 1424.091130732735,
+            "gap": 0.06913748553508123
+          },
+          {
+            "timeMs": 33462.5388,
+            "objective": 1332,
+            "bound": 1412.1604038829266,
+            "gap": 0.06018048339558604
+          },
+          {
+            "timeMs": 33687.0202,
+            "objective": 1332,
+            "bound": 1402.7093187663702,
+            "gap": 0.05308507414892258
+          },
+          {
+            "timeMs": 33932.6017,
+            "objective": 1332,
+            "bound": 1389.5456836286787,
+            "gap": 0.04320246518669249
+          },
+          {
+            "timeMs": 34159.6654,
+            "objective": 1332,
+            "bound": 1378.434860084055,
+            "gap": 0.03486100606910766
+          },
+          {
+            "timeMs": 34360.6281,
+            "objective": 1332,
+            "bound": 1368.7363698257416,
+            "gap": 0.027579857226530644
+          },
+          {
+            "timeMs": 34587.9036,
+            "objective": 1332,
+            "bound": 1353.6670953107928,
+            "gap": 0.016266588071164524
+          }
+        ]
+      }
+    },
+    {
+      "label": "clique+probe",
+      "runAt": "2026-06-21T19:57:52.4734912+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": null,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 0,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": null,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": 2,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": 2,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": null,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 12966.6858,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 183.2616,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 662.0711,
+            "objective": 1332,
+            "bound": 2298.7251805548176,
+            "gap": 0.7257696550711299
+          },
+          {
+            "timeMs": 1019.9981,
+            "objective": 1332,
+            "bound": 2228.4768820724785,
+            "gap": 0.6730306922465549
+          },
+          {
+            "timeMs": 1350.8862,
+            "objective": 1332,
+            "bound": 2215.8179132446016,
+            "gap": 0.6635269618952967
+          },
+          {
+            "timeMs": 1561.2975,
+            "objective": 1332,
+            "bound": 2198.167582251436,
+            "gap": 0.6502759626511796
+          },
+          {
+            "timeMs": 1817.4804,
+            "objective": 1332,
+            "bound": 2190.1829025306265,
+            "gap": 0.6442814583562778
+          },
+          {
+            "timeMs": 2344.5969,
+            "objective": 1332,
+            "bound": 2179.6718146486583,
+            "gap": 0.6363902512376837
+          },
+          {
+            "timeMs": 2718.2522,
+            "objective": 1332,
+            "bound": 2172.0044494945037,
+            "gap": 0.6306339710919223
+          },
+          {
+            "timeMs": 2933.7263,
+            "objective": 1332,
+            "bound": 2165.841894572908,
+            "gap": 0.6260074283579922
+          },
+          {
+            "timeMs": 3170.6562,
+            "objective": 1332,
+            "bound": 2143.6055145386895,
+            "gap": 0.6093134493533248
+          },
+          {
+            "timeMs": 3431.4114,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 3848.3546,
+            "objective": 1332,
+            "bound": 2004.4023923794682,
+            "gap": 0.5048066008854487
+          },
+          {
+            "timeMs": 4403.4323,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4606.3584,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 4813.1355,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5070.257,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5358.6536,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5650.9811,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 5916.0311,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6229.268,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6553.9425,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 6872.6395,
+            "objective": 1332,
+            "bound": 1934.0956604197982,
+            "gap": 0.4520237690838986
+          },
+          {
+            "timeMs": 7231.6488,
+            "objective": 1332,
+            "bound": 1750.9588392870573,
+            "gap": 0.3145336631283978
+          },
+          {
+            "timeMs": 7648.5737,
+            "objective": 1332,
+            "bound": 1700.7375722488316,
+            "gap": 0.27683000919579875
+          },
+          {
+            "timeMs": 8014.4077,
+            "objective": 1332,
+            "bound": 1678.7434495295959,
+            "gap": 0.26031790505222957
+          },
+          {
+            "timeMs": 8229.0821,
+            "objective": 1332,
+            "bound": 1661.2505040644742,
+            "gap": 0.24718506311144853
+          },
+          {
+            "timeMs": 8433.3911,
+            "objective": 1332,
+            "bound": 1646.8092061680716,
+            "gap": 0.23634324787390984
+          },
+          {
+            "timeMs": 8815.1863,
+            "objective": 1332,
+            "bound": 1617.5761694415955,
+            "gap": 0.21439652360478537
+          },
+          {
+            "timeMs": 9028.6752,
+            "objective": 1332,
+            "bound": 1607.9998504859325,
+            "gap": 0.2072070949593932
+          },
+          {
+            "timeMs": 9269.4182,
+            "objective": 1332,
+            "bound": 1594.1795174988467,
+            "gap": 0.196831469593714
+          },
+          {
+            "timeMs": 9504.2081,
+            "objective": 1332,
+            "bound": 1584.3437131543649,
+            "gap": 0.1894472320978573
+          },
+          {
+            "timeMs": 9739.8736,
+            "objective": 1332,
+            "bound": 1567.5849252966268,
+            "gap": 0.17686555953198882
+          },
+          {
+            "timeMs": 9974.5834,
+            "objective": 1332,
+            "bound": 1561.1096585297937,
+            "gap": 0.17200424814547785
+          },
+          {
+            "timeMs": 10214.6975,
+            "objective": 1332,
+            "bound": 1548.1405092442992,
+            "gap": 0.16226764958279502
+          },
+          {
+            "timeMs": 10658.0884,
+            "objective": 1332,
+            "bound": 1528.7572274082022,
+            "gap": 0.1477156361923329
+          },
+          {
+            "timeMs": 11040.511,
+            "objective": 1332,
+            "bound": 1509.7988219762358,
+            "gap": 0.13348259908124807
+          },
+          {
+            "timeMs": 11337.3111,
+            "objective": 1332,
+            "bound": 1488.3305021111325,
+            "gap": 0.11736524182516576
+          },
+          {
+            "timeMs": 11615.4705,
+            "objective": 1332,
+            "bound": 1469.856829635852,
+            "gap": 0.10349611834522639
+          },
+          {
+            "timeMs": 11895.1481,
+            "objective": 1332,
+            "bound": 1445.6695453620393,
+            "gap": 0.08533749651804115
+          },
+          {
+            "timeMs": 12100.2158,
+            "objective": 1332,
+            "bound": 1429.9877450129807,
+            "gap": 0.07356437313286285
+          },
+          {
+            "timeMs": 12360.3335,
+            "objective": 1332,
+            "bound": 1408.0479134466732,
+            "gap": 0.057093028113113724
+          },
+          {
+            "timeMs": 12565.3357,
+            "objective": 1332,
+            "bound": 1390.4482758621575,
+            "gap": 0.043880086983598444
+          },
+          {
+            "timeMs": 12777.9024,
+            "objective": 1332,
+            "bound": 1369.377320199382,
+            "gap": 0.028061051200735116
+          }
+        ]
+      }
+    },
+    {
+      "label": "deterministic-seed",
+      "runAt": "2026-06-21T19:58:19.5142579+08:00",
+      "config": {
+        "solver": "Cplex",
+        "tunable": {
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "Seed": 20260621,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "RootAlgorithm": null,
+          "Presolve": null,
+          "HeuristicEffort": null,
+          "MemoryLimitMb": 2048
+        },
+        "solverSpecific": {
+          "workThreads": 8,
+          "enableLog": false,
+          "exportLP": false,
+          "exportSol": false,
+          "exportMPS": false,
+          "rowRead": 30000,
+          "workMemory": 2048,
+          "epGap": 1E-09,
+          "nodeSelect": null,
+          "randomSeed": 20260621,
+          "epOpt": 1E-06,
+          "epRHS": 1E-06,
+          "timeLimit": 300,
+          "polishAfterTime": null,
+          "mipEmphasis": 0,
+          "varSel": null,
+          "algorithm": null,
+          "nodeFileInd": null,
+          "parallelMode": 1,
+          "detTimeLimit": null,
+          "clockType": null,
+          "numericalEmphasis": null,
+          "epInt": null,
+          "epAGap": null,
+          "nodeLimit": null,
+          "treeMemoryLimit": null,
+          "intSolLimit": null,
+          "probe": null,
+          "rinsHeur": null,
+          "mipSearch": null,
+          "diveType": null,
+          "branchDir": null,
+          "cutsFactor": null,
+          "cutPasses": null,
+          "gomoryCuts": null,
+          "coverCuts": null,
+          "cliqueCuts": null,
+          "mirCuts": null,
+          "flowCoverCuts": null,
+          "simplexIterLimit": null,
+          "barrierAlgorithm": null,
+          "TimeLimit": 300,
+          "MipGap": 1E-09,
+          "Threads": 8,
+          "LogToConsole": false,
+          "LogFilePath": null,
+          "RootAlgorithm": null,
+          "NodeAlgorithm": null,
+          "PreIndicator": null,
+          "Seed": 20260621,
+          "Emphasis": 0,
+          "FeasibilityTol": 1E-06,
+          "OptimalityTol": 1E-06,
+          "MemoryLimitMb": 2048,
+          "Presolve": null,
+          "HeuristicEffort": null
+        }
+      },
+      "metrics": {
+        "status": "Optimal",
+        "objectiveValue": 1332,
+        "bestBound": 1332,
+        "mipGap": 0,
+        "wallTimeMs": 27019.4718,
+        "varCount": 250,
+        "constraintCount": 9275,
+        "convergence": [
+          {
+            "timeMs": 165.6149,
+            "objective": 1068,
+            "bound": 2341.6604686085884,
+            "gap": 1.1925659818431358
+          },
+          {
+            "timeMs": 607.2661,
+            "objective": 1332,
+            "bound": 2323.772641673134,
+            "gap": 0.7445740553101047
+          },
+          {
+            "timeMs": 937.2457,
+            "objective": 1332,
+            "bound": 2245.9506224371353,
+            "gap": 0.6861491159437437
+          },
+          {
+            "timeMs": 1286.4565,
+            "objective": 1332,
+            "bound": 2207.725648466854,
+            "gap": 0.6574516880381295
+          },
+          {
+            "timeMs": 1771.0999,
+            "objective": 1332,
+            "bound": 2178.402558685174,
+            "gap": 0.635437356370203
+          },
+          {
+            "timeMs": 2107.2687,
+            "objective": 1332,
+            "bound": 2172.489773375061,
+            "gap": 0.6309983283596079
+          },
+          {
+            "timeMs": 2392.1946,
+            "objective": 1332,
+            "bound": 2169.423398209033,
+            "gap": 0.6286962449016293
+          },
+          {
+            "timeMs": 2736.8629,
+            "objective": 1332,
+            "bound": 2160.4574960077316,
+            "gap": 0.6219650870928449
+          },
+          {
+            "timeMs": 3039.7611,
+            "objective": 1332,
+            "bound": 2137.5403263058065,
+            "gap": 0.6047600047340436
+          },
+          {
+            "timeMs": 3381.1736,
+            "objective": 1332,
+            "bound": 2137.5403263058065,
+            "gap": 0.6047600047340436
+          },
+          {
+            "timeMs": 3656.9021,
+            "objective": 1332,
+            "bound": 2004.2377697881968,
+            "gap": 0.5046830103514612
+          },
+          {
+            "timeMs": 3948.9806,
+            "objective": 1332,
+            "bound": 2004.2377697881968,
+            "gap": 0.5046830103514612
+          },
+          {
+            "timeMs": 4455.0357,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 4656.6818,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 4871.0467,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 5155.7479,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 5384.4513,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 5596.3569,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 5836.4831,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 6037.0305,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 6371.6933,
+            "objective": 1332,
+            "bound": 1876.1736379418808,
+            "gap": 0.40853876722360355
+          },
+          {
+            "timeMs": 6711.0853,
+            "objective": 1332,
+            "bound": 1813.6167787096458,
+            "gap": 0.3615741581903976
+          },
+          {
+            "timeMs": 7075.0007,
+            "objective": 1332,
+            "bound": 1813.6167787096458,
+            "gap": 0.3615741581903976
+          },
+          {
+            "timeMs": 7458.7999,
+            "objective": 1332,
+            "bound": 1733.0738995317636,
+            "gap": 0.30110653117998004
+          },
+          {
+            "timeMs": 7661.1309,
+            "objective": 1332,
+            "bound": 1718.1869166965312,
+            "gap": 0.28993011764001664
+          },
+          {
+            "timeMs": 8046.7891,
+            "objective": 1332,
+            "bound": 1696.7344888515033,
+            "gap": 0.27382469132993686
+          },
+          {
+            "timeMs": 8404.9689,
+            "objective": 1332,
+            "bound": 1678.6125199564533,
+            "gap": 0.2602196095768973
+          },
+          {
+            "timeMs": 8806.796,
+            "objective": 1332,
+            "bound": 1647.115728094735,
+            "gap": 0.23657336944047397
+          },
+          {
+            "timeMs": 9013.733,
+            "objective": 1332,
+            "bound": 1637.13061736746,
+            "gap": 0.22907704006564344
+          },
+          {
+            "timeMs": 14876.394,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 15208.5103,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 15641.3129,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 16187.8008,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 16623.2407,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 16970.7806,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 17353.2431,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 17657.9176,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 17940.6909,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 18237.3532,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 18540.5023,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 18799.4571,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 19060.3707,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 19320.6317,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 19627.0118,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 19896.4505,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 20149.1432,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 20433.3005,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 20717.7796,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 20974.609,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 21300.4479,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 21593.0963,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 21912.8074,
+            "objective": 1332,
+            "bound": 1615.4988769104534,
+            "gap": 0.21283699467750158
+          },
+          {
+            "timeMs": 22183.0094,
+            "objective": 1332,
+            "bound": 1604.482011361245,
+            "gap": 0.2045660745955139
+          },
+          {
+            "timeMs": 22481.4025,
+            "objective": 1332,
+            "bound": 1595.2919906683376,
+            "gap": 0.19766665966089925
+          },
+          {
+            "timeMs": 22780.1256,
+            "objective": 1332,
+            "bound": 1572.2314561209114,
+            "gap": 0.1803539460367067
+          },
+          {
+            "timeMs": 22991.0488,
+            "objective": 1332,
+            "bound": 1566.1708827967518,
+            "gap": 0.1758039660636143
+          },
+          {
+            "timeMs": 23192.9069,
+            "objective": 1332,
+            "bound": 1553.3441118502205,
+            "gap": 0.16617425814579873
+          },
+          {
+            "timeMs": 23736.4953,
+            "objective": 1332,
+            "bound": 1524.1431986994642,
+            "gap": 0.14425165067526255
+          },
+          {
+            "timeMs": 24167.2099,
+            "objective": 1332,
+            "bound": 1505.9621743963755,
+            "gap": 0.13060223303030216
+          },
+          {
+            "timeMs": 24454.3772,
+            "objective": 1332,
+            "bound": 1479.1728838717213,
+            "gap": 0.11049015305683953
+          },
+          {
+            "timeMs": 24715.6249,
+            "objective": 1332,
+            "bound": 1463.7487690988214,
+            "gap": 0.09891048731142006
+          },
+          {
+            "timeMs": 24935.5159,
+            "objective": 1332,
+            "bound": 1448.9312297734664,
+            "gap": 0.08778620853863184
+          },
+          {
+            "timeMs": 25162.2925,
+            "objective": 1332,
+            "bound": 1437.503048944425,
+            "gap": 0.07920649320151434
+          },
+          {
+            "timeMs": 25369.1199,
+            "objective": 1332,
+            "bound": 1424.2659445226832,
+            "gap": 0.06926872711912632
+          },
+          {
+            "timeMs": 25589.2033,
+            "objective": 1332,
+            "bound": 1412.8982874935127,
+            "gap": 0.06073445007020019
+          },
+          {
+            "timeMs": 25877.7701,
+            "objective": 1332,
+            "bound": 1398.8971661270061,
+            "gap": 0.05022309769294377
+          },
+          {
+            "timeMs": 26127.8295,
+            "objective": 1332,
+            "bound": 1386.6949761616736,
+            "gap": 0.041062294415667784
+          },
+          {
+            "timeMs": 26355.1746,
+            "objective": 1332,
+            "bound": 1377.495225970783,
+            "gap": 0.03415557505313778
+          },
+          {
+            "timeMs": 26595.5382,
+            "objective": 1332,
+            "bound": 1366.5255389126548,
+            "gap": 0.02592007425874793
+          },
+          {
+            "timeMs": 26834.1342,
+            "objective": 1332,
+            "bound": 1352.871331828443,
+            "gap": 0.01566916803937051
+          }
+        ]
+      }
+    }
+  ]
+}

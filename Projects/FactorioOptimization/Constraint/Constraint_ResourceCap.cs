@@ -1,6 +1,6 @@
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
-using FactorioOptimization.Data;
+using FactorioOptimization.Set;
 using FactorioOptimization.Variable;
 
 namespace FactorioOptimization.Constraint

@@ -61,6 +61,14 @@ foreach ($proj in $allProjects) {
         continue
     }
 
+    # Skip non-executable projects (source generators / analyzers / class libraries).
+    # Only projects with <OutputType>Exe</OutputType> are buildable+runnable here.
+    $csprojText = Get-Content $csproj.FullName -Raw
+    if ($csprojText -notmatch '(?i)<OutputType>\s*Exe\s*</OutputType>') {
+        Write-Host "[SKIP] $($proj.Name) - not an executable project (no OutputType=Exe)" -ForegroundColor Yellow
+        continue
+    }
+
     $row = [PSCustomObject]@{
         Project = $proj.Name
         Build   = "-"

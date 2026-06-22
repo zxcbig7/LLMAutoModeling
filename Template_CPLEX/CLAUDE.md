@@ -81,25 +81,36 @@ int  vars  = optEngine.varCount; // 目前變數數量
 
 ## 變數
 
-### 定義
+### 定義（預設：source generator）
+
+本範本**預設**用 `AutoSetsGenerator` 宣告變數——一行 attribute，編譯期自動補完整 class，樣板最省、最不易錯（AI 協作首選）。屬性順序對應 `BuildBVs` 傳入 sets 的順序。
 
 ```csharp
-// Binary 變數 — 屬性順序對應 BuildBVs 傳入 sets 的順序
+using OptimModeling;
+
+// Binary：三維。生成 Item/Machine/Date 屬性
+[OptVar(VarType.Binary, "Item", "Machine", "Date:DateTime")]
+public partial class VariableB_Assign { }
+
+// Continuous：一維
+[OptVar(VarType.Continuous, "Item")]
+public partial class VariableX_Slack { }
+```
+
+> set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別。csproj 需以 analyzer 掛入 `OptimModeling.Generators`（本範本已掛）。
+
+### 定義（後路：手寫）
+
+generator 不適用時（特殊型別、需逐行 debug 生成碼）才手寫，繼承 `VariableBase`、string 屬性加 `= string.Empty;` 避免 CS8618。完整手寫示範見 `Projects/HospitalRostering_Manual`。
+
+```csharp
 public class VariableB_Assign : VariableBase
 {
     public string   Item    { get; set; } = string.Empty;
     public string   Machine { get; set; } = string.Empty;
     public DateTime Date    { get; set; }
 }
-
-// Continuous 變數
-public class VariableX_Slack : VariableBase
-{
-    public string Item { get; set; } = string.Empty;
-}
 ```
-
-> **注意**：string 屬性加 `= string.Empty;` 避免 CS8618 nullable warning。
 
 ### 建立
 
@@ -200,24 +211,33 @@ CsvCtrl.SaveSolutionToCSV<VariableB_Assign>(engine, dataId: "V1", userId: "USER"
 
 ## 參數類別
 
+### 預設：source generator
+
 ```csharp
-// 一般（object initializer）
+using OptimModeling;
+
+// 含值參數（生成 Item/Date/QTY + 兩個建構子）
+[OptParam("Item", "Date:DateTime")]
+public partial class Parameter_Demand { }
+
+// 純 key 參數（無 QTY）→ HasValue = false
+[OptParam("Employee", "Group", HasValue = false)]
+public partial class Parameter_PreAssign { }
+```
+
+> generator 自動補 `QTY`（除非 `HasValue = false`）、無參數建構子（object initializer / `CsvCtrl.BuildParameter<T>` 用）與 `params object[]` 建構子（動態建構）。
+
+### 後路：手寫
+
+```csharp
 public class Parameter_Demand : ParameterBase
 {
     public string   Item  { get; set; } = string.Empty;
     public DateTime Date  { get; set; }
     public double   QTY   { get; set; }
-}
 
-// 動態建構（需 InitClassBySets 時）
-public class Parameter_ABC : ParameterBase
-{
-    public string   A { get; set; } = string.Empty;
-    public string   B { get; set; } = string.Empty;
-    public DateTime C { get; set; }
-    public double QTY { get; set; }
-
-    // public Parameter_ABC(params object[] Sets) { InitClassBySets(Sets); }
+    public Parameter_Demand() { }
+    public Parameter_Demand(params object[] sets) => InitClassBySets(sets);  // 動態建構需要時
 }
 ```
 

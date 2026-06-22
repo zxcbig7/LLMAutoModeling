@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>HospitalRostering_Generator</RootNamespace>
+    <AssemblyName>HospitalRostering_Generator</AssemblyName>
+    <!-- 讓 source generator 產出的 .g.cs 落地到 Generated/，方便檢視生成碼 -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Generated/ 只是 generator 落地供檢視，不可當一般原始碼編譯（否則與 in-memory 輸出撞名） -->
+    <Compile Remove="Generated/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- AutoSetsGenerator：以 analyzer 身分掛入，[OptVar]/[OptParam] 在編譯期生成 class body -->
+    <ProjectReference Include="..\OptimModeling.Generators\OptimModeling.Generators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\ -->
+    <Reference Include="ILOG.Concert">
+      <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
+    </Reference>
+    <Reference Include="ILOG.CPLEX">
+      <HintPath>..\..\dlls\ILOG.CPLEX.dll</HintPath>
+    </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\..\dlls\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="OptimFoundation.Core">
+      <HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="OptimFoundation.Cplex">
+      <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

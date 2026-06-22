@@ -7,7 +7,22 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Template</RootNamespace>
     <AssemblyName>Template</AssemblyName>
+    <!-- 讓 source generator 產出的 .g.cs 落地到 Generated/，方便檢視生成碼 -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Generated/ 只是 generator 落地供檢視，不可當一般原始碼編譯（否則與 in-memory 輸出撞名） -->
+    <Compile Remove="Generated/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- AutoSetsGenerator：以 analyzer 身分掛入，[OptVar]/[OptParam] 在編譯期生成 class body（本範本預設建模方式） -->
+    <ProjectReference Include="..\Projects\OptimModeling.Generators\OptimModeling.Generators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\ -->

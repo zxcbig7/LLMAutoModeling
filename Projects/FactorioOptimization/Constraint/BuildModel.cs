@@ -1,6 +1,6 @@
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
-using FactorioOptimization.Data;
+using FactorioOptimization.Set;
 using FactorioOptimization.Objective;
 
 namespace FactorioOptimization.Constraint
@@ -18,10 +18,10 @@ namespace FactorioOptimization.Constraint
 
         public void Build()
         {
-            Logging.Info("?�建構目標�???);
+            Logging.Info("【建構目標式】");
             new ObjectiveFunction(_dataload, _engine).Build();
 
-            Logging.Info("?�建構�??��???);
+            Logging.Info("【建構限制式】");
             new Constraint_InputCap       (_dataload, _engine).Build();
             new Constraint_ResourceFlowDef(_dataload, _engine).Build();
             new Constraint_ResourceCap    (_dataload, _engine).Build();

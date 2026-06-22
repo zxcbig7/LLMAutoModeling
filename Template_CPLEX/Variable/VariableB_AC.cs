@@ -1,11 +1,8 @@
-using OptimFoundation.Core;
+using OptimModeling;
 
 namespace Template.Variable
 {
-    /// <summary>Binary 變數：二維 SetA × SetC</summary>
-    public class VariableB_AC : VariableBase
-    {
-        public string   A { get; set; } = string.Empty;
-        public DateTime C { get; set; }
-    }
+    /// <summary>Binary 變數：二維 SetA × SetC。body 由 AutoSetsGenerator 生成。</summary>
+    [OptVar(VarType.Binary, "A", "C:DateTime")]
+    public partial class VariableB_AC { }
 }
