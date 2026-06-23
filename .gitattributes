@@ -10,6 +10,9 @@
 # ── 必須是 LF(否則在 Linux/容器執行會壞)──
 *.sh   text eol=lf
 
+# ── 第三方 vendored 檔:保持與上游 byte-identical,不做換行轉換 ──
+tutorial/vendor/** -text
+
 # ── 二進位:完全不做換行轉換(明確標記以保護)──
 *.dll   binary
 *.exe   binary
