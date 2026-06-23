@@ -1,0 +1,40 @@
+# 換行字元(line ending)統一由 git 管理,避免跨機器不一致導致排版跑掉。
+# 政策:repo 一律存 LF;checkout 時依平台 native —— Windows→CRLF、Mac/Linux→LF。
+* text=auto
+
+# ── 明確標記為文字(避免 auto 偵測誤判成 binary)──
+*.cs      text
+*.csproj  text
+*.props   text
+*.targets text
+*.json    text
+*.md      text
+*.txt     text
+*.xml     text
+*.yml     text
+*.yaml    text
+*.sql     text
+*.config  text
+*.editorconfig text
+
+# ── 必須是 CRLF(Windows 工具預期)──
+*.sln  text eol=crlf
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# ── 必須是 LF(否則執行會壞)──
+*.sh   text eol=lf
+
+# ── 二進位:完全不做換行轉換 ──
+*.dll  binary
+*.exe  binary
+*.pdb  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.zip  binary
+*.pdf  binary
+*.xlsx binary
