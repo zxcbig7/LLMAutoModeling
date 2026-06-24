@@ -168,7 +168,7 @@ footer{margin-top:60px; padding-top:24px; border-top:1px solid var(--line); colo
 <section>
   <h3>整體流程一眼看懂</h3>
   <p>OptimFoundation 的開發哲學是三個階段，<strong>建模與寫程式強力綁定</strong>：先把數學模型定義清楚，程式只是把模型「機械式地」翻譯成 code，最後才視需要調校。</p>
-<div class="pipe">  ┌─────────────┐        ┌──────────────┐        ┌──────────────┐
+<pre class="pipe">  ┌─────────────┐        ┌──────────────┐        ┌──────────────┐
   │  Phase 1    │ ─────▶ │   Phase 2    │ ─有需要▶ │   Phase 3    │
   │  Modeling   │ 強綁定  │   Coding     │         │   Tuning     │
   │  數學模型    │        │  翻譯成 C#    │         │ 調參/軟化/除錯 │
@@ -176,7 +176,7 @@ footer{margin-top:60px; padding-top:24px; border-top:1px solid var(--line); colo
    Sets / Params           Parameter/                Solver 調參
    Variables               Variable/                 罰分權重調整
    Objective               Objective/                IIS 衝突分析
-   Constraints             Constraint/</div>
+   Constraints             Constraint/</pre>
   <div class="note warn">
     <span class="t">框架天條</span>
     <p>在數學模型確認前，<strong>不要</strong>動手寫任何 <code class="ic">.cs</code>。所有數值（需求人數、罰分權重、跨組別成本…）一律放在 Parameter / Dataload，<strong>禁止</strong>在 Constraint 或 Objective 裡寫死裸數字。這兩條會貫穿整份教學。</p>
@@ -292,7 +292,7 @@ engine.<span class="tok-typ">CreateEqual</span>(<span class="tok-str">$"Constrai
 
   <h3>2.4 OptModel：組裝模型的唯一進入點</h3>
   <p>你<strong>不直接</strong>管理引擎生死。框架的 <code class="ic">OptModel</code> 是一個註冊式 pipeline：用鏈式方法「登記」設定與各建構步驟，呼叫 <code class="ic">Execute()</code> 後依序把它們叫起來、求解、釋放資源。</p>
-<div class="pipe">  new OptModel("專案名")
+<pre class="pipe">  new OptModel("專案名")
         │
         ▼  .UseConfig(() => new CplexConfig{...})   套用求解設定
         │
@@ -303,7 +303,7 @@ engine.<span class="tok-typ">CreateEqual</span>(<span class="tok-str">$"Constrai
         ▼  .OnSolved(e => ...)                      登記求解成功後的輸出
         │
         ▼  .Execute()  ──▶ bool                     建模 → 求解 → OnSolved → Dispose
-                                                   true = 找到 Optimal 或 Feasible 解</div>
+                                                   true = 找到 Optimal 或 Feasible 解</pre>
   <div class="note tip">
     <span class="t">底層仍是 OptEngine</span>
     <p>每個 <code class="ic">.AddVariables</code> / <code class="ic">.AddModel</code> 的 lambda 參數 <code class="ic">e</code> 就是底層 <code class="ic">OptEngine</code>——你在裡面呼叫 <code class="ic">BuildBVs</code> / <code class="ic">AddLHS</code> / <code class="ic">CreateLessEqual</code> 等建模窗口。<code class="ic">OptModel</code> 只負責「在對的時機、用對的順序」驅動這顆引擎，保證 build / solve / dispose 不漏。</p>
@@ -487,7 +487,7 @@ engine.<span class="tok-typ">CreateEqual</span>(<span class="tok-str">$"Constrai
 <section id="c-skeleton">
   <h3>5.1 專案骨架</h3>
   <p>建立以下資料夾結構。每個資料夾有自己的 namespace（<code class="ic">HospitalRostering.&lt;Folder&gt;</code>）。</p>
-<div class="pipe">HospitalRostering/
+<pre class="pipe">HospitalRostering/
 ├── HospitalRostering.csproj
 ├── Program.cs                       唯一進入點（solve / experiment 雙模式）
 ├── ExperimentRunner.cs              參數掃描（tuning）
@@ -523,7 +523,7 @@ engine.<span class="tok-typ">CreateEqual</span>(<span class="tok-str">$"Constrai
     ├── Constraint_OffOneDay.cs      C7
     ├── Constraint_DoubleOffLT2.cs   C8 + C9
     ├── Constraint_BelowAVG.cs       C10
-    └── Constraint_WeekendLT4.cs     C11</div>
+    └── Constraint_WeekendLT4.cs     C11</pre>
 </section>
 
 <!-- 5.2 Parameters -->
