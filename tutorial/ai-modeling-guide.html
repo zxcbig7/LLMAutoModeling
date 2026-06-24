@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptimFoundation × AI Modeling — 用 AI 把問題變成可跑、可調的最佳化模型</title>
+<style>
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --ink:#1d2430; --muted:#5d6675;
+  --line:#e5e8f0; --accent:#4f46e5; --accent2:#0ea5a4; --warn:#d97706; --err:#dc2626;
+  --code-bg:#0f1729; --code-ink:#e6edf3; --cm:#8aa0c0; --mathbg:#eef1fb;
+  --p1:#4f46e5; --p2:#0ea5a4; --p3:#d97706;
+  --sb-w:288px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;
+  line-height:1.8;font-size:16px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.layout{display:flex;align-items:flex-start}
+nav.sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:#fbfbff;border-right:1px solid var(--line);padding:22px 14px 60px}
+nav .brand{font-weight:800;font-size:16px;color:var(--ink);margin:4px 6px}
+nav .brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:4px}
+nav ul{list-style:none;margin:12px 0 0;padding:0}
+nav li{margin:1px 0}
+nav a{display:block;padding:5px 10px;border-radius:8px;color:var(--muted);font-size:13.5px}
+nav a:hover{background:#eef0fb;color:var(--ink);text-decoration:none}
+nav a.sub{padding-left:22px;font-size:13px}
+nav .ph{margin:12px 6px 2px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#9aa3b5}
+main{flex:1 1 auto;min-width:0;max-width:900px;margin:0 auto;padding:0 44px 120px}
+
+.hero{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+.hero .kicker{color:var(--accent);font-weight:700;letter-spacing:2px;font-size:13px;text-transform:uppercase}
+.hero h1{font-size:33px;line-height:1.25;margin:12px 0 14px}
+.hero p.lead{font-size:18px;color:var(--muted);margin:0}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.badge{background:#eef0fb;color:var(--accent);border:1px solid #dfe2f7;padding:4px 11px;border-radius:999px;font-size:12.5px;font-weight:600}
+
+section{padding-top:48px}
+h2{font-size:25px;margin:0 0 8px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+h2 .num{color:var(--accent);font-weight:800;margin-right:10px}
+h3{font-size:19px;margin:30px 0 6px}
+h4{font-size:16px;margin:22px 0 4px;color:#33405c}
+p{margin:12px 0}
+ul,ol{margin:12px 0;padding-left:26px}
+li{margin:6px 0}
+strong{color:#10162a}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+/* phase 標籤 */
+.phasetag{display:inline-block;color:#fff;border-radius:999px;padding:2px 12px;font-size:12.5px;font-weight:700;margin-right:8px;vertical-align:middle}
+.pt1{background:var(--p1)} .pt2{background:var(--p2)} .pt3{background:var(--p3)}
+
+/* CSS 流程方塊圖（取代 ASCII，永不擠成一行） */
+.flow{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin:22px 0}
+.flow .box{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+.flow .box.b1{border-top:3px solid var(--p1)} .flow .box.b2{border-top:3px solid var(--p2)} .flow .box.b3{border-top:3px solid var(--p3)}
+.flow .box .bt{font-weight:800;font-size:15px}
+.flow .box .bd{font-size:13.5px;color:var(--muted);margin-top:3px}
+.flow .arrow{display:flex;align-items:center;color:var(--muted);font-size:20px;font-weight:700}
+@media(max-width:760px){.flow .arrow{transform:rotate(90deg)}}
+
+.repo{background:#0f1729;color:#cdd9ee;border-radius:12px;padding:16px 18px;margin:18px 0;
+  font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.7}
+.repo .c{color:#7a8aa8}
+
+table{border-collapse:collapse;width:100%;margin:18px 0;font-size:14.5px;background:var(--panel);
+  border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f1f3fb;font-weight:700;color:#2a3550}
+table.tight{font-size:13.5px}
+td code,th code{background:#eceef7;padding:1px 5px;border-radius:4px;font-family:ui-monospace,Consolas,monospace;font-size:12.8px}
+
+code.ic{background:#eceef7;color:#3b3f7a;padding:1px 6px;border-radius:5px;
+  font-family:ui-monospace,Consolas,monospace;font-size:13.6px}
+
+/* 數學式：開發者友善的可讀寫法，純文字、不需 MathJax */
+.math{background:var(--mathbg);border:1px solid #dde2f6;border-radius:10px;padding:11px 16px;margin:12px 0;
+  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:14.5px;color:#26306a;overflow-x:auto;white-space:pre-wrap}
+
+.codeblock{margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #1b2740;box-shadow:0 1px 3px rgba(15,23,41,.14)}
+.codehead{background:#0b1220;color:#9fb0c8;padding:7px 14px;font-size:12.5px;display:flex;justify-content:space-between;border-bottom:1px solid #1b2740}
+.codehead .fname{font-family:ui-monospace,Consolas,monospace;color:#cdd9ee}
+.codehead .lang{text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#5e7095}
+pre{margin:0;background:var(--code-bg);color:var(--code-ink);padding:15px 18px;overflow-x:auto;
+  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:13.4px;line-height:1.7;white-space:pre;tab-size:4}
+pre .cm{color:var(--cm);font-style:italic}
+
+.note{border-radius:10px;padding:14px 16px;margin:18px 0;border-left:5px solid;font-size:15px}
+.note .t{font-weight:800;display:block;margin-bottom:3px}
+.note.tip{background:#ecfdf5;border-color:var(--accent2)}
+.note.warn{background:#fffbeb;border-color:var(--warn)}
+.note.info{background:#eef2ff;border-color:var(--accent)}
+.note.danger{background:#fef2f2;border-color:var(--err)}
+.note p{margin:6px 0}
+
+.step{display:flex;gap:14px;margin:12px 0}
+.step .n{flex:0 0 30px;height:30px;width:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.step .c{flex:1}
+.pin{display:inline-block;background:#fff7ed;color:#b45309;border:1px solid #fed7aa;border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:700}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+@media(max-width:1040px){nav.sidebar{display:none}main{padding:0 22px 80px}.hero h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">AI Modeling Guide
+    <small>OptimFoundation · 開發整合手冊</small>
+  </div>
+  <ul>
+    <li><a href="#intro">這份手冊是什麼</a></li>
+    <li><a href="#why">0 · 為什麼框架適合交給 AI</a></li>
+    <li><a href="#overview">0.5 · 三階段全景</a></li>
+    <li class="ph">Phase 1 · Modeling</li>
+    <li><a href="#modeling">1 · 自然語言 → 數學模型</a></li>
+    <li><a class="sub" href="#m-stage0">1.1 Stage 0 分類</a></li>
+    <li><a class="sub" href="#m-struct">1.2 結構化 / 約束分類</a></li>
+    <li><a class="sub" href="#m-aml">1.3 AML 數學模型</a></li>
+    <li><a class="sub" href="#m-example">1.4 範例：玻璃工廠</a></li>
+    <li class="ph">Phase 2 · Coding</li>
+    <li><a href="#coding">2 · 模型 → 可跑的 C#</a></li>
+    <li><a class="sub" href="#c-struct">2.1 專案結構與慣例</a></li>
+    <li><a class="sub" href="#c-arch">2.2 兩種建模架構</a></li>
+    <li><a class="sub" href="#c-pool">2.3 Pool 機制</a></li>
+    <li><a class="sub" href="#c-assemble">2.4 組裝與雙模式進入點</a></li>
+    <li><a class="sub" href="#c-example">2.5 完整範例：玻璃工廠</a></li>
+    <li><a class="sub" href="#c-buildfix">2.6 build & fix</a></li>
+    <li><a href="#gate">3 · 正確性 Gate</a></li>
+    <li class="ph">Phase 3 · Tuning</li>
+    <li><a href="#tuning">4 · 讓它跑得快又收斂</a></li>
+    <li><a class="sub" href="#t-model">4.1 模型層優化（優先）</a></li>
+    <li><a class="sub" href="#t-solver">4.2 Solver 旋鈕</a></li>
+    <li><a class="sub" href="#t-runner">4.3 ExperimentRunner</a></li>
+    <li><a class="sub" href="#t-table">4.4 旋鈕速查表</a></li>
+    <li class="ph">把它串成 SOP</li>
+    <li><a href="#workflow">5 · AI 協作標準流程</a></li>
+    <li><a href="#trouble">6 · 常見錯誤排查</a></li>
+    <li><a href="#cheat">7 · API / 天條速查</a></li>
+    <li><a href="#next">8 · 參考索引與下一步</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<header class="hero" id="intro">
+  <div class="kicker">AI-Assisted Optimization Modeling · 開發整合手冊</div>
+  <h1>用 AI 把問題變成可跑、可調的最佳化模型</h1>
+  <p class="lead">這份手冊整合 OptimFoundation 的全部開發面資訊，串成一條人機協作流水線：
+  <strong>人給題目 → AI 產數學模型 → AI 機械式翻成 C# → 求解 → 調校</strong>。
+  框架的每一條慣例都是為了讓 AI 的產出穩定、可審閱、可重現。</p>
+  <div class="badges">
+    <span class="badge">給會基本程式的人</span>
+    <span class="badge">Modeling → Coding → Tuning</span>
+    <span class="badge">.NET 8 · CPLEX</span>
+    <span class="badge">Fluent OptModel + Source Generator</span>
+    <span class="badge">ExperimentRunner</span>
+  </div>
+  <div class="note info" style="margin-top:24px">
+    <span class="t">這份手冊的定位</span>
+    <p>這是<strong>開發者導向的整合總覽</strong>。完全零基礎請先看 <a href="getting-started.html">新手村</a>（一個玻璃工廠的小 LP）；想看一個大型實戰，看 <a href="index.html">醫院排班 MILP</a>。本頁把「怎麼用 AI 走完整個開發流程」一次講清楚，並標出每一塊的單一來源規範。</p>
+  </div>
+</header>
+
+<!-- ============ 0 為什麼適合 AI ============ -->
+<section id="why">
+  <h2><span class="num">0</span>核心理念：為什麼這個框架天生適合交給 AI</h2>
+  <p>OptimFoundation 不是「另一個求解器包裝」。它的設計目標是：<strong>把最佳化開發拆成 AI 能穩定、機械式產出的步驟</strong>。每條慣例都對應一個讓 AI 不易出錯的理由：</p>
+  <table>
+    <tr><th>框架特性</th><th>對 AI 協作的意義</th></tr>
+    <tr><td>兩階段（先數學模型、後 code）</td><td>AI 先輸出<strong>可審閱的數學模型</strong>，人確認後才轉 code，錯誤在最便宜的階段就被抓出來</td></tr>
+    <tr><td>QTY 天條（數值全進 Parameter）</td><td>AI 不會把魔術數字散落在邏輯裡；改數據不必改 code，也讓人一眼能核對數值</td></tr>
+    <tr><td>Pool 機制 + 不可移項規則</td><td>AI 把數學式<strong>逐項機械式</strong>翻成 <code>AddLHS/AddRHS</code>，不需「理解」也不會寫錯方向</td></tr>
+    <tr><td>資料夾規範（claudemdTemplate）</td><td>每個資料夾一份 CLAUDE.md ＝ AI 的 few-shot 範本，產出一致</td></tr>
+    <tr><td>Source generator（<code>[OptVar]</code>/<code>[OptParam]</code>）</td><td>AI 用一行 attribute 宣告變數/參數，樣板由編譯器補，產出更短、更不易錯</td></tr>
+    <tr><td>OptModel 雙模式 + ExperimentRunner</td><td>AI 產的專案天生<strong>可求解 + 可掃參數</strong>，連 tuning 都能交給 AI</td></tr>
+  </table>
+  <div class="note tip">
+    <span class="t">一句話記住</span>
+    <p>你的工作是<strong>把問題說清楚、在兩個關卡確認</strong>；AI 的工作是<strong>照框架慣例機械式產出</strong>。框架負責讓這條分工穩定成立。</p>
+  </div>
+</section>
+
+<!-- ============ 0.5 全景 ============ -->
+<section id="overview">
+  <h2><span class="num">0.5</span>三階段全景：逐層收斂，前一層沒過不進下一層</h2>
+  <div class="flow">
+    <div class="box b1"><div class="bt">Phase 1 · Modeling</div><div class="bd">自然語言 → 無歧義數學模型<br>保證「數學意義對」</div></div>
+    <div class="arrow">→</div>
+    <div class="box b2"><div class="bt">Phase 2 · Coding</div><div class="bd">模型 → 可編譯可執行的 C#<br>保證「能跑」</div></div>
+    <div class="arrow">→</div>
+    <div class="box b3"><div class="bt">Phase 3 · Tuning</div><div class="bd">模型優化 → solver 調參<br>保證「快且收斂」</div></div>
+  </div>
+  <p>三者之間有一道<strong>正確性 Gate</strong>：Coding 跑出解後，先確認「解 / 目標值對得上問題描述」，<strong>沒過不准進 Tuning</strong>——否則只是在加速一個錯的模型。</p>
+
+  <h3>心智模型：兩個 repo + 一份 DLL</h3>
+  <div class="repo">OptimFoundation/                  <span class="c">← 框架（求解引擎、pipeline、tuning harness）</span>
+  src/OptimFoundation.Core    →  OptimFoundation.Core.dll
+  src/OptimFoundation.Cplex   →  OptimFoundation.Cplex.dll
+        │  build (Release) 後複製
+        ▼
+ClaudeAIAssistant/dlls/            <span class="c">← 各專案用 HintPath 參考這兩個 DLL（唯一來源）</span>
+ClaudeAIAssistant/                 <span class="c">← 建模端</span>
+  ├─ Template_CPLEX/      <span class="c">canonical code 範本（雙模式）</span>
+  ├─ claudemdTemplate/    <span class="c">各資料夾開發規範（單一來源）</span>
+  ├─ truning/             <span class="c">CPLEX 調校策略與旋鈕對照</span>
+  └─ Projects/            <span class="c">題目專案</span></div>
+  <div class="note warn">
+    <span class="t">改了框架就要更新 DLL</span>
+    <p><code class="ic">dotnet build src/OptimFoundation.Cplex -c Release</code> 後，把 <code class="ic">OptimFoundation.Core.dll</code> + <code class="ic">OptimFoundation.Cplex.dll</code> 複製回 <code class="ic">dlls/</code>。否則專案編譯時看不到新型別（新的 OptModel / Experiment / 建模窗口）。</p>
+  </div>
+</section>
+
+<!-- ============ 1 Modeling ============ -->
+<section id="modeling">
+  <h2><span class="phasetag pt1">Phase 1</span><span class="num">1</span>Modeling：自然語言 → 數學模型</h2>
+  <p>目標：把自然語言的問題，變成<strong>無歧義、可被機器解析</strong>的數學模型。這一步<strong>只動筆、不動 code</strong>。產物是 <code class="ic">Model/ProjectName_Model.md</code>，裡面五區塊：Sets → Parameters → Variables → Objective → Constraints，限制式編號 <code class="ic">[C1][C2]…</code> 之後與程式一一對應。</p>
+  <div class="note warn">
+    <span class="t">天條（從 Modeling 就開始）</span>
+    <p>模型裡<strong>所有數值</strong>（係數、上下限、比例、罰分權重）都必須對應到某個 <code class="ic">Parameter.QTY</code>，<strong>禁止裸數字</strong>。這條會一路貫穿到 code。</p>
+  </div>
+
+  <h3 id="m-stage0">1.1 Stage 0：問題分類（決定 solver 預設）</h3>
+  <p>先判定問題型別，它一路影響到專案的 <code class="ic">CplexConfig</code> 預設：</p>
+  <table>
+    <tr><th>ProblemType</th><th>變數型態</th><th>timeLimit</th><th>mipEmphasis</th></tr>
+    <tr><td>LP</td><td>全連續</td><td>300</td><td>0（平衡）</td></tr>
+    <tr><td>IP</td><td>全整數</td><td>1800</td><td>1（重可行解）</td></tr>
+    <tr><td>MILP</td><td>混合</td><td>3600</td><td>2（重最佳解）</td></tr>
+  </table>
+
+  <h3 id="m-struct">1.2 Stage 1–3：逐步結構化 + 約束分類</h3>
+  <ul>
+    <li><strong>SimpleModel</strong>：用結構化自然語言列出「決策 / 目標 / 限制 / 已知數據」。</li>
+    <li><strong>StandardModel</strong>：統一術語與量綱，並把每條約束<strong>分類</strong>（見下表）。</li>
+    <li><strong>KeyInfo</strong>：抽成 JSON 骨架（Sets、Parameters、Variables、Objective、Constraints），供後續機器解析。</li>
+  </ul>
+  <p>約束分類會直接影響後面 code 的建模手法（例如 Implication 要用指示變數 + Big-M）：</p>
+  <table class="tight">
+    <tr><th>類型</th><th>語言線索</th></tr>
+    <tr><td>UB / LB 上下界</td><td>"at most" / "at least" / "no more than"</td></tr>
+    <tr><td>Balance 平衡</td><td>"must equal" / "total in = total out"</td></tr>
+    <tr><td>Proportional 比例</td><td>"in proportion to" / "at least X times"</td></tr>
+    <tr><td>Conjunction 合取</td><td>"only if all"</td></tr>
+    <tr><td>Disjunction 析取</td><td>"at least one of"</td></tr>
+    <tr><td>Exclusive XOR</td><td>"exactly one of"</td></tr>
+    <tr><td>Implication 蘊含</td><td>"if A then B"</td></tr>
+    <tr><td>Conditional Activation</td><td>"only if" / Big-M 條件啟動</td></tr>
+  </table>
+
+  <h3 id="m-aml">1.3 Stage 4 / 4b：AML 數學模型與驗證</h3>
+  <p>用 AMPL 命名慣例 + Markdown 撰寫，<strong>數學式一律用 LaTeX</strong>，五區塊齊全。命名規則：</p>
+  <ul>
+    <li>所有 identifier 用 <strong>PascalCase</strong>（<code class="ic">ProductIndex</code>、<code class="ic">TotalCost</code>），不隨意複數化；Constraint 名稱即未來的 <code class="ic">Constraint_&lt;Name&gt;</code> 類別名。</li>
+    <li><strong>線性化是硬規則</strong>——禁止 <code class="ic">x*y</code>、<code class="ic">x/y</code>、<code class="ic">abs/min/max/if</code>；比例與邏輯條件要先線性化（Big-M、比例上下界）。</li>
+  </ul>
+  <p><strong>Stage 4b 驗證</strong>：對照原始描述檢查線性性、命名一致、Sets/Params/Vars 是否齊全 —— 這是進入 Coding 前的<strong>最後數學關卡</strong>。</p>
+  <div class="note warn">
+    <span class="t"><span class="pin">暫停確認點 ①</span> 數學結構</span>
+    <p>AML 數學模型是<strong>最容易出錯、也最便宜修正</strong>的地方。讓 AI 在這裡停下來給你看，確認 Sets / 變數型態 / 目標方向 / 每條限制都對，再往下。這一關擋掉大半「跑得出來但答案不對」。</p>
+  </div>
+
+  <h3 id="m-example">1.4 範例：把玻璃工廠寫成數學模型</h3>
+  <p>玻璃工廠在加熱機與冷卻機的產能限制下，決定各類玻璃生產量以最大化利潤（這是一個 <strong>LP</strong>）。</p>
+  <p><strong>Sets / Parameters / Variables：</strong></p>
+  <div class="math">I               玻璃種類集合
+h[i], c[i]      玻璃 i 的加熱 / 冷卻時間（分鐘/片）
+p[i]            玻璃 i 的單位利潤
+H, C            加熱機 / 冷卻機 總產能上限
+x[i] ≥ 0        生產玻璃 i 的片數（連續變數）,  ∀ i ∈ I</div>
+  <p><strong>Objective 與 Constraints：</strong></p>
+  <div class="math">max   Σ_{i∈I}  p[i] · x[i]                    目標：總利潤最大
+
+[C1]  Σ_{i∈I}  h[i] · x[i]  ≤  H              加熱機產能
+[C2]  Σ_{i∈I}  c[i] · x[i]  ≤  C              冷卻機產能</div>
+  <p>到這裡<strong>模型就定稿了</strong>。Phase 2 只是把這幾條機械式翻成 code，沒有任何自由發揮。如果 coding 時發現歧義，要<strong>回來補這份模型</strong>，而不是在 code 裡臨時假設。</p>
+</section>
+
+<!-- ============ 2 Coding ============ -->
+<section id="coding">
+  <h2><span class="phasetag pt2">Phase 2</span><span class="num">2</span>Coding：模型機械式翻成可跑的 C#</h2>
+  <p>核心心法：<strong>code 只是翻譯，不是創作</strong>。AML 的每一條 <code class="ic">[Cx]</code> 對應一個 <code class="ic">Constraint_Xxx</code>，每個零件對應一種檔案。</p>
+
+  <h3 id="c-struct">2.1 標準專案結構與命名慣例</h3>
+  <table>
+    <tr><th>資料夾</th><th>內容</th><th>namespace</th><th>單一來源規範</th></tr>
+    <tr><td><code>Parameter/</code></td><td><code>ParameterBase</code> 子類別（含 <code>QTY</code>）</td><td><code>Proj.Parameter</code></td><td><code>claudemdTemplate/Parameter</code></td></tr>
+    <tr><td><code>Set/</code></td><td><code>Dataload</code>（Sets 由 Parameters 衍生、WriteToCSV）</td><td><code>Proj.Set</code></td><td><code>claudemdTemplate/Set</code></td></tr>
+    <tr><td><code>Variable/</code></td><td><code>VariableB_/X_/I_</code> + <code>VariableCreate</code></td><td><code>Proj.Variable</code></td><td><code>claudemdTemplate/Variable</code></td></tr>
+    <tr><td><code>Objective/</code></td><td><code>ObjectiveFunction</code></td><td><code>Proj.Objective</code></td><td><code>claudemdTemplate/Objective</code></td></tr>
+    <tr><td><code>Constraint/</code></td><td><code>Constraint_*</code> + <code>BuildModel</code></td><td><code>Proj.Constraint</code></td><td><code>claudemdTemplate/Constraint</code></td></tr>
+    <tr><td><code>Model/</code></td><td>數學模型 <code>.md</code></td><td>—</td><td><code>claudemdTemplate/Model</code></td></tr>
+  </table>
+  <table class="tight">
+    <tr><th>元素</th><th>前綴</th><th>繼承</th><th>建立 API</th></tr>
+    <tr><td>參數</td><td><code>Parameter_</code></td><td><code>ParameterBase</code></td><td>—（數值欄位固定 <code>public double QTY</code> 放最後）</td></tr>
+    <tr><td>連續變數</td><td><code>VariableX_</code></td><td><code>VariableBase</code></td><td><code>BuildCVs&lt;T&gt;()</code></td></tr>
+    <tr><td>整數變數</td><td><code>VariableI_</code></td><td><code>VariableBase</code></td><td><code>BuildIVs&lt;T&gt;()</code></td></tr>
+    <tr><td>二元變數</td><td><code>VariableB_</code></td><td><code>VariableBase</code></td><td><code>BuildBVs&lt;T&gt;()</code></td></tr>
+    <tr><td>限制式</td><td><code>Constraint_</code></td><td><code>ConstraintBase</code></td><td>Pool API（<code>public void Build()</code>，<strong>非 override</strong>）</td></tr>
+    <tr><td>目標式</td><td><code>ObjectiveFunction</code></td><td>—</td><td><code>CreateMinimize/Maximize</code></td></tr>
+  </table>
+  <p>關鍵慣例：Parameter / Variable <strong>只宣告 properties、不寫建構子</strong>，index 屬性用 PascalCase（對應 AML set 名）；一律用 <strong>object initializer</strong> 建立（<code class="ic">new VariableB_X { Date = d, Group = g }</code>）；變數型別由 <code class="ic">Build*Vs&lt;T&gt;</code> 決定，前綴只是命名約定。</p>
+
+  <h3 id="c-arch">2.2 兩種建模架構：source generator（預設）vs 手寫（後路）</h3>
+  <p><strong>預設</strong>：用 <code class="ic">[OptVar]</code>/<code class="ic">[OptParam]</code> attribute 宣告，class body（properties、QTY）由 <code class="ic">AutoSetsGenerator</code> 在編譯期生成——最短、最不易錯：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">預設：source generator（partial class + attribute）</span><span class="lang">csharp</span></div><pre>using OptimModeling;
+
+<span class="cm">// 參數：宣告 set 與型別，body 由 generator 補（預設含 QTY；純 key 參數設 HasValue=false）</span>
+[OptParam("Set1", "Set2:double", "Set3:int", "Set4:DateTime")]
+public partial class Parameter_Template { }
+
+<span class="cm">// 變數：宣告型別與 set</span>
+[OptVar(VarType.Binary, "A")]
+public partial class VariableB_A { }</pre></div>
+  <p><strong>後路</strong>：需要逐行掌控時，手寫 properties（兩種等價，產出的變數完全一樣）：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">後路：手寫 properties</span><span class="lang">csharp</span></div><pre>public class Parameter_ShiftDemand : ParameterBase
+{
+    public DateTime Date  { get; set; }
+    public string   Group { get; set; } = string.Empty;
+    public double   QTY   { get; set; }   <span class="cm">// 數值欄位固定叫 QTY、放最後</span>
+}</pre></div>
+  <p>兩架構並排對照見 <a href="index.html">醫院排班教學</a> §5.8；範例專案 <code class="ic">Projects/HospitalRostering_Generator</code>（預設）vs <code class="ic">HospitalRostering_Manual</code>（後路）。</p>
+
+  <h3 id="c-pool">2.3 Pool 機制：AddLHS / AddRHS / Create*（整個框架最核心）</h3>
+  <p>你<strong>不直接</strong>寫出 <code class="ic">3x + 2y ≤ 10</code>，而是把一條式子<strong>逐項累加</strong>進一個暫存區（Pool），最後呼叫 <code class="ic">Create*</code> 收尾並清空：</p>
+  <div class="math">AddLHS(coef, varObj)    ← 左側變數項
+AddLHS(constant)        ← 左側常數項（若有）
+AddRHS(value)           ← 右側常數
+AddRHS(coef, varObj)    ← 右側變數項（若有）
+CreateLessEqual(name)   ← ≤   建立並清空 Pool
+CreateGreatEqual(name)  ← ≥
+CreateEqual(name)       ← =
+CreateMaximize()        ← 目標：最大化 Pool（或 CreateMinimize）
+區間用 CreateRange(lb, ub, name)；軟性用 CreateLeSoft / GeSoft / EqSoft</div>
+  <div class="note danger">
+    <span class="t">不變式（最重要的硬規則，AI 與人都不能破）</span>
+    <p>① AML 左側的項 → <code class="ic">AddLHS</code>；右側的項 → <code class="ic">AddRHS</code>。<br>
+       ② <strong>嚴禁移項、改號、合併化簡、翻轉比較方向</strong>。數學寫 ≤ 就 <code class="ic">CreateLessEqual</code>。<br>
+       ③ 參數值先用 LINQ 查進區域變數，再傳入 <code class="ic">AddLHS/AddRHS</code>（不可把 LINQ 內嵌進參數）。</p>
+  </div>
+  <div class="codeblock"><div class="codehead"><span class="fname">Pool 典型寫法（一條限制式）</span><span class="lang">csharp</span></div><pre>public void Build()
+{
+    dataload.Set1.ForEach(i =&gt;
+    {
+        <span class="cm">// 先把參數值 LINQ 查進區域變數</span>
+        var coef = dataload.parameter_Coef
+            .FirstOrDefault(x =&gt; x.Set1 == i)?.QTY ?? 0.0;
+
+        engine.AddLHS(coef, new VariableX_Amount { Set1 = i });   <span class="cm">// 左側逐項累加</span>
+        engine.AddRHS(rhsValue);                                  <span class="cm">// 右側常數</span>
+        engine.CreateLessEqual($"{ConstraintName}@{i}");          <span class="cm">// 收尾 ≤，Pool 自動清空</span>
+        ConstraintCount++;
+    });
+    Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+}</pre></div>
+
+  <h3 id="c-assemble">2.4 Dataload、組裝、與雙模式進入點</h3>
+  <p><strong>Dataload</strong> 是唯一存放實際數字的地方，<strong>數值保真</strong>：與原始問題描述完全一致，不四捨五入、不推算、不填佔位符。Sets 由 Parameters 衍生，scalar 參數也用 <code class="ic">List&lt;Parameter_X&gt;</code> 只放一筆。</p>
+  <p><strong>VariableCreate</strong>（依型別建所有變數）與 <strong>BuildModel</strong>（先 Objective、再各 Constraint）是兩個 step class，被 solve 與 experiment 兩模式<strong>共用</strong>。<strong>Program.cs</strong> 用 Fluent <code class="ic">OptModel</code> 串起來，並支援雙模式：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">Program.cs（唯一進入點 · solve / experiment 雙模式）</span><span class="lang">csharp</span></div><pre>using System.Linq;
+using OptimFoundation.Cplex;
+using ProjectName.Set;
+using ProjectName.Variable;
+using ProjectName.Constraint;
+
+if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }   <span class="cm">// tuning 模式</span>
+
+var dataload = new ProjectNameDataload();
+using (var m = new OptModel("ProjectName")
+    .UseConfig(() =&gt; new CplexConfig { epGap = 0.0, timeLimit = 60, workThreads = 4, enableLog = true, exportSol = true })
+    .AddVariables(e =&gt; new VariableCreate(dataload, e).Build())   <span class="cm">// ① 先建變數</span>
+    .AddModel(e =&gt; new BuildModel(dataload, e).Build())           <span class="cm">// ②③ 再建目標+限制</span>
+    .OnSolved(e =&gt; dataload.WriteToCSV(e)))                       <span class="cm">// 求解成功後輸出</span>
+{
+    bool ok = m.Execute();   <span class="cm">// 建模 → 求解 → OnSolved → 自動 Dispose</span>
+}</pre></div>
+  <p><code class="ic">OptModel</code> 保證 <code class="ic">AddVariables</code> 先於 <code class="ic">AddModel</code>（目標/限制會用到變數）、內建 build/solve 計時、並自行 Dispose engine。</p>
+
+  <h3 id="c-example">2.5 完整可跑範例：玻璃工廠（對照 1.4 的數學模型）</h3>
+  <p>每個零件一個檔，全部直接對應到 Phase 1 的模型。先是<strong>參數</strong>與<strong>資料</strong>：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">Parameter/Parameter_GlassSpec.cs · Set/GlassDataload.cs</span><span class="lang">csharp</span></div><pre>public class Parameter_GlassSpec : ParameterBase   <span class="cm">// 一種玻璃 = 一列</span>
+{
+    public string GlassType   { get; set; } = string.Empty;
+    public double HeatingTime { get; set; }
+    public double CoolingTime { get; set; }
+    public double Profit      { get; set; }
+}
+
+public class GlassDataload
+{
+    public List&lt;Parameter_GlassSpec&gt; parameter_GlassSpec = new()   <span class="cm">// 數值保真</span>
+    {
+        new() { GlassType = "Regular",  HeatingTime = 3, CoolingTime = 5, Profit = 8  },
+        new() { GlassType = "Tempered", HeatingTime = 5, CoolingTime = 8, Profit = 10 }
+    };
+    public double HeatingCapacity = 300;   <span class="cm">// H</span>
+    public double CoolingCapacity = 300;   <span class="cm">// C</span>
+    public List&lt;string&gt; GlassTypes =&gt; parameter_GlassSpec.Select(s =&gt; s.GlassType).ToList();  <span class="cm">// Set I 由參數衍生</span>
+}</pre></div>
+  <p><strong>變數</strong>（連續，對應 <code class="ic">x[i] ≥ 0</code>）：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">Variable/VariableX_Production.cs · Variable/VariableCreate.cs</span><span class="lang">csharp</span></div><pre>public class VariableX_Production : VariableBase
+{
+    public string GlassType { get; set; } = string.Empty;   <span class="cm">// 只放索引，不放數值</span>
+}
+
+<span class="cm">// VariableCreate.Build()：依玻璃清單建立連續變數</span>
+optEngine.BuildCVs&lt;VariableX_Production&gt;(dataload.GlassTypes);</pre></div>
+  <p><strong>目標</strong>（<code class="ic">max Σ p[i]·x[i]</code>）與<strong>限制</strong>（<code class="ic">[C1]</code> 加熱）——注意都是 Pool「逐項累加 → 收尾」：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">Objective/ObjectiveFunction.cs · Constraint/Constraint_Heating.cs</span><span class="lang">csharp</span></div><pre><span class="cm">// 目標：max Σ Profit[i]·x[i]</span>
+dataload.parameter_GlassSpec.ForEach(spec =&gt;
+    optEngine.AddLHS(spec.Profit, new VariableX_Production { GlassType = spec.GlassType }));
+optEngine.CreateMaximize();
+
+<span class="cm">// [C1] 加熱機產能：Σ Heating[i]·x[i] ≤ H</span>
+dataload.parameter_GlassSpec.ForEach(spec =&gt;
+    optEngine.AddLHS(spec.HeatingTime, new VariableX_Production { GlassType = spec.GlassType }));
+optEngine.AddRHS(dataload.HeatingCapacity);
+optEngine.CreateLessEqual(ConstraintName);
+<span class="cm">// [C2] 冷卻只差：HeatingTime→CoolingTime、HeatingCapacity→CoolingCapacity</span></pre></div>
+  <p><strong>組裝</strong>（<code class="ic">BuildModel</code> 先目標、再限制）後，<code class="ic">dotnet run</code> 會算出：<strong>Regular 60 片、Tempered 0 片、最大利潤 $480</strong>——比較貴的強化玻璃因太吃機器時間，最佳解反而一片都不做。</p>
+
+  <h3 id="c-buildfix">2.6 Stage 14：build &amp; fix 循環 + 暫停確認點 ②</h3>
+  <div class="math">dotnet build → 失敗 → 擷取 compiler error → 修對應 .cs → 重試（最多 5 次）
+              → 5 次全失敗 → 標記 Failed，保留 error log</div>
+  <div class="note warn">
+    <span class="t"><span class="pin">暫停確認點 ②</span> Dataload 數值</span>
+    <p>數學結構（點①）與 <strong>Dataload 數值</strong>是兩個最易錯處。讓 AI 在填完 Dataload 後停下來，<strong>逐筆核對數值與題目一致</strong>，AI 不得自行推算或填佔位符。確認後再 build。</p>
+  </div>
+</section>
+
+<!-- ============ 3 Gate ============ -->
+<section id="gate">
+  <h2><span class="num">3</span>正確性 Gate：沒過不准進 Tuning</h2>
+  <p>求解成功 ≠ 答案正確。進 Tuning 前，先驗：</p>
+  <ul>
+    <li><strong>目標值</strong>對得上問題描述的量級嗎？（手算一兩個小案例對照）</li>
+    <li><strong>解</strong>滿足所有限制、且語意合理嗎？（沒有「負產量」「該滿足的需求沒滿足」）</li>
+    <li>若 <strong>Infeasible</strong>：模型不可行，回 Coding/Modeling，用 IIS 衝突分析定位（見 §6），不要急著調參數。</li>
+  </ul>
+  <p>沒過就回 Phase 1/2 修正。<strong>對錯誤的模型做加速，只會更快得到錯的答案。</strong></p>
+</section>
+
+<!-- ============ 4 Tuning ============ -->
+<section id="tuning">
+  <h2><span class="phasetag pt3">Phase 3</span><span class="num">4</span>Tuning：讓它跑得快又收斂</h2>
+  <div class="note tip">
+    <span class="t">黃金順序</span>
+    <p><strong>先做模型優化，再調 solver 旋鈕。</strong> 模型改一刀的效益，通常遠大於調十個旋鈕。tuning <strong>只改求解策略、不改數學意義</strong>（同樣禁止移項/改號/翻轉/四捨五入）。</p>
+  </div>
+  <p>先判斷觸發來自哪一層：</p>
+  <table>
+    <tr><th>觸發</th><th>線索</th><th>入口</th></tr>
+    <tr><td>structure（數學結構）</td><td>加/刪約束、改 Big-M、加 valid inequality</td><td>回 Modeling（Stage 4）重跑</td></tr>
+    <tr><td>data（數值）</td><td>改參數值</td><td>改 Dataload</td></tr>
+    <tr><td>solver（求解參數）</td><td>timeout / gap 過大 / 太慢但模型正確</td><td>調 <code>CplexConfig</code> 旋鈕</td></tr>
+  </table>
+
+  <h3 id="t-model">4.1 模型層優化（最高優先）</h3>
+  <ul>
+    <li><strong>變數型態</strong>：求解難度 <code class="ic">CV ≪ IV &lt; BV</code>。盡量用自由度最高者；能線性化或取整就用連續。網路流 / 指派且具 totally unimodular 結構 → LP 鬆弛即整數解，直接用 CV。</li>
+    <li><strong>模型精簡</strong>：聚合同型約束、刪冗餘（dominated）約束、收緊變數上下界（<code class="ic">BuildCVs&lt;&gt;(lb, ub, ...)</code>）。</li>
+    <li><strong>Big-M 取最小可行值</strong>：M 過大會使 LP 鬆弛鬆散、節點爆增。</li>
+    <li><strong>對稱性消除</strong>：對等價變數加排序約束（<code class="ic">x₁ ≥ x₂ ≥ …</code>），打斷等價分支。</li>
+    <li><strong>Warm start</strong>：高品質初始解大幅減少 B&amp;B 節點（Foundation 目前無 MIP start API，等效用 <code class="ic">mipEmphasis=1</code> / <code class="ic">rinsHeur</code> / <code class="ic">HeuristicEffort</code> 讓 CPLEX 自己快點找 incumbent）。</li>
+  </ul>
+
+  <h3 id="t-solver">4.2 Solver 層調校（CplexConfig 旋鈕）</h3>
+  <p><code class="ic">CplexConfig</code> 欄位 <code class="ic">null</code> = 用 CPLEX 預設，tuning 只設要動的。常見症狀對應動作：</p>
+  <table>
+    <tr><th>症狀</th><th>動作</th></tr>
+    <tr><td>timeout 但正確</td><td>提 <code>timeLimit</code> / <code>mipEmphasis=1</code> / 開 <code>parallelMode</code>；連續放寬仍 timeout → 回 structure reformulation</td></tr>
+    <tr><td>gap 過大</td><td>加切割（<code>gomoryCuts</code>/<code>mirCuts</code>）→ <code>nodeSelect=1</code>(best-bound) → 收 <code>epGap</code> / <code>mipEmphasis=2</code></td></tr>
+    <tr><td>急著找可行解</td><td><code>nodeSelect=0</code>(DFS) → <code>intSolLimit</code>/<code>nodeLimit</code> → 放寬 <code>epGap</code> → <code>mipEmphasis=1</code></td></tr>
+    <tr><td>記憶體爆</td><td><code>treeMemoryLimit</code> + <code>nodeFileInd=2/3</code></td></tr>
+    <tr><td>數值不穩</td><td><code>numericalEmphasis=true</code></td></tr>
+    <tr><td>要可重現實驗</td><td><code>parallelMode=1</code> + 固定 <code>randomSeed</code> + <code>detTimeLimit</code></td></tr>
+  </table>
+  <div class="note warn">
+    <span class="t">記憶體旋鈕的順序 gotcha</span>
+    <p><code class="ic">Configuration()</code> 在設 <code class="ic">workMemory</code> 時會強制 <code class="ic">MIP.Strategy.File=0</code>。若要「記憶體爆 → 溢寫節點檔」，必須在設 <code class="ic">workMemory</code> <strong>之後</strong>再設 <code class="ic">nodeFileInd=2/3</code>，否則被覆蓋。</p>
+  </div>
+
+  <h3 id="t-runner">4.3 用 ExperimentRunner 實際掃描（可執行架構）</h3>
+  <p>每個專案標配 <code class="ic">ExperimentRunner.cs</code>，建構於框架 harness（<code class="ic">Experiment</code> / <code class="ic">Trial.Capture</code> / <code class="ic">ITunableConfig</code>）：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">PowerShell</span><span class="lang">powershell</span></div><pre>dotnet run -- experiment    <span class="cm"># 掃多組 CplexConfig → Experiments/&lt;name&gt;.csv + .json</span></pre></div>
+  <ul>
+    <li><strong>掃描單位</strong> <code class="ic">(label, Action&lt;CplexConfig&gt; tune)</code>：baseline + <strong>每次只動一個旋鈕</strong>（單一變數測試）。</li>
+    <li><strong>抽象旋鈕</strong>（跨引擎）：<code class="ic">Emphasis / Seed / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / MemoryLimitMb</code>。</li>
+    <li><strong>CPLEX 專屬</strong>：直接設 camelCase 欄位 <code class="ic">varSel / nodeSelect / workThreads / gomoryCuts / mirCuts …</code>。</li>
+    <li>每 Trial 用<strong>全新 Dataload + engine</strong>；掃描時 <code class="ic">enableLog=false</code>、關 export 加速；<code class="ic">timeLimit</code> 確保收斂。</li>
+  </ul>
+  <div class="math">基準（無 tuning，僅 timeLimit）→ 單一變數測試 → 篩選有效 → 疊加組合 → 有改進則更新基準</div>
+  <p>每輪記錄：obj、gap、wall/det 時間、node 數、變更項。可重現性：固定 <code class="ic">randomSeed</code> + <code class="ic">parallelMode=1</code> + 用 <code class="ic">detTimeLimit</code>。</p>
+
+  <h3 id="t-table">4.4 旋鈕速查（按目標分類）</h3>
+  <table class="tight">
+    <tr><th>目標</th><th>優先</th><th>建議動作（Foundation 欄位）</th></tr>
+    <tr><td>加速求解</td><td>1st</td><td>模型精簡 / 緊湊邊界 / 連續替代離散 / 對稱性消除（modeling 層）</td></tr>
+    <tr><td>加速求解</td><td>2nd</td><td>實測篩 <code>workThreads</code> → 切割（<code>gomoryCuts</code>/<code>mirCuts</code>）→ <code>nodeSelect</code></td></tr>
+    <tr><td>改善 GAP</td><td>1st</td><td>加切割 → <code>nodeSelect=1</code> → 收 <code>epGap</code> / <code>mipEmphasis=2</code></td></tr>
+    <tr><td>找可行解</td><td>1st</td><td><code>nodeSelect=0</code> → <code>intSolLimit</code>/<code>nodeLimit</code> → 放寬 <code>epGap</code> → <code>mipEmphasis=1</code></td></tr>
+  </table>
+  <p>完整 CPLEX ↔ Foundation 旋鈕對照（含已接線 ✅ / 待補 ❌：如 Symmetry presolve、MIP start、ZeroHalf 切割、自動調參、callback）見 <code class="ic">truning/CLAUDE.md</code> §6.2。</p>
+</section>
+
+<!-- ============ 5 SOP ============ -->
+<section id="workflow">
+  <h2><span class="num">5</span>把三階段串成「AI 協作標準流程」</h2>
+  <div class="step"><div class="n">1</div><div class="c"><strong>給題目</strong>：用自然語言描述決策、目標、限制與<strong>數值來源</strong>。越具體越好——尤其「每個數字從哪來」。</div></div>
+  <div class="step"><div class="n">2</div><div class="c"><strong>要 AI 先出數學模型</strong>（<code class="ic">Model/*.md</code>）：Sets / Parameters / Variables / Objective / Constraints，限制式編號 <code class="ic">[C1][C2]…</code>。<span class="pin">暫停確認點 ①</span></div></div>
+  <div class="step"><div class="n">3</div><div class="c"><strong>AI 依資料夾規範產 code</strong>：Parameter → Dataload → Variable → Objective → Constraint → Program。每條限制對應一個 <code class="ic">[Cx]</code>。</div></div>
+  <div class="step"><div class="n">4</div><div class="c"><strong>確認 Dataload 數值</strong>逐筆與題目一致。<span class="pin">暫停確認點 ②</span></div></div>
+  <div class="step"><div class="n">5</div><div class="c"><strong>build &amp; fix</strong>：跑 <code class="ic">dotnet build</code>，依 compiler error 修對應 .cs，循環到綠（≤5 次）。</div></div>
+  <div class="step"><div class="n">6</div><div class="c"><strong>正確性 gate → tuning</strong>：先驗解對不對，再 <code class="ic">dotnet run -- experiment</code> 掃參數，AI 讀 <code class="ic">Experiments/*.csv</code> 給調校建議。</div></div>
+
+  <h3>好的提示 vs 不好的提示</h3>
+  <table>
+    <tr><th>不好</th><th>好</th></tr>
+    <tr><td>「幫我排班」</td><td>「16 人月排班；每天各班別需求一定要滿足（硬）；盡量避免連六天(罰1.0)、夜接早(罰0.2)…；需求數字我給你這張表」</td></tr>
+    <tr><td>「優化快一點」</td><td>「跑超過 100 秒、gap 卡 5%；用 ExperimentRunner 掃 emphasis / varSel / nodeSelect，挑最快收斂那組」</td></tr>
+    <tr><td>「加一條限制」</td><td>「加 [C12]：每人每週至少休 1 天，∀e,w：Σ_{d∈w} y[e,d,O] ≥ 1；先更新 Model.md 再寫 Constraint」</td></tr>
+  </table>
+  <div class="note tip">
+    <span class="t">把規範交給 AI</span>
+    <p>新專案直接把 <code class="ic">claudemdTemplate/</code> 的資料夾規範給 AI 當依據；它會照著繼承對的 base、命名前綴、QTY 天條、Pool 收尾、雙模式 Program。要 AI 改既有模型時，叫它<strong>先讀對應資料夾的 CLAUDE.md</strong> 再動手。規範衝突時：專案自身 <code class="ic">CLAUDE.md</code> &gt; <code class="ic">claudemdTemplate/</code> &gt; 框架。</p>
+  </div>
+</section>
+
+<!-- ============ 6 排查 ============ -->
+<section id="trouble">
+  <h2><span class="num">6</span>常見錯誤排查（錯誤訊息 · 原因 · 解法）</h2>
+  <table class="tight">
+    <tr><th>錯誤訊息</th><th>原因</th><th>解法</th></tr>
+    <tr><td><code>KeyNotFoundException: 找不到變數</code></td><td><code>AddLHS/AddRHS</code> 的變數 key 與 <code>Build*Vs</code> 建立時不符</td><td>確認 property 宣告順序與 <code>Build*Vs</code> 傳入 set 順序一致</td></tr>
+    <tr><td><code>NullReferenceException</code>（LINQ 查 Parameter）</td><td><code>FirstOrDefault</code> 回 null</td><td>確認資料已初始化，並用 <code>?.QTY ?? 0.0</code></td></tr>
+    <tr><td>缺少建構子 / <code>ArgumentException 參數數量不符</code></td><td>Variable/Parameter 加了非 property 成員或誤呼叫建構子</td><td>只留 properties，用 object initializer 建立</td></tr>
+    <tr><td>編譯：<code>沒有可覆寫的方法</code></td><td><code>Constraint.Build()</code> 寫了 <code>override</code></td><td>改成 <code>public void Build()</code>（非 virtual）</td></tr>
+    <tr><td>CPLEX 1217 No solution（Infeasible）</td><td>模型不可行</td><td>先查 LHS/RHS 是否移項錯；用 <strong>IIS</strong> 衝突分析定位；暫拿掉部分約束驗證基礎模型</td></tr>
+    <tr><td>求解後 <code>varCount == 0</code></td><td><code>Build*Vs</code> 傳入空 Set</td><td>確認 Dataload 建構子內 Set 有正確 <code>Add/AddRange</code></td></tr>
+    <tr><td>編譯：找不到型別 <code>OptEngine</code>/<code>OptModel</code></td><td>專案沒參考到 DLL、或框架改了沒更新 DLL</td><td>檢查 <code>.csproj</code> 的 <code>HintPath ..\..\dlls\</code> 層數；改框架後重 build 並更新 DLL</td></tr>
+  </table>
+</section>
+
+<!-- ============ 7 速查 ============ -->
+<section id="cheat">
+  <h2><span class="num">7</span>API / 天條速查</h2>
+  <div class="codeblock"><div class="codehead"><span class="fname">建模窗口（engine API）</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Core;
+using OptimFoundation.Cplex;
+
+<span class="cm">// 建變數</span>
+engine.BuildCVs&lt;VariableX_Name&gt;(setA, setB);      <span class="cm">// 連續</span>
+engine.BuildIVs&lt;VariableI_Name&gt;(setA);            <span class="cm">// 整數</span>
+engine.BuildBVs&lt;VariableB_Name&gt;(setA, setB);      <span class="cm">// 二元</span>
+engine.BuildCVs&lt;VariableX_Name&gt;(lb, ub, setA);    <span class="cm">// 自訂界限</span>
+
+<span class="cm">// 建約束 / 目標（Pool）</span>
+engine.AddLHS(coef, new VariableX_Name { Set = s });
+engine.AddRHS(value);
+engine.CreateLessEqual("Name");                  <span class="cm">// 或 CreateGreatEqual / CreateEqual</span>
+engine.CreateMaximize();                         <span class="cm">// 或 CreateMinimize</span>
+
+<span class="cm">// 求解與讀解</span>
+double obj = engine.GetObjectiveValue();
+var sol = engine.GetSetVarValues&lt;VariableX_Name&gt;();   <span class="cm">// 變數值</span></pre></div>
+  <div class="note info">
+    <span class="t">天條清單（人與 AI 都要守）</span>
+    <p>① 數值全進 <code class="ic">Parameter.QTY</code>，任何地方不得裸數字。<br>
+       ② Pool 不移項、不改號、不翻轉比較方向、不合併化簡、不四捨五入。<br>
+       ③ Parameter/Variable 只宣告 properties、用 object initializer；<code class="ic">QTY</code> 放最後。<br>
+       ④ 先 <code class="ic">AddVariables</code> 後 <code class="ic">AddModel</code>；<code class="ic">BuildModel</code> 內先 Objective 再 Constraints。<br>
+       ⑤ 先想清楚數學（過點①），再寫 code；正確性 gate 沒過不進 tuning。</p>
+  </div>
+</section>
+
+<!-- ============ 8 索引 ============ -->
+<section id="next">
+  <h2><span class="num">8</span>參考檔索引與下一步</h2>
+  <table>
+    <tr><th>需求</th><th>看這裡</th></tr>
+    <tr><td>完全零基礎入門（玻璃工廠小 LP）</td><td><a href="getting-started.html">tutorial/getting-started.html</a></td></tr>
+    <tr><td>大型實戰（醫院排班 MILP，含指示變數/軟約束/IIS）</td><td><a href="index.html">tutorial/index.html</a></td></tr>
+    <tr><td>新建專案範本（code，雙模式）</td><td><code>Template_CPLEX/</code></td></tr>
+    <tr><td>各資料夾規範（單一來源）</td><td><code>claudemdTemplate/&lt;Folder&gt;/CLAUDE.md</code></td></tr>
+    <tr><td>Modeling 階段細節（Stage 0–4b）</td><td><code>tutorial/ai-modeling-framework-tutorial.md</code></td></tr>
+    <tr><td>調校策略 + 旋鈕對照（含缺口）</td><td><code>truning/CLAUDE.md</code></td></tr>
+    <tr><td>tuning 可執行架構</td><td><code>claudemdTemplate/Experiment/CLAUDE.md</code></td></tr>
+    <tr><td>端到端流程頂層導覽</td><td><code>tutorial/development-workflow.md</code></td></tr>
+  </table>
+  <p>把這份手冊的順序當成 SOP：<strong>說清楚題目 → 確認數學模型(①) → 機械式產 code → 確認數值(②) → build → 過 gate → 掃參數</strong>。框架的每條慣例都是為了讓這條人機分工穩定成立。</p>
+</section>
+
+<footer>
+  <p><strong>OptimFoundation × AI Modeling 開發整合手冊</strong> — 整合 Modeling / Coding / Tuning 全部開發面資訊。範例取自 <code class="ic">Projects/GlassFactory/</code>。本頁為完全自包含的靜態網頁，不需網路、不需任何外掛即可閱讀。</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+/* 點綴：點程式碼標題可複製。內容完全不靠這段 JS 顯示。 */
+(function(){
+  document.querySelectorAll('.codehead').forEach(function(h){
+    h.style.cursor='copy';
+    h.addEventListener('click',function(){
+      var pre=h.parentElement.querySelector('pre');
+      navigator.clipboard && navigator.clipboard.writeText(pre.innerText);
+    });
+  });
+  var links=[].slice.call(document.querySelectorAll('nav a[href^="#"]')), map={};
+  links.forEach(function(a){var el=document.getElementById(a.getAttribute('href').slice(1)); if(el) map[a.getAttribute('href').slice(1)]=a;});
+  var targets=Object.keys(map).map(function(id){return document.getElementById(id);});
+  function onScroll(){var cur=null,y=window.scrollY+120; targets.forEach(function(t){if(t.offsetTop<=y)cur=t.id;});
+    links.forEach(function(a){a.style.background='';a.style.color='';}); if(cur&&map[cur]){map[cur].style.background='#4f46e5';map[cur].style.color='#fff';}}
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>

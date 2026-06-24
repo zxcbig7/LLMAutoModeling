@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptimFoundation 新手村 — 從零開始，讓電腦幫你做最好的決定</title>
+<style>
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --ink:#1d2430; --muted:#5d6675;
+  --line:#e5e8f0; --accent:#4f46e5; --accent2:#0ea5a4; --warn:#d97706;
+  --code-bg:#0f1729; --code-ink:#e6edf3; --cm:#8aa0c0;
+  --sb-w:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;
+  line-height:1.85;font-size:16.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.layout{display:flex;align-items:flex-start}
+nav.sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:#fbfbff;border-right:1px solid var(--line);padding:22px 16px 60px}
+nav .brand{font-weight:800;font-size:17px;color:var(--ink);margin:4px 6px}
+nav .brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:4px}
+nav ul{list-style:none;margin:14px 0 0;padding:0}
+nav li{margin:1px 0}
+nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--muted);font-size:14px}
+nav a:hover{background:#eef0fb;color:var(--ink);text-decoration:none}
+main{flex:1 1 auto;min-width:0;max-width:880px;margin:0 auto;padding:0 44px 120px}
+
+.hero{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+.hero .kicker{color:var(--accent);font-weight:700;letter-spacing:2px;font-size:13px;text-transform:uppercase}
+.hero h1{font-size:34px;line-height:1.25;margin:12px 0 14px}
+.hero p.lead{font-size:18px;color:var(--muted);margin:0}
+
+section{padding-top:46px}
+h2{font-size:25px;margin:0 0 8px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+h2 .num{color:var(--accent);font-weight:800;margin-right:10px}
+h3{font-size:19px;margin:30px 0 6px}
+p{margin:13px 0}
+ul,ol{margin:12px 0;padding-left:26px}
+li{margin:7px 0}
+strong{color:#10162a}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+/* 白話「方塊圖」：用 flex，不用 ASCII，永遠不會擠成一行 */
+.flow{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin:22px 0}
+.flow .box{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+.flow .box .bt{font-weight:800;color:var(--accent);font-size:15px}
+.flow .box .bd{font-size:14px;color:var(--muted);margin-top:4px}
+.flow .arrow{display:flex;align-items:center;color:var(--muted);font-size:22px;font-weight:700}
+@media(max-width:760px){.flow .arrow{transform:rotate(90deg)}}
+
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+@media(max-width:680px){.cards{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card .q{font-weight:800;font-size:16px;margin-bottom:2px}
+.card .e{color:var(--muted);font-size:14.5px}
+.card .tag{display:inline-block;margin-top:8px;background:#eef0fb;color:var(--accent);
+  border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700}
+
+table{border-collapse:collapse;width:100%;margin:18px 0;font-size:15px;background:var(--panel);
+  border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+th,td{border:1px solid var(--line);padding:9px 13px;text-align:left;vertical-align:top}
+th{background:#f1f3fb;font-weight:700;color:#2a3550}
+
+code.ic{background:#eceef7;color:#3b3f7a;padding:1px 6px;border-radius:5px;
+  font-family:ui-monospace,Consolas,monospace;font-size:14px}
+
+.codeblock{margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #1b2740;
+  box-shadow:0 1px 3px rgba(15,23,41,.14)}
+.codehead{background:#0b1220;color:#9fb0c8;padding:7px 14px;font-size:12.5px;
+  display:flex;justify-content:space-between;border-bottom:1px solid #1b2740}
+.codehead .fname{font-family:ui-monospace,Consolas,monospace;color:#cdd9ee}
+.codehead .lang{text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#5e7095}
+pre{margin:0;background:var(--code-bg);color:var(--code-ink);padding:15px 18px;overflow-x:auto;
+  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:13.6px;line-height:1.7;
+  white-space:pre;-moz-tab-size:4;tab-size:4}
+pre .cm{color:var(--cm);font-style:italic}
+
+.note{border-radius:10px;padding:14px 16px;margin:18px 0;border-left:5px solid;font-size:15px}
+.note .t{font-weight:800;display:block;margin-bottom:3px}
+.note.tip{background:#ecfdf5;border-color:var(--accent2)}
+.note.warn{background:#fffbeb;border-color:var(--warn)}
+.note.info{background:#eef2ff;border-color:var(--accent)}
+.note p{margin:6px 0}
+
+.step{display:flex;gap:14px;margin:14px 0}
+.step .n{flex:0 0 32px;height:32px;width:32px;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800}
+.step .c{flex:1}
+.big{font-size:18px}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.badge{background:#eef0fb;color:var(--accent);border:1px solid #dfe2f7;padding:4px 11px;
+  border-radius:999px;font-size:12.5px;font-weight:600}
+@media(max-width:1000px){nav.sidebar{display:none}main{padding:0 22px 80px}.hero h1{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">OptimFoundation 新手村
+    <small>零數學 · 零程式基礎也能懂</small>
+  </div>
+  <ul>
+    <li><a href="#what">這份教學帶你做什麼</a></li>
+    <li><a href="#intuition">1 · 什麼是「最佳化」</a></li>
+    <li><a href="#four">2 · 任何問題只有 4 個零件</a></li>
+    <li><a href="#byhand">3 · 先用手算一次</a></li>
+    <li><a href="#mapping">4 · 零件 → 程式檔案</a></li>
+    <li><a href="#build">5 · 跟著把它寫成程式</a></li>
+    <li><a href="#run">6 · 跑起來看答案</a></li>
+    <li><a href="#concepts">7 · 三個一定要懂的觀念</a></li>
+    <li><a href="#trouble">8 · 卡住了？常見錯誤</a></li>
+    <li><a href="#next">9 · 下一步</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<header class="hero" id="what">
+  <div class="kicker">給完全的初學者 · Getting Started</div>
+  <h1>讓電腦幫你做「最好的決定」</h1>
+  <p class="lead">你不用懂數學、也不用會寫程式。這份教學會用一個小工廠的故事，帶你一步步理解
+  OptimFoundation 在做什麼，最後親手寫出一個真的能跑、會算出「最賺錢方案」的小程式。</p>
+  <div class="badges">
+    <span class="badge">不需要數學背景</span>
+    <span class="badge">不需要程式背景</span>
+    <span class="badge">看故事學概念</span>
+    <span class="badge">照著抄就能跑</span>
+  </div>
+</header>
+
+<section>
+  <h3>讀完這份你會有什麼</h3>
+  <ul class="big">
+    <li>知道「最佳化（optimization）」到底在解什麼問題、什麼時候該用它。</li>
+    <li>學會把任何「在限制下做最好選擇」的問題，拆成 <strong>4 個零件</strong>。</li>
+    <li>看懂 OptimFoundation 的每個檔案在做什麼——它其實只是把那 4 個零件「翻譯」成程式。</li>
+    <li>親手做出一個會算出最佳生產計畫的小專案。</li>
+  </ul>
+  <div class="note tip">
+    <span class="t">怎麼讀</span>
+    <p>從上到下讀就好，每一節都接著前一節。看到程式碼<strong>先別緊張</strong>——我會先用白話講「這在幹嘛」，再一行一行解釋。你只要會複製貼上，就能跟著做完。</p>
+  </div>
+</section>
+
+<!-- ============ 1 直覺 ============ -->
+<section id="intuition">
+  <h2><span class="num">1</span>什麼是「最佳化」？先講一個你一定遇過的情況</h2>
+  <p>想像你開了一間小玻璃工廠，可以做兩種玻璃：<strong>普通玻璃</strong>和<strong>強化玻璃</strong>。</p>
+  <ul>
+    <li>強化玻璃比較好賺（一片賺 10 元），普通玻璃賺得少一點（一片賺 8 元）。</li>
+    <li>但每片玻璃都要先用<strong>加熱機</strong>烤、再用<strong>冷卻機</strong>冷卻，而這兩台機器<strong>每天能用的時間是有限的</strong>。</li>
+    <li>強化玻璃比較「吃機器時間」，做一片要佔用機器比較久。</li>
+  </ul>
+  <p>問題來了：<strong>今天這兩種玻璃各做幾片，才能賺最多錢？</strong></p>
+  <p>「那就全做強化玻璃啊，它比較賺！」——可是強化玻璃太吃機器時間，全做強化的話機器很快就滿了，總片數做不多。「那全做普通？」——普通片數能做多，但每片賺得少。<strong>最好的答案通常是某種「混搭」</strong>，而且當產品變多、限制變複雜時，用猜的幾乎不可能猜到最好。</p>
+
+  <div class="note info">
+    <span class="t">這就是「最佳化」</span>
+    <p>當你要<strong>在一堆限制底下</strong>，做出一個讓某個目標（賺最多、花最少、跑最快）<strong>達到最好</strong>的決定——這就是一個最佳化問題。OptimFoundation 就是幫你把這種問題交給電腦，由電腦在所有可能方案裡找出「保證最好」的那一個。</p>
+  </div>
+  <p>聽起來很抽象嗎？別擔心。下一節我們會發現：<strong>不管問題長怎樣，它永遠由同樣的 4 個零件組成。</strong></p>
+</section>
+
+<!-- ============ 2 四個零件 ============ -->
+<section id="four">
+  <h2><span class="num">2</span>任何最佳化問題，都只有 4 個零件</h2>
+  <p>這是整份教學<strong>最重要的一張圖</strong>。把它記住，你以後看任何最佳化問題都能秒拆解：</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="q">① 你要「決定」什麼？</div>
+      <div class="e">那些你還不知道、要由你（或電腦）拍板的數字。玻璃工廠裡就是：<strong>普通玻璃做幾片、強化玻璃做幾片</strong>。</div>
+      <span class="tag">決策變數 Variables</span>
+    </div>
+    <div class="card">
+      <div class="q">② 有哪些「固定」的數字？</div>
+      <div class="e">事先就知道、不會變的已知條件。例如：每片玻璃賺多少、要佔多少機器時間、機器總共能用多久。</div>
+      <span class="tag">參數 Parameters</span>
+    </div>
+    <div class="card">
+      <div class="q">③ 你希望什麼「最好」？</div>
+      <div class="e">你想最大化或最小化的那一件事。這裡是：<strong>總利潤最大</strong>。</div>
+      <span class="tag">目標式 Objective</span>
+    </div>
+    <div class="card">
+      <div class="q">④ 有哪些「不能違反」的規則？</div>
+      <div class="e">再怎麼想賺，也不能超過的底線。例如：用掉的加熱機時間不能超過上限、冷卻機也是。</div>
+      <span class="tag">限制式 Constraints</span>
+    </div>
+  </div>
+
+  <p>用一句話串起來：<strong>在「限制」之內，調整你能「決定」的東西，讓「目標」最好。</strong> 那些「固定的數字」則是計算時的依據。</p>
+
+  <div class="note tip">
+    <span class="t">把玻璃工廠套進這 4 個零件</span>
+    <p>① <strong>決定</strong>：普通做幾片、強化做幾片。<br>
+       ② <strong>固定數字</strong>：普通賺 8、強化賺 10；普通要加熱 3 分鐘・冷卻 5 分鐘，強化要加熱 5 分鐘・冷卻 8 分鐘；加熱機共 300 分鐘、冷卻機共 300 分鐘。<br>
+       ③ <strong>目標</strong>：總利潤最大。<br>
+       ④ <strong>限制</strong>：所有玻璃用掉的加熱時間 ≤ 300；冷卻時間 ≤ 300。</p>
+  </div>
+</section>
+
+<!-- ============ 3 手算 ============ -->
+<section id="byhand">
+  <h2><span class="num">3</span>先用手算一次，感受一下</h2>
+  <p>我們把上面的數字整理成一張表（這張表就是零件②「固定的數字」）：</p>
+  <table>
+    <tr><th>玻璃種類</th><th>每片利潤</th><th>每片要加熱（分）</th><th>每片要冷卻（分）</th></tr>
+    <tr><td>普通玻璃</td><td>8 元</td><td>3</td><td>5</td></tr>
+    <tr><td>強化玻璃</td><td>10 元</td><td>5</td><td>8</td></tr>
+    <tr><td colspan="2"><strong>機器總時間上限</strong></td><td><strong>加熱機 300 分</strong></td><td><strong>冷卻機 300 分</strong></td></tr>
+  </table>
+
+  <p>假設我們做 <code class="ic">普通 = a 片</code>、<code class="ic">強化 = b 片</code>。那麼：</p>
+  <ul>
+    <li><strong>總利潤</strong> ＝ 8 × a ＋ 10 × b　（這就是「目標」，要它最大）</li>
+    <li><strong>用掉的加熱時間</strong> ＝ 3 × a ＋ 5 × b，<strong>不能超過 300</strong>（限制一）</li>
+    <li><strong>用掉的冷卻時間</strong> ＝ 5 × a ＋ 8 × b，<strong>不能超過 300</strong>（限制二）</li>
+  </ul>
+
+  <p>試幾組看看：</p>
+  <table>
+    <tr><th>方案</th><th>普通 a</th><th>強化 b</th><th>加熱用量(≤300)</th><th>冷卻用量(≤300)</th><th>總利潤</th></tr>
+    <tr><td>全做強化</td><td>0</td><td>37</td><td>185 ✅</td><td>296 ✅</td><td>370 元</td></tr>
+    <tr><td>全做普通</td><td>60</td><td>0</td><td>180 ✅</td><td>300 ✅</td><td>480 元</td></tr>
+    <tr><td>混搭試試</td><td>40</td><td>12</td><td>180 ✅</td><td>296 ✅</td><td>440 元</td></tr>
+  </table>
+  <p>你會發現：<strong>結果不太直覺</strong>——「比較賺」的強化玻璃全做反而最差，因為它太吃冷卻機。光是手動試，你很難確定哪一組才是真正的最大值，何況真實工廠有幾十種產品、幾百條限制。</p>
+
+  <div class="note info">
+    <span class="t">所以才需要求解器（solver）</span>
+    <p>求解器就是一個數學引擎，它能在<strong>所有合法方案</strong>裡，<strong>保證</strong>找出目標最好的那一組，而且很快。OptimFoundation 內建的引擎叫 <strong>CPLEX</strong>。你的工作不是去解，而是<strong>把這 4 個零件「描述」清楚</strong>，剩下交給它。</p>
+  </div>
+</section>
+
+<!-- ============ 4 對照 ============ -->
+<section id="mapping">
+  <h2><span class="num">4</span>關鍵心法：框架只是把 4 個零件，各放進一個檔案</h2>
+  <p>OptimFoundation 看起來有好多資料夾，但別被嚇到。它的設計就是<strong>一個零件對應一種檔案</strong>。你只要照著把零件填進去：</p>
+
+  <div class="flow">
+    <div class="box"><div class="bt">② 固定數字</div><div class="bd">Parameter 檔<br>+ Dataload</div></div>
+    <div class="arrow">→</div>
+    <div class="box"><div class="bt">① 你要決定的</div><div class="bd">Variable 檔</div></div>
+    <div class="arrow">→</div>
+    <div class="box"><div class="bt">③ 目標</div><div class="bd">Objective 檔</div></div>
+    <div class="arrow">→</div>
+    <div class="box"><div class="bt">④ 限制</div><div class="bd">Constraint 檔</div></div>
+  </div>
+
+  <table>
+    <tr><th>零件（白話）</th><th>在框架裡叫</th><th>放在哪個檔</th></tr>
+    <tr><td>② 固定的數字（利潤、時間、上限）</td><td>Parameter / Dataload</td><td><code class="ic">Parameter/</code>、<code class="ic">Set/Dataload.cs</code></td></tr>
+    <tr><td>① 你要決定的數字（各做幾片）</td><td>Variable</td><td><code class="ic">Variable/</code></td></tr>
+    <tr><td>③ 想要最好的目標（總利潤）</td><td>Objective</td><td><code class="ic">Objective/</code></td></tr>
+    <tr><td>④ 不能違反的規則（機器產能）</td><td>Constraint</td><td><code class="ic">Constraint/</code></td></tr>
+    <tr><td>把以上組裝起來、按下「開始算」</td><td>Program</td><td><code class="ic">Program.cs</code></td></tr>
+  </table>
+
+  <div class="note tip">
+    <span class="t">最重要的觀念：寫程式 = 機械式翻譯</span>
+    <p>你<strong>不需要自己想演算法</strong>。把第 2、3 節想清楚的 4 個零件，照框架的格式「抄」成檔案就好。下一節就是手把手做這件事。</p>
+  </div>
+</section>
+
+<!-- ============ 5 動手 ============ -->
+<section id="build">
+  <h2><span class="num">5</span>跟著做：把玻璃工廠寫成程式</h2>
+  <p>下面每一步都長這樣：<strong>先白話講這步在幹嘛 → 給程式碼 → 解釋每行</strong>。你只要新增對應的檔案、把程式碼貼進去即可。專案放在 <code class="ic">Projects/GlassFactory/</code>。</p>
+
+  <div class="note info">
+    <span class="t">開始前（環境）</span>
+    <p>你需要安裝 <strong>.NET 8</strong>，並且專案能參考到框架的 DLL（已經放在 <code class="ic">ClaudeAIAssistant/dlls/</code>）。環境細節在主教學裡有，這裡先假設已就緒，把重點放在「怎麼把問題寫出來」。每個資料夾的開頭都有一行 <code class="ic">namespace</code>，照抄即可。</p>
+  </div>
+
+  <div class="step"><div class="n">1</div><div class="c">
+    <h3>第 ② 個零件：把「固定的數字」變成一個類別</h3>
+    <p>每一種玻璃都有 3 個固定數字：利潤、加熱時間、冷卻時間。我們先做一個「資料表的一列長什麼樣」的模板，叫 <code class="ic">Parameter_GlassSpec</code>。它就是一張表的<strong>欄位定義</strong>。</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Parameter/Parameter_GlassSpec.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Core;
+
+namespace GlassFactory.Parameter
+{
+    <span class="cm">// 一種玻璃的規格＝表格的一列。每個玻璃會有一筆這樣的資料。</span>
+    public class Parameter_GlassSpec : ParameterBase
+    {
+        public string GlassType   { get; set; } = string.Empty;  <span class="cm">// 玻璃名稱</span>
+        public double HeatingTime { get; set; }                  <span class="cm">// 每片要加熱幾分鐘</span>
+        public double CoolingTime { get; set; }                  <span class="cm">// 每片要冷卻幾分鐘</span>
+        public double Profit      { get; set; }                  <span class="cm">// 每片賺多少</span>
+    }
+}</pre></div>
+    <p><strong>逐行看：</strong></p>
+    <ul>
+      <li><code class="ic">: ParameterBase</code>＝「我是一筆參數資料」，繼承框架的基底類別，照抄即可。</li>
+      <li>中間 4 行就是表格的 4 個欄位。<code class="ic">{ get; set; }</code> 是 C# 寫「這是一個可讀可寫的欄位」的固定寫法，照抄。</li>
+      <li><strong>這一步只是「定義欄位」，還沒填數字</strong>。填數字在下一步。</li>
+    </ul>
+  </div></div>
+
+  <div class="step"><div class="n">2</div><div class="c">
+    <h3>填進真正的數字，並順便生出「有哪些玻璃」</h3>
+    <p><code class="ic">Dataload</code> 是<strong>整個專案唯一放實際數字的地方</strong>。我們在這裡填兩種玻璃的規格、兩台機器的產能上限。</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Set/GlassDataload.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using GlassFactory.Parameter;
+using GlassFactory.Variable;
+
+namespace GlassFactory.Set
+{
+    public class GlassDataload
+    {
+        <span class="cm">// 兩種玻璃的固定數字（對照第 3 節那張表）</span>
+        public List&lt;Parameter_GlassSpec&gt; parameter_GlassSpec = new()
+        {
+            new() { GlassType = "Regular",  HeatingTime = 3, CoolingTime = 5, Profit = 8  },
+            new() { GlassType = "Tempered", HeatingTime = 5, CoolingTime = 8, Profit = 10 }
+        };
+
+        <span class="cm">// 兩台機器的總時間上限</span>
+        public double HeatingCapacity = 300;
+        public double CoolingCapacity = 300;
+
+        <span class="cm">// 「有哪些玻璃」＝把上面每一列的名字撈出來，不用另外手打</span>
+        public List&lt;string&gt; GlassTypes =&gt; parameter_GlassSpec.Select(s =&gt; s.GlassType).ToList();
+    }
+}</pre></div>
+    <p><strong>逐行看：</strong></p>
+    <ul>
+      <li><code class="ic">List&lt;Parameter_GlassSpec&gt;</code>＝「一串 GlassSpec」，也就是一張表，裡面塞了兩列（Regular、Tempered）。數字就照第 3 節那張表填。</li>
+      <li><code class="ic">Regular</code>／<code class="ic">Tempered</code> 就是「普通」「強化」的英文，當作名稱用。</li>
+      <li>兩個 <code class="ic">Capacity = 300</code> 是機器上限。</li>
+      <li>最後 <code class="ic">GlassTypes</code> 這一行：自動把「Regular、Tempered」這份清單湊出來——之後建立決策變數要用。你<strong>不用</strong>手動再列一次名字。</li>
+    </ul>
+    <div class="note warn">
+      <span class="t">框架天條：數字只能放這裡</span>
+      <p>所有數字（利潤、時間、上限）<strong>一律</strong>放在 Parameter / Dataload。<strong>絕對不要</strong>把數字直接寫死在後面的目標式或限制式裡。這樣以後要改數字，只改這一個檔，不會出錯。</p>
+    </div>
+  </div></div>
+
+  <div class="step"><div class="n">3</div><div class="c">
+    <h3>第 ① 個零件：宣告「要決定的東西」</h3>
+    <p>我們要決定「每種玻璃做幾片」。所以建立一個決策變數 <code class="ic">VariableX_Production</code>，它「依玻璃種類」而存在——Regular 一個、Tempered 一個。</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Variable/VariableX_Production.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Core;
+
+namespace GlassFactory.Variable
+{
+    <span class="cm">// 決策變數：某種玻璃要生產的片數（由求解器決定）</span>
+    public class VariableX_Production : VariableBase
+    {
+        public string GlassType { get; set; } = string.Empty;  <span class="cm">// 這個變數對應哪種玻璃</span>
+    }
+}</pre></div>
+    <p><strong>重點：</strong></p>
+    <ul>
+      <li>名稱開頭的 <code class="ic">VariableX_</code> 的 <strong>X</strong> 代表「<strong>連續</strong>變數」——可以是 12.5 這種小數。（玻璃片數其實該是整數，但入門先用連續，第 7 節會說明 X / I / B 的差別。）</li>
+      <li>裡面<strong>只放「索引」</strong>（這變數是哪種玻璃），<strong>不放數字</strong>。片數是多少，是求解器算出來的，不是你填的。</li>
+    </ul>
+    <p>然後告訴框架「請依玻璃清單，把這些變數建出來」：</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Variable/VariableCreate.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using GlassFactory.Set;
+
+namespace GlassFactory.Variable
+{
+    public class VariableCreate
+    {
+        private OptEngine     optEngine;
+        private GlassDataload dataload;
+
+        public VariableCreate(GlassDataload dataload, OptEngine engine)
+        {
+            this.optEngine = engine;
+            this.dataload  = dataload;
+        }
+
+        public void Build()
+        {
+            <span class="cm">// 依玻璃清單建立「連續變數」：BuildCVs 的 C = Continuous</span>
+            optEngine.BuildCVs&lt;VariableX_Production&gt;(dataload.GlassTypes);
+        }
+    }
+}</pre></div>
+    <p>這段大部分是固定樣板（建構子那段照抄）。真正關鍵只有一行：<code class="ic">BuildCVs&lt;VariableX_Production&gt;(dataload.GlassTypes)</code>——意思是「<strong>照著玻璃清單，每種玻璃各生一個連續變數</strong>」。於是求解器手上就有了 <code class="ic">Regular 片數</code> 和 <code class="ic">Tempered 片數</code> 兩個待決定的數字。</p>
+  </div></div>
+
+  <div class="step"><div class="n">4</div><div class="c">
+    <h3>第 ③ 個零件：寫出「目標」——總利潤最大</h3>
+    <p>總利潤 ＝ 8 × 普通片數 ＋ 10 × 強化片數。我們把它「一片一片地疊加」起來，最後說一句「請最大化」。</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Objective/ObjectiveFunction.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using GlassFactory.Set;
+using GlassFactory.Variable;
+
+namespace GlassFactory.Objective
+{
+    public class ObjectiveFunction
+    {
+        private OptEngine     optEngine;
+        private GlassDataload dataload;
+
+        public ObjectiveFunction(GlassDataload dataload, OptEngine engine)
+        {
+            this.optEngine = engine;
+            this.dataload  = dataload;
+        }
+
+        public void Build()
+        {
+            <span class="cm">// 對每一種玻璃：把「利潤 × 該玻璃片數」加進目標</span>
+            dataload.parameter_GlassSpec.ForEach(spec =&gt;
+                optEngine.AddLHS(spec.Profit, new VariableX_Production { GlassType = spec.GlassType }));
+
+            optEngine.CreateMaximize();   <span class="cm">// 收尾：請求解器「最大化」這個總和</span>
+        }
+    }
+}</pre></div>
+    <p><strong>白話：</strong> <code class="ic">ForEach</code> 是「對清單裡每一筆做同一件事」。對每種玻璃，<code class="ic">AddLHS(利潤, 該玻璃的片數變數)</code> 就是把「利潤 × 片數」這一項<strong>丟進一個暫存籃子</strong>。兩種玻璃都丟完，籃子裡就是 <code class="ic">8×Regular + 10×Tempered</code>。最後 <code class="ic">CreateMaximize()</code> ＝「結帳：請最大化籃子裡的東西」。</p>
+    <p class="note info"><span class="t">這個「丟籃子 → 結帳」就是 Pool 機制</span>第 7 節會再講，現在先記住這個畫面就好。</p>
+  </div></div>
+
+  <div class="step"><div class="n">5</div><div class="c">
+    <h3>第 ④ 個零件：寫出「限制」——機器時間不能超過</h3>
+    <p>限制一：所有玻璃用掉的<strong>加熱</strong>時間 ≤ 300。和目標一樣用「丟籃子」，只是這次結帳說的是「<strong>小於等於</strong> 300」。</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Constraint/Constraint_Heating.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Cplex;
+using OptimFoundation.Core;
+using GlassFactory.Set;
+using GlassFactory.Variable;
+
+namespace GlassFactory.Constraint
+{
+    <span class="cm">// [限制一] 加熱機產能：Σ (加熱時間 × 片數) ≤ 300</span>
+    public class Constraint_Heating : ConstraintBase
+    {
+        private OptEngine     optEngine;
+        private GlassDataload dataload;
+
+        public Constraint_Heating(GlassDataload dataload, OptEngine engine)
+        {
+            this.optEngine = engine;
+            this.dataload  = dataload;
+        }
+
+        public void Build()
+        {
+            <span class="cm">// 左邊：每種玻璃的「加熱時間 × 片數」全部加起來</span>
+            dataload.parameter_GlassSpec.ForEach(spec =&gt;
+                optEngine.AddLHS(spec.HeatingTime, new VariableX_Production { GlassType = spec.GlassType }));
+
+            optEngine.AddRHS(dataload.HeatingCapacity);  <span class="cm">// 右邊：上限 300</span>
+            optEngine.CreateLessEqual(ConstraintName);   <span class="cm">// 收尾：左邊 ≤ 右邊</span>
+        }
+    }
+}</pre></div>
+    <p><strong>白話：</strong> 左邊（<code class="ic">AddLHS</code>）疊加 <code class="ic">3×Regular + 5×Tempered</code>；右邊（<code class="ic">AddRHS</code>）放上限 300；<code class="ic">CreateLessEqual</code> ＝「結帳：左邊要 ≤ 右邊」。<code class="ic">ConstraintName</code> 是這條限制的名字，照抄即可。</p>
+    <p>限制二（冷卻）幾乎一模一樣，只是把 <code class="ic">HeatingTime</code> 換成 <code class="ic">CoolingTime</code>、產能換成冷卻機：</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Constraint/Constraint_Cooling.cs（與上面只差兩個字）</span><span class="lang">csharp</span></div><pre>        public void Build()
+        {
+            dataload.parameter_GlassSpec.ForEach(spec =&gt;
+                optEngine.AddLHS(spec.CoolingTime, new VariableX_Production { GlassType = spec.GlassType }));
+
+            optEngine.AddRHS(dataload.CoolingCapacity);
+            optEngine.CreateLessEqual(ConstraintName);
+        }</pre></div>
+    <div class="note tip">
+      <span class="t">方向不能亂猜</span>
+      <p>數學寫 ≤ 就用 <code class="ic">CreateLessEqual</code>、≥ 用 <code class="ic">CreateGreatEqual</code>、= 用 <code class="ic">CreateEqual</code>。照你在第 2、3 節想清楚的限制方向寫，不要反過來。</p>
+    </div>
+  </div></div>
+
+  <div class="step"><div class="n">6</div><div class="c">
+    <h3>把零件組裝起來</h3>
+    <p>用一個 <code class="ic">BuildModel</code> 把「目標 + 兩條限制」依序叫起來（這只是個召集人）：</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Constraint/BuildModel.cs</span><span class="lang">csharp</span></div><pre>public void Build()
+{
+    new ObjectiveFunction(dataload, engine).Build();   <span class="cm">// ③ 目標</span>
+    new Constraint_Heating(dataload, engine).Build();  <span class="cm">// ④ 限制一</span>
+    new Constraint_Cooling(dataload, engine).Build();  <span class="cm">// ④ 限制二</span>
+}</pre></div>
+  </div></div>
+
+  <div class="step"><div class="n">7</div><div class="c">
+    <h3>進入點：按下「開始算」</h3>
+    <p>最後 <code class="ic">Program.cs</code> 把一切串起來、按下執行。<code class="ic">OptModel</code> 像一條生產線，你只是<strong>登記</strong>各步驟，最後 <code class="ic">Execute()</code> 會自動「建變數 → 建模型 → 求解 → 輸出結果」。</p>
+    <div class="codeblock"><div class="codehead"><span class="fname">Program.cs</span><span class="lang">csharp</span></div><pre>using OptimFoundation.Cplex;
+using GlassFactory.Set;
+using GlassFactory.Variable;
+using GlassFactory.Constraint;
+
+var dataload = new GlassDataload();   <span class="cm">// 載入所有固定數字</span>
+
+using (var m = new OptModel("GlassFactory")
+    .UseConfig(() =&gt; new CplexConfig { timeLimit = 60, enableLog = true })
+    .AddVariables(e =&gt; new VariableCreate(dataload, e).Build())  <span class="cm">// ① 先建變數</span>
+    .AddModel(e =&gt; new BuildModel(dataload, e).Build())          <span class="cm">// ③④ 再建目標+限制</span>
+    .OnSolved(e =&gt; dataload.WriteToCSV(e)))                      <span class="cm">// 算完後印結果</span>
+{
+    bool ok = m.Execute();   <span class="cm">// ← 真正開始計算</span>
+    if (!ok) Console.Error.WriteLine("[ERROR] 求解失敗");
+}</pre></div>
+    <p>注意順序：<strong>一定先建變數（AddVariables），再建目標和限制（AddModel）</strong>——因為目標和限制會用到變數。框架已經幫你固定好這個順序，照抄就對。</p>
+  </div></div>
+</section>
+
+<!-- ============ 6 跑 ============ -->
+<section id="run">
+  <h2><span class="num">6</span>跑起來，看電腦給的答案</h2>
+  <p>在專案資料夾打開終端機（PowerShell），輸入：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">PowerShell</span><span class="lang">powershell</span></div><pre>dotnet run</pre></div>
+  <p>你會看到類似這樣的輸出（數字是求解器算出來的最佳解）：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">執行結果</span><span class="lang">text</span></div><pre>═══════════════════════════════════
+       最佳生產計畫
+═══════════════════════════════════
+  Regular   :   60.0 片   利潤 = $480.00
+  Tempered  :    0.0 片   利潤 = $0.00
+───────────────────────────────────
+  最大總利潤 = $480.00
+═══════════════════════════════════</pre></div>
+  <p>電腦告訴你：<strong>在這組數字下，全做普通玻璃（60 片）最賺，最大利潤 480 元</strong>——正好印證了第 3 節我們手算時的驚訝：比較貴的強化玻璃，因為太吃機器時間，反而一片都不該做。這就是求解器的價值：它<strong>保證</strong>這是最好的，不是猜的。</p>
+  <div class="note tip">
+    <span class="t">自己玩玩看</span>
+    <p>回到 <code class="ic">GlassDataload.cs</code>，把冷卻機產能從 300 改成 500，再 <code class="ic">dotnet run</code>——你會看到答案變了，因為瓶頸鬆開了。<strong>只改數字、不動其他程式</strong>，就能問「如果…會怎樣」，這就是天條（數字集中放）帶來的好處。</p>
+  </div>
+</section>
+
+<!-- ============ 7 觀念 ============ -->
+<section id="concepts">
+  <h2><span class="num">7</span>三個你一定要懂的小觀念</h2>
+
+  <h3>觀念一：Pool 機制——「丟籃子 → 結帳」</h3>
+  <p>你已經用過了。建一條式子時，先用 <code class="ic">AddLHS</code>（左邊）和 <code class="ic">AddRHS</code>（右邊）把各項<strong>逐一丟進暫存籃子</strong>，最後呼叫一個 <code class="ic">Create…</code> 來<strong>結帳</strong>：</p>
+  <table>
+    <tr><th>結帳用的方法</th><th>意思</th></tr>
+    <tr><td><code class="ic">CreateMaximize()</code> / <code class="ic">CreateMinimize()</code></td><td>這是目標：最大化 / 最小化籃子裡的總和</td></tr>
+    <tr><td><code class="ic">CreateLessEqual(名字)</code></td><td>這是限制：左邊 ≤ 右邊</td></tr>
+    <tr><td><code class="ic">CreateGreatEqual(名字)</code></td><td>這是限制：左邊 ≥ 右邊</td></tr>
+    <tr><td><code class="ic">CreateEqual(名字)</code></td><td>這是限制：左邊 ＝ 右邊</td></tr>
+  </table>
+  <p>結帳完，籃子<strong>自動清空</strong>，下一條式子重新開始。所以你可以在迴圈裡一直 <code class="ic">AddLHS</code> 疊加很多項，這在「很多產品、很多限制」時超好用。</p>
+
+  <h3>觀念二：三種「要決定的東西」——X / I / B</h3>
+  <p>回想「玻璃片數其實不該是小數」。決策變數依「能取什麼值」分三種，用類別名稱開頭區分：</p>
+  <table>
+    <tr><th>開頭</th><th>類型</th><th>能取的值</th><th>建立方法</th><th>適合</th></tr>
+    <tr><td><code class="ic">VariableX_</code></td><td>連續 Continuous</td><td>任意 ≥ 0 的數（可小數）</td><td><code class="ic">BuildCVs</code></td><td>重量、時間、金額</td></tr>
+    <tr><td><code class="ic">VariableI_</code></td><td>整數 Integer</td><td>0,1,2,3…</td><td><code class="ic">BuildIVs</code></td><td>「幾片」「幾個人」</td></tr>
+    <tr><td><code class="ic">VariableB_</code></td><td>二元 Binary</td><td>只有 0 或 1</td><td><code class="ic">BuildBVs</code></td><td>「要/不要」「開/關」的是非題</td></tr>
+  </table>
+  <p>我們的玻璃片數，嚴謹一點應該用 <code class="ic">VariableI_</code>（整數）。入門用連續是為了簡單；之後遇到「某件事要不要做」這種是非題，就會用到 B（二元）——那是進階教學裡醫院排班的主角。</p>
+
+  <h3>觀念三：先想清楚數學，再寫程式</h3>
+  <p>這份教學的順序不是偶然：<strong>先把 4 個零件用白話／表格想清楚（第 2、3 節），才動手寫程式（第 5 節）</strong>。框架刻意這樣設計——程式只是把想清楚的東西「翻譯」出來。如果你跳過思考直接寫，很容易寫出「跑得出來但答案是錯的」程式。</p>
+  <div class="note warn">
+    <span class="t">記住這條鐵則</span>
+    <p>在 4 個零件還沒想清楚前，不要急著寫 <code class="ic">.cs</code>。想清楚了，寫程式就只是照抄。</p>
+  </div>
+</section>
+
+<!-- ============ 8 排查 ============ -->
+<section id="trouble">
+  <h2><span class="num">8</span>卡住了？最常見的幾種狀況</h2>
+
+  <h3>編譯失敗：找不到 DLL / 型別</h3>
+  <p><strong>錯誤訊息：</strong>類似 <code class="ic">error CS0246: 找不到型別或命名空間名稱 'OptEngine'</code>。<br>
+  <strong>原因：</strong>專案沒參考到框架 DLL，或相對路徑層數不對。<br>
+  <strong>解法：</strong>檢查 <code class="ic">.csproj</code> 裡 DLL 的路徑 <code class="ic">..\..\dlls\</code> 是否對應你專案的實際層數，並確認檔名拼對。</p>
+
+  <h3>執行說「求解失敗 / Infeasible」</h3>
+  <p><strong>原因：</strong>你的限制互相矛盾，<strong>根本沒有任何方案能同時滿足</strong>（例如要求做超過機器能負荷的量）。<br>
+  <strong>解法：</strong>回到第 2、3 節，逐條檢查限制方向（≤ 還是 ≥）有沒有寫反、上限數字是否填錯。這幾乎都是「人想錯」而不是程式 bug。</p>
+
+  <h3>答案明顯不對（例如全是 0）</h3>
+  <p><strong>原因：</strong>多半是目標寫反（該 <code class="ic">Maximize</code> 卻 <code class="ic">Minimize</code>），或某個係數從 Parameter 取錯。<br>
+  <strong>解法：</strong>檢查 <code class="ic">ObjectiveFunction</code> 用的是不是 <code class="ic">CreateMaximize()</code>；檢查 <code class="ic">AddLHS</code> 裡放的係數（利潤、時間）是否對應正確的欄位。</p>
+
+  <h3>變數忘了建就用</h3>
+  <p><strong>原因：</strong>在 <code class="ic">Program.cs</code> 把 <code class="ic">AddModel</code> 寫在 <code class="ic">AddVariables</code> 前面。<br>
+  <strong>解法：</strong>順序一定是<strong>先 AddVariables、後 AddModel</strong>——目標和限制都會用到變數，變數必須先存在。</p>
+</section>
+
+<!-- ============ 9 下一步 ============ -->
+<section id="next">
+  <h2><span class="num">9</span>恭喜！你已經會基本套路了</h2>
+  <p>你剛剛完整走過一個最佳化問題：<strong>看懂問題 → 拆成 4 個零件 → 翻譯成檔案 → 跑出保證最好的答案</strong>。這個套路<strong>對所有問題都一樣</strong>，差別只在零件的多寡與複雜度。</p>
+  <p>準備好挑戰更真實的題目了嗎？下一份教學用同樣的套路，解一個真正的<strong>醫院護理排班</strong>：那裡會大量用到「是非題」變數（B / 二元），以及把「不希望發生的事」用罰分軟性避免的技巧。</p>
+  <p><a href="index.html">→ 前往進階教學：醫院排班 MILP 實戰</a></p>
+
+  <div class="note tip">
+    <span class="t">帶走這張小抄</span>
+    <p>① 決定什麼 → Variable　②　固定數字 → Parameter/Dataload　③　要什麼最好 → Objective　④　不能違反 → Constraint。<br>
+    建式子：<code class="ic">AddLHS</code> / <code class="ic">AddRHS</code> 丟籃子 → <code class="ic">Create…</code> 結帳。先想清楚數學，再照抄成程式。</p>
+  </div>
+</section>
+
+<footer>
+  <p><strong>OptimFoundation 新手村</strong> — 從零開始的最佳化入門。範例取自 <code class="ic">Projects/GlassFactory/</code>（經典 Wyndor 玻璃工廠 LP）。本頁為完全自包含的靜態網頁，不需網路、不需任何外掛即可閱讀。</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+/* 純屬點綴：點程式碼區塊標題可複製。內容完全不靠這段 JS 顯示。 */
+(function(){
+  document.querySelectorAll('.codeblock pre').forEach(function(pre){
+    pre.title = '點上方標題可複製';
+  });
+  document.querySelectorAll('.codehead').forEach(function(h){
+    h.style.cursor='copy';
+    h.addEventListener('click',function(){
+      var pre=h.parentElement.querySelector('pre');
+      navigator.clipboard && navigator.clipboard.writeText(pre.innerText);
+    });
+  });
+})();
+</script>
+</body>
+</html>
