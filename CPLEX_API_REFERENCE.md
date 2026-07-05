@@ -1,9 +1,9 @@
 # OptimFoundation CPLEX 接口參考文件
 
 > **用途**：本文件是給 AI 在生成 / 修改 / 驗證 OptimFoundation CPLEX 程式碼時的權威參考。
-> **權威來源**：`C:\Users\zxcbi\Desktop\ClaudeAIAssistant\Foundation\src\` 原始碼。
-> **天條**：所有 API 呼叫必須能在 Foundation 原始碼找到對應定義；本文件未列出的方法視為「不存在」。
-> **NEVER**：禁止修改 `Foundation\` 任何檔案。
+> **權威來源**：`dlls/` 內編譯版 OptimFoundation 的公開簽名；原始碼在 sibling 資料夾 `../OptimFoundation/`（本 repo 外，非硬相依）。
+> **天條**：所有 API 呼叫必須能在編譯版 OptimFoundation 找到對應定義；本文件未列出的方法視為「不存在」。
+> **NEVER**：禁止修改 OptimFoundation 框架本體（唯讀）。
 
 ---
 
@@ -1071,7 +1071,7 @@ namespace GlassFactory.Constraint
 ### 不可動的檔案
 
 ```text
-C:\Users\zxcbi\Desktop\ClaudeAIAssistant\Foundation\**     ← 整個目錄禁止修改
+OptimFoundation 框架本體（dlls/ 內編譯版 + sibling ../OptimFoundation/ 原始碼）  ← 唯讀，禁止修改
 ```
 
 任何「Foundation 缺方法」的需求 → 在 **Project 端寫 helper / extension** 解決，**不可改 Foundation**。

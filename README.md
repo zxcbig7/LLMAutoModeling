@@ -1,31 +1,55 @@
-# ClaudeAIAssistant — OptimFoundation CPLEX 練習專案
+# AI Modeling — OptimFoundation CPLEX
 
-以 **OptimFoundation** 框架（封裝 IBM ILOG CPLEX）建構整數線性規劃（ILP / MIP）模型的 C# 練習集。
+自然語言最佳化題目 → 可求解的 **OptimFoundation**（封裝 IBM ILOG CPLEX）C# 專案。
 建模預設走 **source generator（`[OptVar]`/`[OptParam]`）+ Fluent `OptModel` 雙模式**，需逐行掌控時可退回手寫。
+
+## 入口與路線
+
+任何 AI agent 先讀 [`AGENTS.md`](AGENTS.md)（通用入口）；規範單一來源在 `interactive/` 與 `automated/`。
+
+| 路線 | 位置 | 何時用 |
+| --- | --- | --- |
+| **interactive**（有 gate，預設） | [`interactive/`](interactive/) | 一般開發：Modeling → Coding → Tuning 三階段 phase gate |
+| **automated**（全自動 16-stage） | [`automated/`](automated/) | 大量量產 / 不需人在迴路：`00 → 14` 一路生到底 |
+
+## 換機器設置（clone 後唯一要做的事）
+
+```powershell
+powershell -File scripts/setup-dlls.ps1
+```
+
+DLL 不進版控（商用 CPLEX + 建置產物）。上面這行自動偵測本機 CPLEX 安裝與 sibling `../OptimFoundation/` 建置輸出，把 6 個 DLL 放進 `dlls/`。手動步驟與執行期 PATH 注意事項見 [`dlls/README.md`](dlls/README.md)。
 
 ---
 
 ## 目錄結構
 
 ```text
-ClaudeAIAssistant/
-├── dlls/                        ← ★ 所有 DLL 唯一來源（編譯版 OptimFoundation，唯讀）
-│   ├── ILOG.Concert.dll
-│   ├── ILOG.CPLEX.dll
-│   ├── NLog.dll
-│   ├── OptimFoundation.Core.dll
-│   └── OptimFoundation.Cplex.dll
+AI-Modeling/
+├── AGENTS.md                    ← 通用 AI agent 入口（任何 agent 先讀這）
+├── CLAUDE.md                    ← Claude Code 入口 router（指向 AGENTS.md / interactive / automated）
 │
-├── CLAUDE.md                    ← AI 操作規範（天條）
+├── interactive/                 ← ★ 路線一（預設）：三階段 phase gate 規範單一來源
+│   ├── README.md                ←   天條層 + 三階段總綱
+│   ├── phase-1-model-design.md  ←   建模（4 階段降維）
+│   ├── phase-2-coding.md        ←   轉譯實作（解驗證協定）
+│   ├── phase-3-tuning.md        ←   調校（solver / IIS / structure 決策）
+│   └── linearization-patterns.md ←  8 類 constraint linearization 手法
+├── automated/                   ← 路線二：全自動 16-stage pipeline（Prompts + specs + CLAUDE.md）
+│
+├── dlls/                        ← ★ 所有 DLL 唯一來源（不進版控；見 dlls/README.md）
+│   └── README.md                ←   6 個 DLL 清單 + 佈置說明
+├── scripts/
+│   ├── setup-dlls.ps1           ← 一鍵佈置 dlls/（偵測 CPLEX + sibling OptimFoundation）
+│   └── run.ps1                  ← 批次 build + run 所有 Projects/
+│
 ├── CPLEX_API_REFERENCE.md       ← OptimFoundation 完整 API 參考（含速查卡）
 ├── claudemdTemplate/            ← 各資料夾規則的單一來源（few-shot 範本）
-│
 ├── Template_CPLEX/              ← 新專案起始範本（generator + OptModel 雙模式）
 ├── Projects/                    ← 所有練習題目
-│   ├── OptimModeling.Generators/    ← AutoSetsGenerator（source generator，analyzer）
 │   ├── HospitalRostering_Generator/ ← 雙架構教學：generator + 注入 Action（預設）
 │   ├── HospitalRostering_Manual/    ← 雙架構教學：手寫 class + Problem.Execute（後路）
-│   └── …（GlassFactory / SandwichProduction / ClinicVitamin / WeeniesBuns / …）
+│   └── …（GlassFactory / SandwichProduction / ClinicVitamin / …）
 │
 ├── tutorial/                    ← 端到端教學（醫院排班，含兩架構對照）
 ├── truning/                     ← CPLEX tuning 策略與旋鈕對照
@@ -42,7 +66,7 @@ ClaudeAIAssistant/
 | IBM CPLEX | 22.1.1                     |
 | IDE       | Visual Studio 2022 / Rider / VS Code |
 
-> DLL 已預置於 `dlls/`，不需另行安裝 NuGet 套件。框架本體唯讀，API 對照 `CPLEX_API_REFERENCE.md`。
+> clone 後先跑 `scripts/setup-dlls.ps1` 佈置 `dlls/`（見上「換機器設置」）；不需另行安裝 NuGet 套件。框架本體唯讀，API 對照 `CPLEX_API_REFERENCE.md`。
 
 ---
 
@@ -142,7 +166,7 @@ using (var m = new OptModel("MyProject")
 
 ## 關鍵規則（天條）
 
-1. **DLL 唯一來源**：所有 `csproj` HintPath 指向 `ClaudeAIAssistant\dlls\`
+1. **DLL 唯一來源**：所有 `csproj` HintPath 指向 repo 根 `dlls/`（佈置見 `dlls/README.md`）
 2. **框架唯讀**：OptimFoundation 為編譯版 DLL，需擴充在專案端寫 helper，不改框架
 3. **Parameter 資料夾必須存在**：Sets 由 Parameters 衍生
 4. **禁止 Hardcode**：所有數值放 `Parameter.QTY`，Constraint / Objective 不得出現裸數字

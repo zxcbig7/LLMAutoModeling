@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -File C:/Users/zxcbi/.claude/hooks/dotnet-build-summary.ps1"
+            "command": "powershell -NoProfile -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/dotnet-build-summary.ps1\""
           }
         ]
       }

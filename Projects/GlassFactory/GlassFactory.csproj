@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- 所有 DLL 統一參考 C:\Users\zxcbi\Desktop\ClaudeAIAssistant\dlls\ -->
+    <!-- 所有 DLL 統一參考 repo 根的 dlls/（此層 ..\..\dlls\）。設置見 dlls/README.md -->
     <Reference Include="ILOG.Concert">
       <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
     </Reference>

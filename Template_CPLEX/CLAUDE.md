@@ -18,7 +18,7 @@
 ## 概述
 
 OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線性規劃（ILP / MIP）**模型。
-.NET 8.0；DLL 統一放於 `ClaudeAIAssistant\dlls\`（見根目錄 CLAUDE.md 天條）。
+.NET 8.0；DLL 統一放於 repo 根 `dlls/`（設置見 `dlls/README.md`）。
 
 ---
 
@@ -281,5 +281,5 @@ Logging.Info("訊息含計時:", stopwatch);
 | `OptimFoundation.Cplex` | OptEngine、CplexConfig |
 | `NLog` | 日誌 |
 
-> **★ 天條**：所有 DLL 統一放在 `ClaudeAIAssistant\dlls\`。  
+> **★ 天條**：所有 DLL 統一放在 repo 根 `dlls/`（設置見 `dlls/README.md`）。  
 > DLL HintPath（Template_CPLEX）：`..\dlls\Xxx.dll`；Projects：`..\..\dlls\Xxx.dll`

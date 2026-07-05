@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\ -->
+    <!-- 所有 DLL 統一參考 repo 根 dlls/（Template_CPLEX 此層 ..\dlls\）。設置見 dlls/README.md -->
     <Reference Include="ILOG.Concert">
       <HintPath>..\dlls\ILOG.Concert.dll</HintPath>
     </Reference>
