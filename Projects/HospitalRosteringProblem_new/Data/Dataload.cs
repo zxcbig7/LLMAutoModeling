@@ -2,6 +2,7 @@
 using OptimFoundation.Cplex;
 
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
 
 
 namespace SandBox.Data

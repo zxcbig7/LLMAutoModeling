@@ -1,5 +1,6 @@
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
 using GlassFactory.Parameter;
 using GlassFactory.Variable;
 

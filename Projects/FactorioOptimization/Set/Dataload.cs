@@ -1,5 +1,6 @@
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
 using FactorioOptimization.Parameter;
 using FactorioOptimization.Variable;
 

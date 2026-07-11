@@ -26,10 +26,10 @@
    ```
    沒設環境變數就找 `C:\IBM\ILOG\CPLEX_Studio*\cplex\bin\x64_win64\`。
 
-2. **OptimFoundation 四個 DLL**：先建 sibling 框架 repo，再複製 `net48` 輸出
+2. **OptimFoundation 四個 DLL**：先建 sibling 框架 repo，再複製 `net8.0` 輸出
    ```powershell
    dotnet build ..\OptimFoundation\OptimFoundation\OptimFoundation.sln -c Release
-   # 從各 src\*\bin\Release\net48\ 複製 OptimFoundation.Core/Cplex/Generators.dll + NLog.dll 到 dlls\
+   # Core/Cplex.dll + NLog.dll 在 src\*\bin\Release\net8.0\；Generators.dll 在 bin\Release\netstandard2.0\ —— 複製到 dlls\
    ```
 
 ## 執行期注意（run，不是 build）

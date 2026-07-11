@@ -1,5 +1,6 @@
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
 using HospitalRostering_Manual.Parameter;
 using HospitalRostering_Manual.Variable;
 
