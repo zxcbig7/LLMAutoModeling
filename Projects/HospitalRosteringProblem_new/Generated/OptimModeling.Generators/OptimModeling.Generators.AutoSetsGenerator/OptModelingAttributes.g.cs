@@ -4,16 +4,12 @@ using System;
 
 namespace OptimModeling
 {
-    public enum VarType { Binary, Integer, Continuous }
-
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public sealed class OptVarAttribute : Attribute
     {
-        public VarType VarType { get; }
         public string[] Sets { get; }
-        public OptVarAttribute(VarType varType, params string[] sets)
+        public OptVarAttribute(params string[] sets)
         {
-            VarType = varType;
             Sets = sets;
         }
     }

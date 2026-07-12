@@ -59,7 +59,7 @@ namespace MaxWeightIndependentSet.Project
                 exp.AddTrial(trial);
 
                 var m = trial.Metrics;
-                Console.WriteLine($"{label,-22} {m.Status,-9} {m.ObjectiveValue,10:F1} {m.MipGap,8:P2} {m.WallTimeMs,10:F0} {m.NodeCount,10}");
+                Console.WriteLine($"{label,-22} {m.Status,-9} {m.ObjectiveValue,10:F1} {m.MipGap,8:P2} {m.RunTimeMs,10:F0} {m.NodeCount,10}");
             }
 
             exp.Save();   // → Experiments/mwis-tuning.csv + .json

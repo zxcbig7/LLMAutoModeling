@@ -107,8 +107,8 @@ namespace FactorioOptimization.Set
             Logging.Info("═══════════════════════════════════════════");
 
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableI_Machine> (engine, "FactorioOptimization", "USER");
-            CsvCtrl.SaveSolutionToCSV<VariableX_Resource>(engine, "FactorioOptimization", "USER");
+            CsvCtrl.WriteSolution<VariableI_Machine> (engine, "FactorioOptimization", "USER");
+            CsvCtrl.WriteSolution<VariableX_Resource>(engine, "FactorioOptimization", "USER");
         }
     }
 }

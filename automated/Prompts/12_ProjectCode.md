@@ -38,7 +38,7 @@ namespace Model
             if (success)
             {
                 // Output results to CSV using CsvCtrl
-                CsvCtrl.SaveSolutionToCSV<VariableX_XXX>(this, "ProjectName", "User");
+                CsvCtrl.WriteSolution<VariableX_XXX>(this, "ProjectName", "User");
                 Console.WriteLine($"Objective: {GetObjectiveValue()}");
             }
             else
@@ -56,7 +56,7 @@ namespace Model
 - Inherit from `OptimFoundation.Cplex.OptEngine`
 - Override `Build()` to call `VariableCreate`, `BuildConstraints`, `ObjectiveFunction`
 - `Run()` calls `Build()`, `Solve()`, then outputs results
-- Use `CsvCtrl.SaveSolutionToCSV<>` for each variable type
+- Use `CsvCtrl.WriteSolution<>` for each variable type
 - Check `engine.Status` (Optimal / Feasible / Infeasible / Unbounded / TimeLimit)
 
 ---

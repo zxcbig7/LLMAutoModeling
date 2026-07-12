@@ -1,0 +1,400 @@
+<!-- ============ 01 · Cover ============ -->
+<section class="slide accent" data-layout="SWISS-COVER-ASCII" data-animate="hero">
+  <div class="canvas-card">
+    <canvas class="ascii-bg" aria-hidden="true"></canvas>
+    <div class="chrome-min">
+      <div class="l">OptimFoundation · 開發整合報告</div>
+      <div class="r">AI MODELING · 01 / 18</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:2.6vh">
+      <div data-anim="kicker" class="t-meta" style="color:rgba(255,255,255,.8);letter-spacing:.22em">AI-ASSISTED OPTIMIZATION MODELING</div>
+      <h1 data-anim="title" style="align-self:center;font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(9.6vw,16vh);line-height:.96;letter-spacing:-.03em;color:#fff">讓 AI 把問題<br>變成可跑的<span style="font-style:italic;font-weight:300">模型</span></h1>
+      <div data-anim="bottom" style="display:grid;grid-template-rows:auto auto;gap:1.6vh;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh">
+        <div data-anim="lead" class="lead" style="max-width:60ch;color:rgba(255,255,255,.88);font-weight:300">一條人機協作流水線：人給題目，AI 產數學模型、機械式翻成 C#、再調校求解。框架的每條慣例都為了讓 AI 的產出穩定、可審閱、可重現。</div>
+        <div style="display:flex;justify-content:space-between;align-items:end">
+          <div class="t-meta" style="color:rgba(255,255,255,.62)">OptimFoundation × IBM CPLEX · .NET 8</div>
+          <div class="t-meta" style="color:rgba(255,255,255,.62)">→ 方向鍵 / 滾輪翻頁</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · Opening Statement ============ -->
+<section class="slide dark" data-layout="S09" data-animate="statement">
+  <div class="canvas-card">
+    <span class="ring-mat" style="left:4vw;bottom:6vh;width:16vw;height:16vw;opacity:.45"></span>
+    <div class="chrome-min"><div class="l">WHAT IS OPTIMIZATION</div><div class="r">02 / 18</div></div>
+    <div data-anim="stmt" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <h1 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(7.6vw,13vh);line-height:1.02;letter-spacing:-.03em;color:#fff">在限制之內，<br>做出<span style="font-style:italic;font-weight:300;color:var(--accent)">最好</span>的決定。</h1>
+    </div>
+    <div class="t-meta" style="color:rgba(255,255,255,.6)">— 這就是「最佳化」，也是這個框架要交給 AI 的事</div>
+    <span class="dot-mat" style="right:0;top:0;width:30vw;height:30vw;opacity:.38"></span>
+  </div>
+</section>
+
+<!-- ============ 03 · Why · Duo Compare ============ -->
+<section class="slide light" data-layout="S08" data-animate="duo-mirror">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">WHY THIS FRAMEWORK</div><div class="r">03 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">PAIN → VALUE · 03</div>
+      <h2 class="h-xl-zh">為什麼需要它</h2>
+    </div>
+    <div class="duo-compare" data-anim="body">
+      <div class="col">
+        <div class="col-tag"><span class="num">A</span> 沒有框架</div>
+        <div class="col-ttl">靠人硬湊</div>
+        <div class="col-desc">人工排程、試算表，靠經驗與直覺。</div>
+        <ul class="col-list">
+          <li>魔術數字散落在邏輯各處</li>
+          <li>無法保證是最好的方案</li>
+          <li>改一條規則＝動到一堆程式</li>
+        </ul>
+      </div>
+      <div class="vrule"></div>
+      <div class="col accent">
+        <div class="col-tag"><span class="num">B</span> 交給框架 + AI</div>
+        <div class="col-ttl">機械式產出</div>
+        <div class="col-desc">人給題目，AI 照慣例產模型與 code。</div>
+        <ul class="col-list">
+          <li>QTY 天條：數值全集中於 Parameter</li>
+          <li>求解器（CPLEX）保證最佳解</li>
+          <li>改數據不改 code，可重現</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 · Six conventions ============ -->
+<section class="slide dark" data-layout="S04" data-animate="grid-reveal">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">DESIGN FOR AI</div><div class="r">04 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat" style="color:var(--accent)">SIX CONVENTIONS · 04</div>
+      <h2 class="h-xl-zh">六條慣例，讓 AI 穩定產出</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:1vw;margin-top:4vh">
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta">01</div><div style="font-weight:500;font-size:max(17px,1.35vw);letter-spacing:-.01em">兩階段</div><div class="t-body-sm">先數學模型、後 code，錯誤在最便宜的階段被抓</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta">02</div><div style="font-weight:500;font-size:max(17px,1.35vw);letter-spacing:-.01em">QTY 天條</div><div class="t-body-sm">數值全進 Parameter，AI 不會把魔術數字散落在邏輯裡</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta">03</div><div style="font-weight:500;font-size:max(17px,1.35vw);letter-spacing:-.01em">Pool 不可移項</div><div class="t-body-sm">逐項翻成 AddLHS/AddRHS，不需理解也不會寫錯方向</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta">04</div><div style="font-weight:500;font-size:max(17px,1.35vw);letter-spacing:-.01em">資料夾規範</div><div class="t-body-sm">每個資料夾一份 CLAUDE.md＝AI 的 few-shot 範本</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta">05</div><div style="font-weight:500;font-size:max(17px,1.35vw);letter-spacing:-.01em">Source Generator</div><div class="t-body-sm">一行 [OptVar]/[OptParam]，樣板由編譯器補</div></div>
+      <div class="card-accent" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent-on)">06</div><div style="font-weight:500;font-size:max(17px,1.35vw);letter-spacing:-.01em">雙模式 + Runner</div><div class="t-body-sm" style="color:var(--accent-on);opacity:.92">產的專案天生可求解、可掃參數，tuning 也交給 AI</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 · Three Layers ============ -->
+<section class="slide light" data-layout="S05" data-animate="stack-build">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">THE PIPELINE</div><div class="r">05 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">THREE STAGES · 05</div>
+      <h2 class="h-xl-zh">三階段，逐層收斂</h2>
+    </div>
+    <div class="stack-row" data-anim="body">
+      <div class="stack-block b-accent">
+        <div class="layer-nb">PHASE 1</div>
+        <div class="layer-ttl">Modeling</div>
+        <div class="layer-desc">自然語言 → 無歧義數學模型。保證「數學意義對」。</div>
+        <div class="layer-tag">Sets · Params · Vars · Obj · Constraints</div>
+      </div>
+      <div class="stack-block b-grey">
+        <div class="layer-nb">PHASE 2</div>
+        <div class="layer-ttl">Coding</div>
+        <div class="layer-desc">模型機械式翻成可編譯可執行的 C#。保證「能跑」。</div>
+        <div class="layer-tag">Parameter → Variable → Constraint → Program</div>
+      </div>
+      <div class="stack-block b-ink">
+        <div class="layer-nb">PHASE 3</div>
+        <div class="layer-ttl">Tuning</div>
+        <div class="layer-desc">先優化模型、再調 solver 旋鈕。保證「快且收斂」。</div>
+        <div class="layer-tag">ExperimentRunner · CplexConfig</div>
+      </div>
+    </div>
+    <div data-anim="foot" class="t-body-sm" style="margin-top:3vh;border-top:1px solid var(--grey-2);padding-top:1.6vh">中間有一道「正確性 Gate」：解／目標值對得上問題描述，沒過不准進 Tuning。</div>
+  </div>
+</section>
+
+<!-- ============ 06 · 6-step workflow ============ -->
+<section class="slide light" data-layout="S11" data-animate="timeline-walk">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">AI COLLABORATION</div><div class="r">06 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">WORKFLOW · 06</div>
+      <h2 class="h-xl-zh">AI 協作六步流程</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1vw">
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">01</div><div style="width:10px;height:10px;background:var(--accent)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">給題目</div><div class="t-body-sm">決策 / 目標 / 限制 / 數值來源</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">02 ▣</div><div style="width:10px;height:10px;background:var(--accent)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">出數學模型</div><div class="t-body-sm">暫停確認點 ① · 數學結構</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">03</div><div style="width:10px;height:10px;background:var(--ink)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">產 code</div><div class="t-body-sm">逐條 [Cx] → Constraint</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">04 ▣</div><div style="width:10px;height:10px;background:var(--accent)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">確認數值</div><div class="t-body-sm">暫停確認點 ② · Dataload</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">05</div><div style="width:10px;height:10px;background:var(--ink)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">build &amp; fix</div><div class="t-body-sm">依 compiler error 修，循環 ≤5</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">06</div><div style="width:10px;height:10px;background:var(--ink)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">tuning</div><div class="t-body-sm">過 gate 後掃參數</div></div>
+      </div>
+    </div>
+    <div data-anim="foot" class="t-body-sm" style="border-top:1px solid var(--grey-2);padding-top:1.6vh">▣ = 兩個「暫停確認點」：數學結構與數值，是最易錯處，先讓人確認再往下。</div>
+  </div>
+</section>
+
+<!-- ============ 07 · Phase 1 divider · Manifesto ============ -->
+<section class="slide accent" data-layout="S12" data-animate="manifesto">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">PHASE 1</div><div class="r">07 / 18</div></div>
+    <div data-anim="body" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:2.4vh">
+      <div class="t-meta" style="color:rgba(255,255,255,.8);letter-spacing:.22em">PHASE 1 · MODELING</div>
+      <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(7vw,12vh);line-height:1;letter-spacing:-.03em;color:#fff">先把問題寫成數學，<br>再寫<span style="font-style:italic;font-weight:300">一行</span> code。</h2>
+      <div style="font-size:max(15px,1.1vw);line-height:1.6;color:rgba(255,255,255,.86);font-weight:300;max-width:52ch">自然語言 → 結構化 → AML 數學模型 → 驗證。產物是可審閱的 <code style="font-family:var(--mono)">Model/*.md</code>，限制式編號 [C1][C2]… 與程式一一對應。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 · Modeling Stages · Four Cards ============ -->
+<section class="slide light" data-layout="S19" data-animate="four-cards">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">MODELING STAGES</div><div class="r">08 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div style="width:80px;height:2px;background:var(--accent)"></div>
+      <h2 class="h-xl-zh" style="margin-top:1vh">Modeling 的四道關卡</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1.4vw;margin-top:4vh;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:1.2vh"><div class="t-meta">— 01 / STAGE 0</div><div style="font-weight:300;font-size:min(2.4vw,4.2vh);letter-spacing:-.02em">分類</div><div class="t-body-sm">LP / IP / MILP，決定 CplexConfig 預設（timeLimit、mipEmphasis）。</div></div>
+      <div style="display:flex;flex-direction:column;gap:1.2vh"><div class="t-meta">— 02 / STAGE 1–3</div><div style="font-weight:300;font-size:min(2.4vw,4.2vh);letter-spacing:-.02em">結構化</div><div class="t-body-sm">SimpleModel → StandardModel → KeyInfo(JSON)，並對約束分類。</div></div>
+      <div style="display:flex;flex-direction:column;gap:1.2vh"><div class="t-meta">— 03 / STAGE 4</div><div style="font-weight:300;font-size:min(2.4vw,4.2vh);letter-spacing:-.02em">AML 模型</div><div class="t-body-sm">AMPL 命名 + LaTeX 數學式；線性化是硬規則。</div></div>
+      <div style="display:flex;flex-direction:column;gap:1.2vh;border-left:2px solid var(--accent);padding-left:1vw"><div class="t-meta" style="color:var(--accent)">— 04 / STAGE 4b</div><div style="font-weight:300;font-size:min(2.4vw,4.2vh);letter-spacing:-.02em;color:var(--accent)">驗證</div><div class="t-body-sm">線性性 / 命名 / 完整性 —— 進 Coding 前最後數學關卡。</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 · Constraint classification · Matrix ============ -->
+<section class="slide light" data-layout="S15" data-animate="matrix-fill">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">CONSTRAINT TYPES</div><div class="r">09 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">CLASSIFICATION · 09</div>
+      <h2 class="h-xl-zh">約束分類系統</h2>
+    </div>
+    <div data-anim="body" style="display:grid;grid-template-columns:repeat(4,1fr);gap:.9vw;margin-top:3vh">
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">UB / LB</div><div class="t-body-sm">at most / at least</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">BALANCE</div><div class="t-body-sm">in = out / must equal</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">PROPORTIONAL</div><div class="t-body-sm">in proportion to</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">CONJUNCTION</div><div class="t-body-sm">only if all</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">DISJUNCTION</div><div class="t-body-sm">at least one of</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">EXCLUSIVE XOR</div><div class="t-body-sm">exactly one of</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">IMPLICATION</div><div class="t-body-sm">if A then B</div></div>
+      <div class="card-fill" style="padding:1.6vh 1vw"><div class="t-meta">COND. ACTIVATION</div><div class="t-body-sm">only if · Big-M</div></div>
+    </div>
+    <div data-anim="foot" style="display:flex;align-items:baseline;gap:1.6vw;margin-top:auto;border-top:1px solid var(--grey-2);padding-top:2vh">
+      <span class="num-mega" style="font-size:min(8vw,13vh);color:var(--accent)">8</span>
+      <span class="lead" style="max-width:48ch">類約束 —— 分類決定建模手法。全部必須線性化：禁 <code style="font-family:var(--mono)">x·y</code>、<code style="font-family:var(--mono)">x/y</code>、<code style="font-family:var(--mono)">abs/min/max/if</code>。</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · Phase 2 divider · Statement ============ -->
+<section class="slide dark" data-layout="S09" data-animate="statement">
+  <div class="canvas-card">
+    <span class="dot-mat" style="left:0;bottom:0;width:28vw;height:28vw;opacity:.32"></span>
+    <div class="chrome-min"><div class="l">PHASE 2 · CODING</div><div class="r">10 / 18</div></div>
+    <div data-anim="stmt" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div class="t-meta" style="color:rgba(255,255,255,.7);letter-spacing:.22em;margin-bottom:2vh">PHASE 2 · CODING</div>
+      <h1 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(7.4vw,13vh);line-height:1;letter-spacing:-.03em;color:#fff">code 只是<span style="font-style:italic;font-weight:300;color:var(--accent)">翻譯</span>，<br>不是創作。</h1>
+    </div>
+    <div class="t-meta" style="color:rgba(255,255,255,.6)">— AML 的每一條 [Cx] 對應一個 Constraint_Xxx，照抄即可</div>
+  </div>
+</section>
+
+<!-- ============ 11 · Coding 3 pillars · Three Forces ============ -->
+<section class="slide light" data-layout="S13" data-animate="three-forces">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">CODING PILLARS</div><div class="r">11 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">THREE PILLARS · 11</div>
+      <h2 class="h-xl-zh">Coding 的三支柱</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:grid;grid-template-columns:5fr 11fr;gap:1.6vw;margin-top:3vh">
+      <div class="card-ink" style="padding:3vh 1.8vw;display:flex;flex-direction:column;justify-content:space-between">
+        <div class="t-cat" style="color:rgba(255,255,255,.6)">RULES</div>
+        <div style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(3.4vw,6vh);line-height:1.05;color:#fff">三條<br>不可破的<br>慣例</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1vw">
+        <div class="card-fill" style="padding:2.2vh 1.6vw;display:grid;grid-template-columns:auto 1fr;gap:1.6vw;align-items:start">
+          <span style="font-family:var(--sans);font-weight:200;font-size:min(4vw,7vh);color:var(--accent);line-height:.85">01</span>
+          <div><div style="font-weight:500;font-size:max(17px,1.4vw)">QTY 天條</div><div class="t-body-sm">所有數值進 <code style="font-family:var(--mono)">Parameter.QTY</code>，任何地方不得裸數字。</div></div>
+        </div>
+        <div class="card-fill" style="padding:2.2vh 1.6vw;display:grid;grid-template-columns:auto 1fr;gap:1.6vw;align-items:start">
+          <span style="font-family:var(--sans);font-weight:200;font-size:min(4vw,7vh);color:var(--accent);line-height:.85">02</span>
+          <div><div style="font-weight:500;font-size:max(17px,1.4vw)">Pool「丟籃子 → 結帳」</div><div class="t-body-sm"><code style="font-family:var(--mono)">AddLHS/AddRHS</code> 逐項累加，<code style="font-family:var(--mono)">Create*</code> 收尾。禁移項、改號、翻轉方向。</div></div>
+        </div>
+        <div class="card-fill" style="padding:2.2vh 1.6vw;display:grid;grid-template-columns:auto 1fr;gap:1.6vw;align-items:start">
+          <span style="font-family:var(--sans);font-weight:200;font-size:min(4vw,7vh);color:var(--accent);line-height:.85">03</span>
+          <div><div style="font-weight:500;font-size:max(17px,1.4vw)">雙模式 OptModel</div><div class="t-body-sm">Fluent pipeline，solve / experiment 雙模式；變數先建、目標限制後建。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 · Project structure · Brief ============ -->
+<section class="slide light" data-layout="S16" data-animate="field-notes">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">PROJECT STRUCTURE</div><div class="r">12 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">ONE PART · ONE FILE · 12</div>
+      <h2 class="h-xl-zh">每個零件，對應一種檔案</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:1vw;margin-top:3.5vh">
+      <div class="card-fill" style="padding:2vh 1.4vw;display:flex;flex-direction:column"><div style="font-weight:500;font-size:max(16px,1.25vw)">Parameter / Dataload</div><div class="t-body-sm" style="margin-top:auto">已知數值（QTY）+ Sets 衍生 + 數值保真</div></div>
+      <div class="card-fill" style="padding:2vh 1.4vw;display:flex;flex-direction:column"><div style="font-weight:500;font-size:max(16px,1.25vw)">Variable</div><div class="t-body-sm" style="margin-top:auto">決策變數 B / I / X，只放索引</div></div>
+      <div class="card-fill" style="padding:2vh 1.4vw;display:flex;flex-direction:column"><div style="font-weight:500;font-size:max(16px,1.25vw)">Objective</div><div class="t-body-sm" style="margin-top:auto">CreateMaximize / CreateMinimize</div></div>
+      <div class="card-fill" style="padding:2vh 1.4vw;display:flex;flex-direction:column"><div style="font-weight:500;font-size:max(16px,1.25vw)">Constraint</div><div class="t-body-sm" style="margin-top:auto">一條 [Cx] 一個檔 + BuildModel</div></div>
+      <div class="card-accent" style="padding:2vh 1.4vw;display:flex;flex-direction:column"><div style="font-weight:500;font-size:max(16px,1.25vw)">Program</div><div class="t-body-sm" style="margin-top:auto;color:var(--accent-on);opacity:.92">唯一進入點 · OptModel 雙模式</div></div>
+      <div class="card-fill" style="padding:2vh 1.4vw;display:flex;flex-direction:column"><div style="font-weight:500;font-size:max(16px,1.25vw)">Model</div><div class="t-body-sm" style="margin-top:auto">數學模型 .md（Phase 1 產物）</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 · Phase 3 divider · Statement (accent) ============ -->
+<section class="slide accent" data-layout="S03" data-animate="statement">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">PHASE 3 · TUNING</div><div class="r">13 / 18</div></div>
+    <div data-anim="stmt" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:2.4vh">
+      <div class="t-meta" style="color:rgba(255,255,255,.8);letter-spacing:.22em">PHASE 3 · TUNING</div>
+      <h1 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(7.6vw,13vh);line-height:1;letter-spacing:-.03em;color:#fff">先改<span style="font-style:italic;font-weight:300">模型</span>，<br>再調旋鈕。</h1>
+      <div style="font-size:max(15px,1.1vw);line-height:1.6;color:rgba(255,255,255,.86);font-weight:300;max-width:50ch">黃金順序：模型改一刀的效益，通常遠大於調十個 solver 旋鈕。tuning 只改求解策略，不改數學意義。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14 · Tuning knobs · Six cells ============ -->
+<section class="slide light" data-layout="S04" data-animate="grid-reveal">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">SOLVER KNOBS</div><div class="r">14 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">SYMPTOM → ACTION · 14</div>
+      <h2 class="h-xl-zh">Solver 旋鈕速查</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:1vw;margin-top:4vh">
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent)">TIMEOUT 但正確</div><div class="t-body-sm">提 timeLimit / mipEmphasis=1 / 開 parallelMode</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent)">GAP 過大</div><div class="t-body-sm">加切割 gomory/mir → nodeSelect=1 → 收 epGap</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent)">急找可行解</div><div class="t-body-sm">nodeSelect=0(DFS) → intSolLimit → mipEmphasis=1</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent)">記憶體爆</div><div class="t-body-sm">treeMemoryLimit + nodeFileInd=2/3（注意設定順序）</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent)">數值不穩</div><div class="t-body-sm">numericalEmphasis=true</div></div>
+      <div class="card-fill" style="padding:2.2vh 1.4vw;display:flex;flex-direction:column;gap:.8vh"><div class="t-meta" style="color:var(--accent)">要可重現</div><div class="t-body-sm">parallelMode=1 + 固定 randomSeed + detTimeLimit</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 15 · Tuning flow · Timeline ============ -->
+<section class="slide light" data-layout="S11" data-animate="timeline-walk">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">EXPERIMENT RUNNER</div><div class="r">15 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat accent">TUNING FLOW · 15</div>
+      <h2 class="h-xl-zh">用 ExperimentRunner 掃描</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.2vw">
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">01</div><div style="width:10px;height:10px;background:var(--accent)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">基準</div><div class="t-body-sm">無 tuning，僅 timeLimit</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">02</div><div style="width:10px;height:10px;background:var(--accent)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">單一變數測試</div><div class="t-body-sm">每次只動一個旋鈕</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">03</div><div style="width:10px;height:10px;background:var(--ink)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">篩選有效</div><div class="t-body-sm">比 obj / gap / 時間 / nodes</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">04</div><div style="width:10px;height:10px;background:var(--ink)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">疊加組合</div><div class="t-body-sm">保留有改進者</div></div>
+        <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta" style="color:var(--accent)">05</div><div style="width:10px;height:10px;background:var(--ink)"></div><div style="font-weight:500;font-size:max(15px,1.05vw)">更新基準</div><div class="t-body-sm">→ Experiments/*.csv</div></div>
+      </div>
+    </div>
+    <div data-anim="foot" class="t-body-sm" style="border-top:1px solid var(--grey-2);padding-top:1.6vh"><code style="font-family:var(--mono)">dotnet run -- experiment</code> · 每 Trial 全新 Dataload + engine，關 log 加速。</div>
+  </div>
+</section>
+
+<!-- ============ 16 · Model vs Solver · Duo ============ -->
+<section class="slide dark" data-layout="S08" data-animate="duo-mirror">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">GOLDEN ORDER</div><div class="r">16 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div class="t-cat" style="color:var(--accent)">MODEL ≫ SOLVER · 16</div>
+      <h2 class="h-xl-zh">優化的優先順序</h2>
+    </div>
+    <div class="duo-compare" data-anim="body">
+      <div class="col accent">
+        <div class="col-tag"><span class="num">1st</span> 模型層</div>
+        <div class="col-ttl">改數學結構</div>
+        <div class="col-desc">效益最大、最該先做。</div>
+        <ul class="col-list">
+          <li>變數型態 CV ≪ IV &lt; BV</li>
+          <li>聚合 / 刪冗餘 / 收緊邊界</li>
+          <li>Big-M 取最小、對稱性消除</li>
+        </ul>
+      </div>
+      <div class="vrule"></div>
+      <div class="col">
+        <div class="col-tag"><span class="num">2nd</span> Solver 層</div>
+        <div class="col-ttl">調 CplexConfig</div>
+        <div class="col-desc">模型正確、只是慢時才動。</div>
+        <ul class="col-list">
+          <li>workThreads / 切割 / nodeSelect</li>
+          <li>mipEmphasis / epGap</li>
+          <li>null = 用 CPLEX 預設，只設要動的</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 17 · Troubleshooting · Four cards ============ -->
+<section class="slide light" data-layout="S19" data-animate="four-cards">
+  <div class="canvas-card">
+    <div class="chrome-min"><div class="l">TROUBLESHOOTING</div><div class="r">17 / 18</div></div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1vh">
+      <div style="width:80px;height:2px;background:var(--accent)"></div>
+      <h2 class="h-xl-zh" style="margin-top:1vh">最常見的四個坑</h2>
+    </div>
+    <div data-anim="body" style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1.4vw;margin-top:4vh;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta">— 01</div><div style="font-weight:300;font-size:min(2vw,3.6vh);letter-spacing:-.02em">找不到變數</div><div class="t-body-sm">KeyNotFound：property 宣告順序與 Build*Vs 傳入 set 順序要一致。</div></div>
+      <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta">— 02</div><div style="font-weight:300;font-size:min(2vw,3.6vh);letter-spacing:-.02em">Null 參考</div><div class="t-body-sm">LINQ 查 Parameter 回 null：用 <code style="font-family:var(--mono)">?.QTY ?? 0.0</code>。</div></div>
+      <div style="display:flex;flex-direction:column;gap:1.1vh;border-left:2px solid var(--accent);padding-left:1vw"><div class="t-meta" style="color:var(--accent)">— 03</div><div style="font-weight:300;font-size:min(2vw,3.6vh);letter-spacing:-.02em;color:var(--accent)">Infeasible</div><div class="t-body-sm">先查 LHS/RHS 移項錯；用 IIS 衝突分析定位。</div></div>
+      <div style="display:flex;flex-direction:column;gap:1.1vh"><div class="t-meta">— 04</div><div style="font-weight:300;font-size:min(2vw,3.6vh);letter-spacing:-.02em">順序錯</div><div class="t-body-sm">一定先 AddVariables、後 AddModel；目標/限制會用到變數。</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 18 · Closing ============ -->
+<section class="slide split" data-layout="SWISS-CLOSING-ASCII" data-animate="split-statement">
+  <div class="canvas-card">
+    <div class="split-half">
+      <div class="half b-accent" style="padding:5.6vh 3.6vw 4.4vh;justify-content:space-between;position:relative;overflow:hidden">
+        <canvas class="ascii-bg" aria-hidden="true"></canvas>
+        <div class="chrome-min" style="margin-bottom:0;position:relative;z-index:1"><div class="l">18 / 18</div><div class="r">CLOSING</div></div>
+        <div data-anim="manifesto" style="display:flex;flex-direction:column;gap:2vh;position:relative;z-index:1">
+          <div class="t-meta" style="color:rgba(255,255,255,.8);letter-spacing:.22em;margin-bottom:1.6vh">MANIFESTO</div>
+          <h2 style="font-family:var(--sans),var(--sans-zh);font-size:min(7vw,12vh);line-height:.98;letter-spacing:-.025em;font-weight:200;color:#fff">說清題目，<br>其餘交給<span style="font-style:italic;font-weight:300">框架</span>。</h2>
+          <div style="font-family:var(--sans),var(--sans-zh);font-size:max(14px,1vw);line-height:1.6;color:rgba(255,255,255,.85);font-weight:300;max-width:34ch;margin-top:1.4vh">人給題目、在兩個關卡確認；AI 照慣例機械式產出。</div>
+        </div>
+        <div data-anim="signature" style="display:flex;justify-content:space-between;align-items:end;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh;position:relative;z-index:1">
+          <div class="t-meta" style="color:rgba(255,255,255,.62)">OptimFoundation</div>
+          <div class="t-meta" style="color:rgba(255,255,255,.62)">AI MODELING</div>
+        </div>
+      </div>
+      <div class="half" style="padding:5.6vh 3.6vw 4.4vh;justify-content:space-between">
+        <div class="chrome-min"><div class="l">TAKEAWAYS</div><div class="r">03 RULES</div></div>
+        <div data-anim="rules" style="display:flex;flex-direction:column;gap:0">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:start;padding:2.6vh 0;border-top:1px solid var(--border-subtle)">
+            <div style="font-family:var(--sans);font-weight:200;font-size:min(4.4vw,7.8vh);line-height:.9;color:var(--text-primary)">01</div>
+            <div><h3 style="font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:max(18px,1.8vw);line-height:1.2;letter-spacing:-.015em;color:var(--text-primary);margin-bottom:1vh">QTY 天條</h3><p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.94vw);line-height:1.6;color:var(--text-secondary);font-weight:400">數值全進 Parameter，改數據不改 code。</p></div>
+          </div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:start;padding:2.6vh 0;border-top:1px solid var(--border-subtle)">
+            <div style="font-family:var(--sans);font-weight:200;font-size:min(4.4vw,7.8vh);line-height:.9;color:var(--text-primary)">02</div>
+            <div><h3 style="font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:max(18px,1.8vw);line-height:1.2;letter-spacing:-.015em;color:var(--text-primary);margin-bottom:1vh">兩個確認點</h3><p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.94vw);line-height:1.6;color:var(--text-secondary);font-weight:400">數學結構 + Dataload 數值，確認再往下。</p></div>
+          </div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:start;padding:2.6vh 0;border-top:1px solid var(--border-subtle);border-bottom:2px solid var(--accent)">
+            <div style="font-family:var(--sans);font-weight:200;font-size:min(4.4vw,7.8vh);line-height:.9;color:var(--accent)">03</div>
+            <div><h3 style="font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:max(18px,1.8vw);line-height:1.2;letter-spacing:-.015em;color:var(--accent);margin-bottom:1vh">先模型，後旋鈕</h3><p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.94vw);line-height:1.6;color:var(--text-secondary);font-weight:400">正確性 gate 沒過，不進 tuning。</p></div>
+          </div>
+        </div>
+        <div data-anim="foot" class="t-meta" style="color:var(--text-helper);text-align:right">→ 完 · END OF REPORT</div>
+      </div>
+    </div>
+  </div>
+</section>

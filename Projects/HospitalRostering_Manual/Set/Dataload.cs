@@ -103,10 +103,10 @@ namespace HospitalRostering_Manual.Set
         public void WriteToCSV(OptEngine engine)
         {
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableB_ShiftAssign>(engine, "V1", "VIC");
-            CsvCtrl.SaveSolutionToCSV<VariableX_WeekendLT4> (engine, "V1", "VIC");
-            CsvCtrl.SaveSolutionToCSV<VariableX_BelowAVG>   (engine, "V1", "VIC");
-            CsvCtrl.SaveSolutionToCSV<VariableB_Off1Day>    (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableB_ShiftAssign>(engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableX_WeekendLT4> (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableX_BelowAVG>   (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableB_Off1Day>    (engine, "V1", "VIC");
         }
     }
 }

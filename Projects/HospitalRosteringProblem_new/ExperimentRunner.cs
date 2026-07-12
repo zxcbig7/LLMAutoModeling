@@ -60,7 +60,7 @@ namespace SandBox
                 var mtr = trial.Metrics;
                 Logging.Info(
                     $"[Experiment] ({i}/{variants.Length}) {label}: Status={mtr.Status} " +
-                    $"Obj={mtr.ObjectiveValue:G6} Gap={mtr.MipGap:P2} Time={mtr.WallTimeMs:F0}ms " +
+                    $"Obj={mtr.ObjectiveValue:G6} Gap={mtr.MipGap:P2} Time={mtr.RunTimeMs:F0}ms " +
                     $"Nodes={mtr.NodeCount} Vars={mtr.VarCount} Cons={mtr.ConstraintCount}");
             }
 

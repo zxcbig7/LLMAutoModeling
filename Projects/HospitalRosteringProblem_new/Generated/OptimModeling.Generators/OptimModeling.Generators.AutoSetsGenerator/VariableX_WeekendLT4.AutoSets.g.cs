@@ -3,7 +3,7 @@
 
 namespace SandBox.VariableClass
 {
-    // [VarType=2] —— 由 AutoSetsGenerator 生成
+    // [VarType=Continuous（由類別名前綴決定）] —— 由 AutoSetsGenerator 生成
     public partial class VariableX_WeekendLT4 : global::OptimFoundation.Core.VariableBase
     {
         public string Employee { get; set; } = string.Empty;

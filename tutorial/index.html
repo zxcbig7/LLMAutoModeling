@@ -750,7 +750,7 @@ engine.<span class="tok-typ">CreateEqual</span>(<span class="tok-str">$"Constrai
 
             <span class="tok-com">// 匯出 CSV（Solution/VariableB_ShiftAssign.csv）</span>
             <span class="tok-typ">FolderDir</span>.<span class="tok-typ">Solution</span>.<span class="tok-typ">CreateFolder</span>();
-            <span class="tok-typ">CsvCtrl</span>.<span class="tok-typ">SaveSolutionToCSV</span>&lt;<span class="tok-typ">VariableB_ShiftAssign</span>&gt;(engine, <span class="tok-str">"HospitalRostering"</span>, <span class="tok-str">"USER"</span>);
+            <span class="tok-typ">CsvCtrl</span>.<span class="tok-typ">WriteSolution</span>&lt;<span class="tok-typ">VariableB_ShiftAssign</span>&gt;(engine, <span class="tok-str">"HospitalRostering"</span>, <span class="tok-str">"USER"</span>);
         }
     }
 }</code></pre></div>
@@ -777,7 +777,7 @@ parameter_ShiftDemand = <span class="tok-typ">CsvCtrl</span>.<span class="tok-ty
 <span class="tok-typ">CsvCtrl</span>.<span class="tok-typ">CreateParamTable</span>&lt;<span class="tok-typ">Parameter_ShiftDemand</span>&gt;();   <span class="tok-com">// → Data/Parameter_ShiftDemand.csv（只有表頭）</span></code></pre></div>
   <div class="note tip">
     <span class="t">輸入在 Data/、輸出在 Solution/</span>
-    <p><code class="ic">CsvCtrl</code> 讀檔一律從 <code class="ic">FolderDir.Data</code>（<code class="ic">Data/</code> 資料夾）抓；<code class="ic">SaveSolutionToCSV</code> 寫到 <code class="ic">FolderDir.Solution</code>（<code class="ic">Solution/</code>）。<code class="ic">BuildParameter&lt;T&gt;</code> 要求 <code class="ic">T</code> 有無參數建構子（見 5.2 寫法 A）。</p>
+    <p><code class="ic">CsvCtrl</code> 讀檔一律從 <code class="ic">FolderDir.Data</code>（<code class="ic">Data/</code> 資料夾）抓；<code class="ic">WriteSolution</code> 寫到 <code class="ic">FolderDir.Solution</code>（<code class="ic">Solution/</code>）。<code class="ic">BuildParameter&lt;T&gt;</code> 要求 <code class="ic">T</code> 有無參數建構子（見 5.2 寫法 A）。</p>
   </div>
 </section>
 
@@ -1671,7 +1671,7 @@ dotnet run -- experiment   # 參數掃描：輸出 Experiments\*.csv + .json</co
     <tr><td>最佳 bound</td><td><code>engine.BestObjValue</code></td></tr>
     <tr><td>最佳性誤差</td><td><code>engine.MIPGap</code></td></tr>
     <tr><td>求解狀態</td><td><code>engine.Status</code>（<code>Optimal</code> / <code>Feasible</code> / <code>Infeasible</code>…）</td></tr>
-    <tr><td>匯出 CSV</td><td><code>CsvCtrl.SaveSolutionToCSV&lt;T&gt;(engine, "DataId", "User")</code></td></tr>
+    <tr><td>匯出 CSV</td><td><code>CsvCtrl.WriteSolution&lt;T&gt;(engine, "DataId", "User")</code></td></tr>
   </table>
   <div class="note tip">
     <span class="t">變數名稱格式</span>
@@ -1679,7 +1679,7 @@ dotnet run -- experiment   # 參數掃描：輸出 Experiments\*.csv + .json</co
   </div>
   <div class="note danger">
     <span class="t">不存在的方法</span>
-    <p>別用 <code class="ic">GetVarSol()</code>、<code class="ic">GetSetVarSol&lt;T&gt;()</code>、<code class="ic">CsvCtrl.SaveToCSV()</code>——這些<strong>不在</strong>框架裡。正確的是 <code class="ic">GetSetVarValues&lt;T&gt;</code> 與 <code class="ic">SaveSolutionToCSV</code>。</p>
+    <p>別用 <code class="ic">GetVarSol()</code>、<code class="ic">GetSetVarSol&lt;T&gt;()</code>、<code class="ic">CsvCtrl.SaveToCSV()</code>——這些<strong>不在</strong>框架裡。正確的是 <code class="ic">GetSetVarValues&lt;T&gt;</code> 與 <code class="ic">WriteSolution</code>。</p>
   </div>
 
   <h3>6.4 看不懂答案？匯出 LP 檔</h3>
@@ -1871,7 +1871,7 @@ engine.<span class="tok-typ">Build</span>();
     <span class="tok-kw">var</span> conflict = engine.<span class="tok-typ">GetConflictConstraints</span>();    <span class="tok-com">// IIS</span>
 
 <span class="tok-typ">FolderDir</span>.<span class="tok-typ">Solution</span>.<span class="tok-typ">CreateFolder</span>();
-<span class="tok-typ">CsvCtrl</span>.<span class="tok-typ">SaveSolutionToCSV</span>&lt;<span class="tok-typ">VariableB_ShiftAssign</span>&gt;(engine, <span class="tok-str">"DataId"</span>, <span class="tok-str">"User"</span>);
+<span class="tok-typ">CsvCtrl</span>.<span class="tok-typ">WriteSolution</span>&lt;<span class="tok-typ">VariableB_ShiftAssign</span>&gt;(engine, <span class="tok-str">"DataId"</span>, <span class="tok-str">"User"</span>);
 engine.<span class="tok-typ">Dispose</span>();</code></pre></div>
 
   <h4>CplexConfig 常用欄位</h4>

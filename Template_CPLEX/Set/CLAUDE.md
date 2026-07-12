@@ -18,7 +18,7 @@ public List<string> Items = new() { "A", "B" };  // 與 parameter 重複
 
 - 必須先呼叫 `FolderDir.Solution.CreateFolder()`
 - 解值輸出格式：整數變數 `:F0`、連續變數 `:F4`
-- 呼叫 `CsvCtrl.SaveSolutionToCSV<T>(engine, "ProjectName", "USER")`
+- 呼叫 `CsvCtrl.WriteSolution<T>(engine, "ProjectName", "USER")`
 
 ## 取解方式
 

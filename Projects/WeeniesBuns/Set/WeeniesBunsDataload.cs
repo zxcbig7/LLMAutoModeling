@@ -43,7 +43,7 @@ namespace WeeniesBuns.Set
             Logging.Info("═══════════════════════════════════════════");
 
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableX_Production>(engine, "WeeniesBuns", "USER");
+            CsvCtrl.WriteSolution<VariableX_Production>(engine, "WeeniesBuns", "USER");
             Logging.Info("Results saved: Solution/VariableX_Production.csv");
         }
     }

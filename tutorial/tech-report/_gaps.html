@@ -1,0 +1,23 @@
+<!-- ============ 12 · S16 Multi-card Brief · 誠實的缺口清單 ============ -->
+<section class="slide light" data-layout="S16" data-animate="field-notes">
+  <div class="canvas-card">
+    <div class="chrome-min tight">
+      <div class="l">Engineering Debt · Known Gaps</div>
+      <div class="r">12 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:flex;flex-direction:column;min-height:0">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+        <div class="t-meta">修好它們,前面的主張才算完整兌現</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">誠實的缺口清單</h2>
+      </div>
+      <div class="sub-grid-3-2" style="margin-top:2.6vh">
+        <div class="sub-card" data-anim="card"><span class="nb-corner">01</span><div class="ttl">Generator 接線不全</div><div class="desc">框架 repo 內無任何專案以 Analyzer 參考 Generators,Templates 仍全 FORM 01;宣告式目前只在建模端透過 dlls 上線。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">02</span><div class="ttl">QTY 規則文檔不一致</div><div class="desc">docs 寫「已移除純 key 選項、QTY 強制」,code 仍留 HasValue=false。二選一收斂,別讓文件說謊。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">03</span><div class="ttl">ParseSet 型別字彙窄</div><div class="desc">宣告式只認 string / DateTime / int / double;runtime 已支援 long / decimal / enum,FORM 02 宣告不出來。</div></div>
+        <div class="sub-card accent" data-anim="card"><span class="nb-corner">04</span><div class="ttl">OptModel 綁死 CPLEX</div><div class="desc">組裝入口住在 Cplex 專案、Action&lt;OptEngine&gt; 吃 concrete 型別 —— solver-agnostic 在最後一哩破功。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">05</span><div class="ttl">軟約束 O(N²) 重建</div><div class="desc">每加一條 soft 就全量重建目標式(CPLEX 還先刪舊目標);應累積 penalty,solve 前一次套用。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">06</span><div class="ttl">解讀取逐筆 interop</div><div class="desc">GetSetVarValues 每個變數一次 native 呼叫;CPLEX 有批次 GetValues(INumVar[]),N 次可降為 1 次。</div></div>
+      </div>
+    </div>
+  </div>
+</section>

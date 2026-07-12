@@ -88,16 +88,16 @@ int  vars  = optEngine.varCount; // 目前變數數量
 ```csharp
 using OptimModeling;
 
-// Binary：三維。生成 Item/Machine/Date 屬性
-[OptVar(VarType.Binary, "Item", "Machine", "Date:DateTime")]
+// Binary：三維。生成 Item/Machine/Date 屬性；型別由前綴 VariableB_ 決定
+[OptVar("Item", "Machine", "Date:DateTime")]
 public partial class VariableB_Assign { }
 
-// Continuous：一維
-[OptVar(VarType.Continuous, "Item")]
+// Continuous：一維；型別由前綴 VariableX_ 決定
+[OptVar("Item")]
 public partial class VariableX_Slack { }
 ```
 
-> set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別。csproj 需以 analyzer 掛入 `OptimModeling.Generators`（本範本已掛）。
+> `[OptVar]` 只帶 sets，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名）。set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別。csproj 需以 analyzer 掛入 `OptimModeling.Generators`（本範本已掛）。
 
 ### 定義（後路：手寫）
 
@@ -204,7 +204,7 @@ string[] allNames = engine.GetAllVarNames();
 string[] setNames = engine.GetSetVarNames<VariableX_Slack>();
 
 // ⑥ 存 CSV
-CsvCtrl.SaveSolutionToCSV<VariableB_Assign>(engine, dataId: "V1", userId: "USER");
+CsvCtrl.WriteSolution<VariableB_Assign>(engine, dataId: "V1", userId: "USER");
 ```
 
 ---

@@ -171,7 +171,7 @@ using (var m = new OptModel("MyProject")
 3. **Parameter 資料夾必須存在**：Sets 由 Parameters 衍生
 4. **禁止 Hardcode**：所有數值放 `Parameter.QTY`，Constraint / Objective 不得出現裸數字
 5. **先模型後實作**：數學模型（`Model/`）確認前不寫 `.cs`
-6. **SaveSolutionToCSV 前先 CreateFolder**：`FolderDir.Solution.CreateFolder();`
+6. **WriteSolution 前先 CreateFolder**：`FolderDir.Solution.CreateFolder();`
 
 ---
 

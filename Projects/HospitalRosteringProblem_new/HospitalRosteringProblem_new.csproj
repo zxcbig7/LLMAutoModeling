@@ -21,13 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- AutoSetsGenerator：以 analyzer 身分掛入，不輸出組件參考 -->
-    <ProjectReference Include="..\OptimModeling.Generators\OptimModeling.Generators.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\（與原專案同層，相對路徑一致） -->
     <Reference Include="ILOG.Concert">
       <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
@@ -44,6 +37,8 @@
     <Reference Include="OptimFoundation.Cplex">
       <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
     </Reference>
+    
+    <Analyzer Include="C:\Users\zxcbi\Desktop\Projects\OptimizationFramework\AI-Modeling\OptimFoundation\OptimFoundation\Templates\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 
 </Project>

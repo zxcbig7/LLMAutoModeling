@@ -41,7 +41,7 @@ namespace GlassFactory.Set
             Logging.Info("═══════════════════════════════════");
 
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableX_Production>(engine, "GlassFactory", "USER");
+            CsvCtrl.WriteSolution<VariableX_Production>(engine, "GlassFactory", "USER");
             Logging.Info("Results saved: Solution/VariableX_Production.csv");
         }
     }

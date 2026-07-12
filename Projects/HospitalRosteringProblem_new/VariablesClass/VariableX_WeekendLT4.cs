@@ -2,6 +2,6 @@ using OptimModeling;
 
 namespace SandBox.VariableClass
 {
-    [OptVar(VarType.Continuous, "Employee")]
+    [OptVar("Employee")]
     public partial class VariableX_WeekendLT4 { }
 }

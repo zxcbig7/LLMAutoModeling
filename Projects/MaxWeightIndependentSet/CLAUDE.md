@@ -25,4 +25,4 @@ NP-hard 的 **Max Weighted Independent Set**（IP）範例 + 一份 **solver-層
 - 資料夾規則單一來源：`claudemdTemplate/`
 - 端到端教學：`tutorial/`
 
-> 若日後要把本專案標準化：依 spec `specs/2026-06-21-claudeai-spec-refresh.md` 的「MWIS 重構為標準六資料夾 + 雙模式」項，把 `csharp/` 攤平成 `Model/ Set/ Parameter/ Variable/ Objective/ Constraint/` + 頂層 `Program.cs`/`ExperimentRunner.cs`，`stages/` 的數學文件歸入 `Model/`。
+> 若日後要把本專案標準化：見 [`../../ROADMAP.md`](../../ROADMAP.md) §6「MWIS 標準化」待辦，把 `csharp/` 攤平成 `Model/ Set/ Parameter/ Variable/ Objective/ Constraint/` + 頂層 `Program.cs`/`ExperimentRunner.cs`，`stages/` 的數學文件歸入 `Model/`。

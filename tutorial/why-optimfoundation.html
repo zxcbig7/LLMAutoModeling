@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>為什麼是 OptimFoundation — 框架價值與工程內幕</title>
+<style>
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --ink:#1d2430; --muted:#5d6675;
+  --line:#e5e8f0; --accent:#4f46e5; --accent2:#0ea5a4; --warn:#d97706;
+  --code-bg:#0f1729; --code-ink:#e6edf3; --cm:#8aa0c0;
+  --sb-w:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;
+  line-height:1.85;font-size:16.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.layout{display:flex;align-items:flex-start}
+nav.sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:#fbfbff;border-right:1px solid var(--line);padding:22px 16px 60px}
+nav .brand{font-weight:800;font-size:17px;color:var(--ink);margin:4px 6px}
+nav .brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:4px}
+nav ul{list-style:none;margin:14px 0 0;padding:0}
+nav li{margin:1px 0}
+nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--muted);font-size:14px}
+nav a:hover{background:#eef0fb;color:var(--ink);text-decoration:none}
+main{flex:1 1 auto;min-width:0;max-width:880px;margin:0 auto;padding:0 44px 120px}
+
+.hero{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+.hero .kicker{color:var(--accent);font-weight:700;letter-spacing:2px;font-size:13px;text-transform:uppercase}
+.hero h1{font-size:34px;line-height:1.25;margin:12px 0 14px}
+.hero p.lead{font-size:18px;color:var(--muted);margin:0}
+
+section{padding-top:46px}
+h2{font-size:25px;margin:0 0 8px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+h2 .num{color:var(--accent);font-weight:800;margin-right:10px}
+h3{font-size:19px;margin:30px 0 6px}
+p{margin:13px 0}
+ul,ol{margin:12px 0;padding-left:26px}
+li{margin:7px 0}
+strong{color:#10162a}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+.flow{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin:22px 0}
+.flow .box{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+.flow .box .bt{font-weight:800;color:var(--accent);font-size:15px}
+.flow .box .bd{font-size:14px;color:var(--muted);margin-top:4px}
+.flow .arrow{display:flex;align-items:center;color:var(--muted);font-size:22px;font-weight:700}
+@media(max-width:760px){.flow .arrow{transform:rotate(90deg)}}
+
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+@media(max-width:680px){.cards{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card .q{font-weight:800;font-size:16px;margin-bottom:2px}
+.card .e{color:var(--muted);font-size:14.5px}
+.card .tag{display:inline-block;margin-top:8px;background:#eef0fb;color:var(--accent);
+  border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700}
+
+table{border-collapse:collapse;width:100%;margin:18px 0;font-size:15px;background:var(--panel);
+  border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+th,td{border:1px solid var(--line);padding:9px 13px;text-align:left;vertical-align:top}
+th{background:#f1f3fb;font-weight:700;color:#2a3550}
+
+code.ic{background:#eceef7;color:#3b3f7a;padding:1px 6px;border-radius:5px;
+  font-family:ui-monospace,Consolas,monospace;font-size:14px}
+
+.codeblock{margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #1b2740;
+  box-shadow:0 1px 3px rgba(15,23,41,.14)}
+.codehead{background:#0b1220;color:#9fb0c8;padding:7px 14px;font-size:12.5px;
+  display:flex;justify-content:space-between;border-bottom:1px solid #1b2740}
+.codehead .fname{font-family:ui-monospace,Consolas,monospace;color:#cdd9ee}
+.codehead .lang{text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#5e7095}
+pre{margin:0;background:var(--code-bg);color:var(--code-ink);padding:15px 18px;overflow-x:auto;
+  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:13.6px;line-height:1.7;
+  white-space:pre;-moz-tab-size:4;tab-size:4}
+pre .cm{color:var(--cm);font-style:italic}
+pre .k{color:#7aa2f7}
+pre .s{color:#9ece6a}
+pre .t{color:#2ac3de}
+
+.note{border-radius:10px;padding:14px 16px;margin:18px 0;border-left:5px solid;font-size:15px}
+.note .t{font-weight:800;display:block;margin-bottom:3px}
+.note.tip{background:#ecfdf5;border-color:var(--accent2)}
+.note.warn{background:#fffbeb;border-color:var(--warn)}
+.note.info{background:#eef2ff;border-color:var(--accent)}
+.note p{margin:6px 0}
+
+.lead-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.badge{background:#eef0fb;color:var(--accent);border:1px solid #dfe2f7;padding:4px 11px;
+  border-radius:999px;font-size:12.5px;font-weight:600}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+@media(max-width:1000px){nav.sidebar{display:none}main{padding:0 22px 80px}.hero h1{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">為什麼是 OptimFoundation
+    <small>框架價值 · 工程內幕 · 給工程師看</small>
+  </div>
+  <ul>
+    <li><a href="#tldr">TL;DR</a></li>
+    <li><a href="#pain">1 · 它消滅了什麼痛點</a></li>
+    <li><a href="#enginebase">2 · 泛型抽掉 solver 型別</a></li>
+    <li><a href="#key">3 · 物件即變數身份證</a></li>
+    <li><a href="#builder">4 · 建幾十萬變數還要快</a></li>
+    <li><a href="#generator">5 · 一行宣告長出整個 class</a></li>
+    <li><a href="#pool">6 · 不准移項的 Pool API</a></li>
+    <li><a href="#experiment">7 · 可調參 · 面向 LLM</a></li>
+    <li><a href="#advanced">8 · 沒把上層綁死</a></li>
+    <li><a href="#value">9 · 一張表看懂價值</a></li>
+    <li><a href="#philosophy">10 · 工程哲學</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<header class="hero" id="tldr">
+  <div class="kicker">Engineering Deep-Dive · 不是怎麼用，是為什麼有價值</div>
+  <h1>為什麼是 OptimFoundation</h1>
+  <p class="lead">一個 solver-agnostic 的 MIP 建模框架。核心主張只有一句：<strong>讓「定義問題」與「呼叫求解器」徹底解耦——上層只寫變數 / 參數 / 限制式 / 目標式，換 solver 只換引擎，模型程式碼一行不動。</strong>這份文件從工程師的角度，拆它底層怎麼做到、為什麼這樣設計。</p>
+  <div class="lead-tags">
+    <span class="badge">泛型抽象</span>
+    <span class="badge">反射 + 快取</span>
+    <span class="badge">Roslyn Source Generator</span>
+    <span class="badge">Pool API</span>
+    <span class="badge">Solver-Agnostic Telemetry</span>
+    <span class="badge">LLM-Ready</span>
+  </div>
+</header>
+
+<section>
+  <h3>五個設計撐起這個主張</h3>
+  <table>
+    <thead><tr><th>#</th><th>技術</th><th>一句話</th><th>殺掉的痛點</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code class="ic">EngineBase&lt;TModel,TVar,TExpr,TConstr&gt;</code></td><td>四個型別參數把 solver 型別整個抽掉</td><td>建模 code 與 CPLEX/Gurobi API 黏死</td></tr>
+      <tr><td>2</td><td>反射 <code class="ic">ModelElementBase</code> + deterministic key</td><td>物件即變數身份證（<code class="ic">ClassName@v1@v2</code>）</td><td>命名 / 查找 / 對解值散落各處</td></tr>
+      <tr><td>3</td><td><code class="ic">VariableBuilder</code></td><td>建幾十萬變數名稱不靠反射、不建實例</td><td>大模型建變數又慢又吃記憶體</td></tr>
+      <tr><td>4</td><td><code class="ic">AutoSetsGenerator</code></td><td>一行 attribute，編譯期長出整個 class</td><td>每個變數 / 參數一堆重複樣板</td></tr>
+      <tr><td>5</td><td>Pool API + Experiment</td><td>不移項建約束、可記錄可調參、LLM-ready</td><td>限制式手抄易錯、調參靠翻 log</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="pain">
+  <h2><span class="num">1</span>它到底消滅了什麼痛點</h2>
+  <p>直接用 CPLEX / Gurobi 的 .NET API 寫最佳化問題，工程上會撞到四道牆：</p>
+  <div class="cards">
+    <div class="card"><div class="q">建模與 solver 黏死</div><div class="e"><code class="ic">INumVar</code>、<code class="ic">GRBVar</code>、<code class="ic">ILinearNumExpr</code> 散落整個專案。換 solver = 重寫。</div></div>
+    <div class="card"><div class="q">樣板地獄</div><div class="e">每個變數 / 參數都是「宣告欄位 + 建構子 + 組 key」的重複 code。一個排班問題十幾個類別全是噪音。</div></div>
+    <div class="card"><div class="q">限制式容易抄錯</div><div class="e">右邊有變數要移項、改號、合併同類項。人腦做這個，錯一個符號整個模型不可行，還難 debug。</div></div>
+    <div class="card"><div class="q">調參不可累積</div><div class="e">比較不同 <code class="ic">mipEmphasis</code> 只能人工翻 log、手抄目標值與時間，無法系統化，更不能餵給工具學。</div></div>
+  </div>
+  <p>OptimFoundation 把這四件事<strong>全部下沉到框架</strong>。下面逐一拆它怎麼做到。</p>
+</section>
+
+<section id="enginebase">
+  <h2><span class="num">2</span>工程核心一：用泛型把 solver 型別整個抽掉</h2>
+  <p>所有共用邏輯（變數管理、Pool、批次建變數、實驗記錄）都在 <code class="ic">EngineBase</code>：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">EngineBase.cs</span><span class="lang">csharp</span></div>
+<pre><span class="k">public abstract class</span> <span class="t">EngineBase</span>&lt;TModel, TVar, TExpr, TConstr&gt; : <span class="t">ISolverEngine</span></pre></div>
+  <ul>
+    <li><code class="ic">TModel</code> = solver 模型物件（CPLEX <code class="ic">Cplex</code> / Gurobi <code class="ic">GRBModel</code>）</li>
+    <li><code class="ic">TVar</code> = 變數（<code class="ic">INumVar</code> / <code class="ic">GRBVar</code>）</li>
+    <li><code class="ic">TExpr</code> = 線性表達式（<code class="ic">ILinearNumExpr</code> / <code class="ic">GRBLinExpr</code>）</li>
+    <li><code class="ic">TConstr</code> = 限制式（<code class="ic">IRange</code> / <code class="ic">GRBConstr</code>）</li>
+  </ul>
+  <p>接新 solver 只要實作一份 <code class="ic">OptEngine : EngineBase&lt;...&gt;</code>，override <strong>11 個 Solver Contract</strong> 抽象方法。框架其餘部分完全不知道底下是誰。</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">三層繼承</span><span class="lang">text</span></div>
+<pre>EngineBase&lt;TModel,TVar,TExpr,TConstr&gt;     <span class="cm">← solver 無關的共用邏輯</span>
+   ├── Cplex.OptEngine    : EngineBase&lt;Cplex, INumVar, ILinearNumExpr, IRange&gt;
+   ├── Gurobi.OptEngine   : EngineBase&lt;GRBModel, GRBVar, GRBLinExpr, GRBConstr&gt;
+   └── Solver.OptEngine   : EngineBase&lt;...&gt;   <span class="cm">（自研 solver）</span></pre></div>
+  <div class="note tip"><span class="t">工程價值</span>
+  <p>solver 差異被收斂到一個 class 的 11 個方法。<code class="ic">AddVariables</code> 這種可選 override 還能讓各 solver 用原生 batch API（CPLEX <code class="ic">NumVarArray</code> / Gurobi <code class="ic">AddVars</code>）一次 interop 建 N 個變數——效能熱點留在該優化的地方，不污染上層。</p></div>
+</section>
+
+<section id="key">
+  <h2><span class="num">3</span>工程核心二：物件即變數身份證</h2>
+  <p>所有模型元素都繼承 <code class="ic">ModelElementBase</code>。它只做兩件事，卻撐起整個框架的「無樣板」體驗：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">DesignBases.cs</span><span class="lang">csharp</span></div>
+<pre><span class="k">public abstract class</span> <span class="t">ModelElementBase</span>
+{
+    <span class="cm">// PropertyInfo[] 快取：反射 GetProperties() 每次 ~100ns，快取後 ~10ns</span>
+    <span class="k">private static readonly</span> ConcurrentDictionary&lt;Type, PropertyInfo[]&gt; _propsCache = <span class="k">new</span>();
+
+    <span class="cm">// 把 sets 依「property 宣告順序」填值（反射 + 型別轉換）</span>
+    <span class="k">public void</span> InitClassBySets(<span class="k">params object</span>[] sets) { <span class="cm">/* 數量檢查 + Convert.ChangeType */</span> }
+
+    <span class="cm">// 產生唯一 key：ClassName@val1@val2@...（DateTime 固定 yyyy-MM-dd）</span>
+    <span class="k">public override string</span> ToString() { <span class="cm">/* 反射讀 props 拼 key */</span> }
+}</pre></div>
+  <p>於是一個變數類別<strong>只剩 properties</strong>，零建構子：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">VariableB_ShiftAssign.cs</span><span class="lang">csharp</span></div>
+<pre><span class="k">public class</span> <span class="t">VariableB_ShiftAssign</span> : <span class="t">VariableBase</span>
+{
+    <span class="k">public</span> DateTime Date     { <span class="k">get; set;</span> }
+    <span class="k">public string</span>  Employee { <span class="k">get; set;</span> }
+    <span class="k">public string</span>  Group    { <span class="k">get; set;</span> }
+}</pre></div>
+  <p>而它的 <code class="ic">ToString()</code> 就是它在整個系統裡的唯一識別字串：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">variable key</span><span class="lang">text</span></div>
+<pre>VariableB_ShiftAssign@2026-01-01@E1@D
+│                     │          │  │
+class 名稱            Date        E1 Group</pre></div>
+  <div class="note info"><span class="t">為什麼這個 key 是關鍵設計</span>
+  <p>它讓「建立變數」和「在限制式裡引用變數」用<strong>同一個物件、同一個 key</strong>。約束裡寫 <code class="ic">new VariableB_ShiftAssign { Date=d, ... }</code>，<code class="ic">ToString()</code> 出來的 key 必然對得上建立時的 key——不需手動維護字串、不需 ID 表。</p></div>
+  <p>代價與護欄也很清楚（框架列為天條）：</p>
+  <ul>
+    <li><strong>property 宣告順序 = key 的 <code class="ic">@</code> 順序</strong>，必須與 <code class="ic">Build*Vs</code> 傳入順序一致；不一致 → <code class="ic">KeyNotFoundException</code>。</li>
+    <li>類別<strong>只能有 properties</strong>，多一個成員 <code class="ic">InitClassBySets</code> 的數量檢查就炸 <code class="ic">ArgumentException</code>。</li>
+  </ul>
+  <p>這是「用約定換掉樣板」的典型取捨——而這兩條紀律正好是 source generator（見 §5）能在編譯期幫你守住的。</p>
+</section>
+
+<section id="builder">
+  <h2><span class="num">4</span>工程核心三：建幾十萬變數還要快</h2>
+  <p>排班、路徑這類問題，變數數量是多個 set 的<strong>笛卡爾積</strong>，動輒數十萬。<code class="ic">VariableBuilder</code> 做了三個明確的效能決策：</p>
+  <p><strong>(1) 建構子用 <code class="ic">Expression.Lambda</code> 編譯成 delegate 後快取</strong>，而非每次反射 <code class="ic">Activator.CreateInstance</code>：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">VariableBuilder.cs</span><span class="lang">csharp</span></div>
+<pre><span class="k">private static readonly</span> ConcurrentDictionary&lt;Type, Func&lt;<span class="k">string</span>[], <span class="k">object</span>&gt;&gt; _ctorCache = <span class="k">new</span>();
+<span class="cm">// 優先無參數建構子（零建構子設計），向下相容 object[] / string[] 建構子</span></pre></div>
+  <p><strong>(2) 笛卡爾積直接 <code class="ic">yield return string[]</code></strong>，不做「字串拼接再 Split」的來回。</p>
+  <p><strong>(3) 熱路徑 <code class="ic">GetVarNames&lt;T&gt;</code> 根本不建實例</strong>——純拼字串產出所有變數名稱，官方註解標「比舊版快 10x 以上」：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">VariableBuilder.cs</span><span class="lang">csharp</span></div>
+<pre><span class="k">public static</span> IEnumerable&lt;<span class="k">string</span>&gt; GetVarNames&lt;TVariable&gt;(<span class="k">object</span>[] sets)
+{
+    <span class="k">string</span> typeName = <span class="k">typeof</span>(TVariable).Name;
+    <span class="k">var</span> stringLists = ConvertSetsToStringLists(sets);
+    <span class="k">foreach</span> (<span class="k">var</span> parts <span class="k">in</span> GenVarParts(stringLists))
+        <span class="k">yield return</span> typeName + <span class="s">"@"</span> + <span class="k">string</span>.Join(<span class="s">"@"</span>, parts);
+}</pre></div>
+  <div class="note warn"><span class="t">一個容易忽略但關鍵的細節</span>
+  <p><code class="ic">ConvertSetsToStringLists</code> 支援 <code class="ic">DateTime/int/long/double/decimal/string/enum</code> 當 set，浮點數一律走 <code class="ic">InvariantCulture</code>——確保和 <code class="ic">ToString()</code> 的 key 格式<strong>逐字一致</strong>，否則 build 與 lookup 的 key 對不上。enum 是 value type 無法靠共變比對，特地用非泛型 <code class="ic">IEnumerable</code> + 元素型別偵測繞過。</p></div>
+</section>
+
+<section id="generator">
+  <h2><span class="num">5</span>工程核心四：一行宣告長出整個 class</h2>
+  <p>§3 的「零建構子」已經夠精簡，但連 properties 都還要手寫。<code class="ic">AutoSetsGenerator</code>（一個 <strong>Incremental Source Generator</strong>）把它推到極限——<strong>宣告即模型</strong>：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">宣告式建模（FORM 02）</span><span class="lang">csharp</span></div>
+<pre><span class="k">using</span> OptimFoundation.Modeling;
+
+[<span class="t">OptVar</span>(VarType.Binary, <span class="s">"Date:DateTime"</span>, <span class="s">"Employee"</span>, <span class="s">"Group"</span>)]
+<span class="k">public partial class</span> <span class="t">VariableB_ShiftAssign</span> { }   <span class="cm">// ← 你只寫這一行</span>
+
+[<span class="t">OptParam</span>(<span class="s">"Date:DateTime"</span>, <span class="s">"Group"</span>)]
+<span class="k">public partial class</span> <span class="t">Parameter_ShiftDemand</span> { }    <span class="cm">// ← 自動補 set 屬性 + QTY + 建構子</span></pre></div>
+  <p>編譯期生成 <code class="ic">VariableB_ShiftAssign.AutoSets.g.cs</code>，等價於 §3 的手寫版。幾個值得一看的工程決策：</p>
+  <ul>
+    <li><strong>零組件參考。</strong> attribute 與 <code class="ic">VarType</code> enum 用 <code class="ic">RegisterPostInitializationOutput</code> 注入到使用端自己的編譯。使用者只要 <code class="ic">using OptimFoundation.Modeling;</code>，不需任何 NuGet / 專案參考。</li>
+    <li><strong>增量、精準觸發。</strong> 用 <code class="ic">ForAttributeWithMetadataName</code> 而非掃整棵語法樹，只有帶標記的節點進 pipeline。</li>
+    <li><strong>生成 code 用 <code class="ic">global::</code> 全名</strong>指向 <code class="ic">OptimFoundation.Core.VariableBase</code>，避免 namespace 衝突。</li>
+    <li><strong>參數強制 <code class="ic">QTY</code> 在最後</strong>：一個參數代表「某組 key 下的一個數值」，QTY 排在所有 set 之後——和 §3 反射填值的順序約定對齊。</li>
+  </ul>
+  <div class="note tip"><span class="t">這一層真正的價值不只是少打字</span>
+  <p>source generator 是把 §3 那兩條紀律收編的最佳位置。後續可讓它在編譯期直接報錯——沒標 <code class="ic">partial</code>、混進非 property 成員、<code class="ic">QTY</code> 不在最後、<code class="ic">BuildBVs</code> set 數對不上——把原本執行期才炸的例外提前到紅色波浪線。<strong>這是框架目前最有發展空間的一塊。</strong></p></div>
+  <p class="lead"><small>手寫（FORM 01）與宣告式（FORM 02）完全等價、可混用——產出的是 <code class="ic">partial class</code>，需要時在另一個同名 partial 補方法即可。</small></p>
+</section>
+
+<section id="pool">
+  <h2><span class="num">6</span>工程核心五：不准移項的 Pool API</h2>
+  <p>數學限制式翻成 code 最容易錯的地方是「整理式子」。OptimFoundation 直接<strong>禁止</strong>使用者做這件事，改用 LHS / RHS 雙 Pool：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">Constraint_OneGroup.cs</span><span class="lang">csharp</span></div>
+<pre><span class="cm">// 每位員工每天只能排一個班別： Σ_g X[d,e,g] = 1</span>
+dataload.Group.ForEach(g =&gt;
+    engine.AddLHS(<span class="t">1</span>, <span class="k">new</span> VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
+engine.AddRHS(<span class="t">1</span>);
+engine.CreateEqual($<span class="s">"OneGroup@{d:yyyy_MM_dd}@{e}"</span>);   <span class="cm">// 送出後 Pool 自動清空</span></pre></div>
+  <p>送出時框架自己算：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">框架內部</span><span class="lang">text</span></div>
+<pre>(LHS terms − RHS terms)  {sense}  (RHS const − LHS const)</pre></div>
+  <p><strong>兩邊都能放變數和常數，框架負責移項合併。</strong>使用者唯一要守的不變式是：</p>
+  <div class="note info"><span class="t">唯一不變式</span>
+  <p>AML 數學式左邊的項 → <code class="ic">AddLHS</code>；右邊的項 → <code class="ic">AddRHS</code>。<strong>嚴禁自己移項、改號、化簡、翻轉比較方向。</strong></p></div>
+  <p>這把「人腦做代數」這個最大出錯來源從流程裡刪掉了。配合 §3 物件即 key，整個限制式建構變成「照抄數學式」。軟性限制式（<code class="ic">CreateLeSoft / GeSoft / EqSoft</code>）也走同一 Pool：違反不報不可行，而是把偏差量乘 penalty 加進目標式，框架依目標方向自動決定懲罰符號。</p>
+</section>
+
+<section id="experiment">
+  <h2><span class="num">7</span>工程核心六：可記錄 · 可調參 · 面向 LLM</h2>
+  <p>最後一道牆是「調參不可累積」。框架在 Core 層補了一套 <strong>solver-agnostic 的單次求解記錄器</strong>：</p>
+  <div class="codeblock"><div class="codehead"><span class="fname">Trial.Capture</span><span class="lang">csharp</span></div>
+<pre><span class="cm">// 不接管 engine 生命週期，只讀設定 + 跑一次 + 讀指標</span>
+Trial t = Trial.Capture(engine, <span class="s">"emphasis=2"</span>, () =&gt; engine.Solve());
+experiment.AddTrial(t);
+experiment.Save();   <span class="cm">// → experiments/&lt;name&gt;.csv（給人比對）+ .json（給 LLM 學）</span></pre></div>
+  <p>它補上兩個原本散落或缺失的抽象面：</p>
+  <ul>
+    <li><strong>統一 telemetry</strong>：<code class="ic">ISolverEngine.LastMetrics</code> 讓三個 engine 在 <code class="ic">Solve()</code> 後各自回填 <code class="ic">SolveMetrics</code>（Status / Objective / BestBound / MipGap / WallTime / Node·Iteration count / 收斂軌跡）。取不到的欄位填 <code class="ic">null</code> 而非丟例外。</li>
+    <li><strong>統一可調旋鈕</strong>：<code class="ic">ITunableConfig</code> 把各家「都有但沒抽象」的旋鈕（Seed / Emphasis / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / MemoryLimit）對映成跨引擎共通介面。</li>
+  </ul>
+  <div class="note warn"><span class="t">net48 相容性陷阱（值得記）</span>
+  <p>JSON 用 <code class="ic">System.Text.Json</code>，但<strong>必須綁 8.0.0 而非 8.0.5</strong>——net8 消費端的 shared framework 只提供 assembly 8.0.0.0，綁 8.0.5 會在 net8 app 載入失敗。options 開 <code class="ic">UnsafeRelaxedJsonEscaping</code>（中文直出）+ <code class="ic">AllowNamedFloatingPointLiterals</code>（非 Optimal 的 NaN）。</p></div>
+  <div class="note tip"><span class="t">戰略價值</span>
+  <p>CSV 給人做 tuning 對照，JSON 是結構化的「設定 → 指標 → 軌跡」，明擺著為 <strong>LLM 自動調參</strong>鋪路。<code class="ic">ITrajectorySource</code> 這個 opt-in hook 本期只 CPLEX 用 <code class="ic">MIPInfoCallback</code> 實作，其餘宣告不支援、呼叫端不報錯——典型的「抽象先留好，實作後補」。</p></div>
+</section>
+
+<section id="advanced">
+  <h2><span class="num">8</span>進階：框架沒把上層綁死</h2>
+  <p>這些抽象沒有以犧牲彈性為代價。需要逐行掌控時，框架留了後門：</p>
+  <ul>
+    <li><strong>繼承 <code class="ic">OptEngine</code></strong> 可直接拿原生 <code class="ic">Model</code>、<code class="ic">Variables</code> 字典、<code class="ic">ReadVar</code>、<code class="ic">SetVarLB/UB</code>，做 dual value 擷取或動態改界限。</li>
+    <li><strong>Benders Decomposition</strong> 一級支援：<code class="ic">ResetConstraint()</code>（保留變數清約束）、<code class="ic">CopyModel()</code>、跨 model 的 Thread 限制式 + <code class="ic">MergeModel()</code>。一般限制式 attach 在 model 上不能跨 model，Thread 限制式用 <code class="ic">Le/Ge/Eq</code> 建立、暫不屬於任何 model 所以能搬——這個分界是 CPLEX <code class="ic">MultipleUseException</code> 逼出來的正確設計。</li>
+  </ul>
+  <p>抽象負責 80% 的日常，後門負責 20% 的硬核需求，兩者不打架。</p>
+</section>
+
+<section id="value">
+  <h2><span class="num">9</span>一張表看懂價值</h2>
+  <table>
+    <thead><tr><th>維度</th><th>直接用 solver API</th><th>用 OptimFoundation</th></tr></thead>
+    <tbody>
+      <tr><td>換 solver</td><td>重寫建模 code</td><td>換 <code class="ic">OptEngine</code> + <code class="ic">Config</code>，模型不動</td></tr>
+      <tr><td>定義一個變數</td><td>宣告欄位 + 建構子 + 手維護 key</td><td><code class="ic">[OptVar(...)] partial class</code>（或只寫 properties）</td></tr>
+      <tr><td>變數命名 / 查找</td><td>自己組字串、自己維護</td><td>物件 <code class="ic">ToString()</code> 即 key，自動對上</td></tr>
+      <tr><td>建幾十萬變數</td><td>自己迴圈 + 反射建實例</td><td><code class="ic">BuildBVs&lt;T&gt;</code>，編譯式 ctor + 零分配字串</td></tr>
+      <tr><td>寫限制式</td><td>手動移項、改號、化簡</td><td>LHS/RHS 雙池，框架移項</td></tr>
+      <tr><td>違反容忍（軟約束）</td><td>自己加 slack 變數與 penalty 項</td><td><code class="ic">CreateLeSoft/GeSoft/EqSoft</code></td></tr>
+      <tr><td>調參記錄</td><td>人工翻 log 手抄</td><td><code class="ic">Trial.Capture</code> → CSV + LLM-ready JSON</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="philosophy">
+  <h2><span class="num">10</span>收束：這個框架的工程哲學</h2>
+  <div class="flow">
+    <div class="box"><div class="bt">抽象在對的層級</div><div class="bd">solver 型別收進泛型、樣板收進 generator、代數收進 Pool、調參收進 Experiment。上層只剩純粹的問題描述。</div></div>
+    <div class="box"><div class="bt">約定換樣板，但用工具守約定</div><div class="bd">「物件即 key」「只宣告 properties」靠約定省 code，而 source generator 正是把約定在編譯期釘死的地方。</div></div>
+    <div class="box"><div class="bt">為下一步留好介面</div><div class="bd"><code class="ic">ITunableConfig</code> / <code class="ic">ITrajectorySource</code> / LLM-ready JSON 把「LLM-based 自動調參」的擴展點先挖好。</div></div>
+  </div>
+  <div class="note info"><span class="t">想更深入</span>
+  <p>框架架構看 <code class="ic">OptimFoundation/specs/framework-dev-spec.md</code>，逐功能 API 看 <code class="ic">developer-guide.md</code>，實驗環境設計看 <code class="ic">2026-06-18-experiment-tuning-tracking.md</code>。想動手：同層的 <code class="ic">getting-started.html</code>（新手村）與 <code class="ic">index.html</code>（醫院排班實戰）。</p></div>
+</section>
+
+<footer>
+  OptimFoundation · 框架價值與工程內幕 · 對應 Markdown 來源 <code class="ic">why-optimfoundation.md</code>
+</footer>
+
+</main>
+</div>
+</body>
+</html>

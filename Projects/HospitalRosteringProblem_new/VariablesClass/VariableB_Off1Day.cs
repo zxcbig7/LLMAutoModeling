@@ -2,6 +2,6 @@ using OptimModeling;
 
 namespace SandBox.VariableClass
 {
-    [OptVar(VarType.Binary, "Date:DateTime", "Employee")]
+    [OptVar("Date:DateTime", "Employee")]
     public partial class VariableB_Off1Day { }
 }

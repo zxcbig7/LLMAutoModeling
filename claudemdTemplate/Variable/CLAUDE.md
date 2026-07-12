@@ -17,12 +17,14 @@
 ```csharp
 using OptimModeling;
 
-[OptVar(VarType.Binary, "Date:DateTime", "Employee", "Group")]   // 屬性順序＝Build*Vs 傳入順序
+[OptVar("Date:DateTime", "Employee", "Group")]   // 屬性順序＝Build*Vs 傳入順序；型別由類別名前綴決定
 public partial class VariableB_ShiftAssign { }
 ```
 
+- `[OptVar]` 只帶 sets，**不帶型別**——型別由類別名前綴決定（`VariableB_`→Binary / `VariableX_`→Continuous / `VariableI_`→Integer）
+- 前綴不合法（非 B_/X_/I_）→ compile error `OPTF001`，訊息會教正確取名；`OptParam` 非 `Parameter_` 前綴 → `OPTF002`
 - set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別
-- Namespace：`ProjectName.Variable`；前綴 `VariableB_/X_/I_` 對應 Build 方法
+- Namespace：`ProjectName.Variable`；前綴同時對應 Build 方法（見上表）
 - 可運作範例：`Projects/HospitalRostering_Generator`
 
 ### 後路：手寫（generator 不適用時）

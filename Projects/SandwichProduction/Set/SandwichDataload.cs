@@ -52,7 +52,7 @@ namespace SandwichProduction.Set
             Logging.Info("═══════════════════════════════════");
 
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableX_Sandwich>(engine, "SandwichProduction", "USER");
+            CsvCtrl.WriteSolution<VariableX_Sandwich>(engine, "SandwichProduction", "USER");
             Logging.Info("Results saved: Solution/VariableX_Sandwich.csv");
         }
     }

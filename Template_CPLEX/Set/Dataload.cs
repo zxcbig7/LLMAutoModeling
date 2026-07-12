@@ -91,9 +91,9 @@ namespace Template.Set
 
             // ── 存 CSV → Solution/<VariableName>.csv（必須先 CreateFolder）────
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableB_ABC>(engine, "V1", "USER");
-            CsvCtrl.SaveSolutionToCSV<VariableX_A>  (engine, "V1", "USER");
-            CsvCtrl.SaveSolutionToCSV<VariableI_A>  (engine, "V1", "USER");
+            CsvCtrl.WriteSolution<VariableB_ABC>(engine, "V1", "USER");
+            CsvCtrl.WriteSolution<VariableX_A>  (engine, "V1", "USER");
+            CsvCtrl.WriteSolution<VariableI_A>  (engine, "V1", "USER");
         }
     }
 }

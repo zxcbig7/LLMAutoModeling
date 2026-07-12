@@ -17,7 +17,7 @@ public List<string> Items = new() { "A", "B" };
 ## WriteToCSV 規範
 
 - 必須先呼叫 `FolderDir.Solution.CreateFolder()`
-- 呼叫 `CsvCtrl.SaveSolutionToCSV<T>(engine, dataId, userId)`
+- 呼叫 `CsvCtrl.WriteSolution<T>(engine, dataId, userId)`
 - 整數變數解值格式 `:F0`，連續變數 `:F4`
 
 ## 取解 API

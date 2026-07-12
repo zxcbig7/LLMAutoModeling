@@ -75,7 +75,7 @@ graph TD
 | `OptModel` | OptimFoundation.Cplex | `.UseConfig(Func<CplexConfig>).AddVariables(Action<OptEngine>).AddModel(...).OnSolved(...).Execute()` | B 的 composition root |
 | `HospitalRosteringProblem` | `HospitalRostering_Manual` | `: IDisposable`，`Execute()`、`Dispose()` | A 的 composition root（手寫） |
 | `OptEngine` | OptimFoundation.Cplex | `BuildBVs/CVs<T>`、`AddLHS/AddRHS`、`CreateEqual/LessEqual/GreatEqual`、`Solve`、`GetSetVarValues<T>` | 求解引擎窗口 |
-| `AutoSetsGenerator` | OptimModeling.Generators | `[OptVar(VarType, sets…)]`、`[OptParam(sets…, HasValue=)]` → 生成 partial class body | B 的變數/參數生成器 |
+| `AutoSetsGenerator` | OptimModeling.Generators | `[OptVar(sets…)]`（型別由類別名前綴決定，非法→OPTF001）、`[OptParam(sets…, HasValue=)]` → 生成 partial class body | B 的變數/參數生成器 |
 | `VariableCreate` | `<Proj>.Variable` | `(Dataload, OptEngine)` → `.Build()` | 建變數（兩模式共用） |
 | `BuildModel` | `<Proj>.Constraint` | `(Dataload, OptEngine)` → `.Build()` | 建目標+限制（兩模式共用） |
 | `ExperimentRunner` | `<Proj>` | `static Run()`：variants 掃描 + `Trial.Capture` + `Experiment.Save` | tuning（兩版同形狀） |

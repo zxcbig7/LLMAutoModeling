@@ -2,6 +2,6 @@ using OptimModeling;
 
 namespace SandBox.VariableClass
 {
-    [OptVar(VarType.Binary, "Employee")]
+    [OptVar("Employee")]
     public partial class VariableB_DoubleOffLT2 { }
 }

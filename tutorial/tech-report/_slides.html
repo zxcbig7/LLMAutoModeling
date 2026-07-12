@@ -1,0 +1,487 @@
+<!-- ============ 01 · S01 Cover · IKB 滿屏 + ASCII ============ -->
+<section class="slide accent" data-layout="SWISS-COVER-ASCII" data-animate="hero">
+  <div class="canvas-card">
+    <canvas class="ascii-bg" aria-hidden="true"></canvas>
+    <div class="chrome-min">
+      <div class="l">OptimFoundation · Technical Report</div>
+      <div class="r">SS · 26.07.03 · 01 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:2.6vh">
+      <div data-anim="kicker" class="t-meta" style="color:rgba(255,255,255,.78);letter-spacing:.22em">SOLVER-AGNOSTIC MIP MODELING FRAMEWORK</div>
+      <h1 data-anim="title" style="align-self:center;font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(8.8vw,15vh);line-height:1.02;letter-spacing:-.025em;color:#fff">把定義問題,<br/>從<span style="font-style:italic;font-weight:300">求解器</span>解耦。</h1>
+      <div data-anim="bottom" style="display:grid;grid-template-rows:auto auto;gap:1.6vh;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh">
+        <div data-anim="lead" class="lead" style="max-width:56ch;color:rgba(255,255,255,.86);font-weight:300">OptimFoundation 框架 × ClaudeAIAssistant 建模端的完整技術剖面 —— 泛型引擎、宣告式建模、Pool API、實驗記錄,以及為 LLM 自動調參鋪的路。</div>
+        <div style="display:flex;justify-content:space-between;align-items:end">
+          <div class="t-meta" style="color:rgba(255,255,255,.6)">VIC · OPTIMIZATION FRAMEWORK · 2026.07</div>
+          <div class="t-meta" style="color:rgba(255,255,255,.6)">→ swipe / arrow keys</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · S19 Four Cards · 四道牆 ============ -->
+<section class="slide light" data-layout="S19" data-animate="four-cards">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">Problem · Why a Framework</div>
+      <div class="r">02 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr;gap:6vh">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.6vh">
+        <div class="rule accent" style="width:80px"></div>
+        <div class="t-meta">直接用 CPLEX / GUROBI .NET API 會撞到的</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(6.4vw,11.2vh);line-height:1;letter-spacing:-.03em">四道牆</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2vw;align-items:start">
+        <div data-anim="col" style="display:flex;flex-direction:column;gap:1.6vh;border-top:1px solid var(--ink);padding-top:2vh">
+          <div class="t-meta">— 01 / COUPLING</div>
+          <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:max(20px,1.7vw);line-height:1.2">建模與 solver 黏死</div>
+          <p class="t-body-sm">INumVar、GRBVar、ILinearNumExpr 散落整個專案。換 solver 等於重寫。</p>
+        </div>
+        <div data-anim="col" style="display:flex;flex-direction:column;gap:1.6vh;border-top:1px solid var(--ink);padding-top:2vh">
+          <div class="t-meta">— 02 / BOILERPLATE</div>
+          <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:max(20px,1.7vw);line-height:1.2">樣板地獄</div>
+          <p class="t-body-sm">每個變數、參數都是「宣告欄位 + 建構子 + 組 key」的重複 code,一題十幾個類別全是噪音。</p>
+        </div>
+        <div data-anim="col" style="display:flex;flex-direction:column;gap:1.6vh;border-top:1px solid var(--ink);padding-top:2vh">
+          <div class="t-meta">— 03 / ALGEBRA</div>
+          <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:max(20px,1.7vw);line-height:1.2">限制式手抄易錯</div>
+          <p class="t-body-sm">移項、改號、合併同類項靠人腦。錯一個符號整個模型不可行,而且極難 debug。</p>
+        </div>
+        <div data-anim="col" style="display:flex;flex-direction:column;gap:1.6vh;border-top:1px solid var(--ink);padding-top:2vh">
+          <div class="t-meta">— 04 / TUNING</div>
+          <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:max(20px,1.7vw);line-height:1.2">調參不可累積</div>
+          <p class="t-body-sm">比較設定只能翻 solver log、手抄目標值與時間,無法系統化,更餵不進 LLM。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 · S09 Statement · 核心主張(dark) ============ -->
+<section class="slide dark" data-layout="S09" data-animate="statement">
+  <div class="canvas-card">
+    <span class="ring-mat" style="position:absolute;left:5vw;bottom:6vh;width:16vw;height:16vw;color:rgba(255,255,255,.5)"></span>
+    <span class="dot-mat" style="position:absolute;right:0;top:0;width:30vw;height:34vw;color:rgba(255,255,255,.55)"></span>
+    <div class="chrome-min">
+      <div class="l">Thesis · Design Contract</div>
+      <div class="r">03 / 14</div>
+    </div>
+    <div data-anim="stmt" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:3.4vh">
+      <h1 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(5.6vw,9.8vh);line-height:1.18;letter-spacing:-.02em;max-width:78vw">上層只描述問題。<br/>下層對接求解器。<br/><span style="color:var(--accent)">Core 永不為某個問題而修改。</span></h1>
+      <div class="t-meta" style="color:rgba(255,255,255,.55)">— FRAMEWORK-DEV-SPEC · 上層依賴下層,下層不知道上層存在</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 · S05 Three Layers · 三層架構 ============ -->
+<section class="slide light" data-layout="S05" data-animate="stack-build">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">Architecture · Three Layers</div>
+      <div class="r">04 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:flex;flex-direction:column;gap:0">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.4vh">
+        <div class="t-meta">OPTIMFOUNDATION.SLN · CORE / CPLEX / GUROBI / GENERATORS</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(5.2vw,9.2vh);line-height:1.05;letter-spacing:-.025em">三層架構,單向依賴</h2>
+      </div>
+      <div class="stack-row" style="margin-top:5vh">
+        <div class="stack-block b-grey" data-anim="blk">
+          <span class="layer-nb">LAYER 01</span>
+          <i data-lucide="clipboard-list" class="lucide"></i>
+          <div class="layer-ttl">Project Layer</div>
+          <div class="layer-desc">問題定義:變數、參數、限制式、目標式與資料。絕大多數開發停在這層,不碰任何 solver 細節。</div>
+          <div class="layer-tag">RosteringProblem · Projects/*</div>
+        </div>
+        <div class="stack-block b-accent" data-anim="blk">
+          <span class="layer-nb">LAYER 02</span>
+          <i data-lucide="cpu" class="lucide"></i>
+          <div class="layer-ttl">Solver Layer</div>
+          <div class="layer-desc">每個求解器一份 OptEngine,實作 EngineBase 的 11 個合約方法。換 solver 只換這層 + Config。</div>
+          <div class="layer-tag">Cplex · Gurobi · Solver</div>
+        </div>
+        <div class="stack-block b-ink" data-anim="blk">
+          <span class="layer-nb">LAYER 03</span>
+          <i data-lucide="database" class="lucide"></i>
+          <div class="layer-ttl">Core Layer</div>
+          <div class="layer-desc">抽象合約與共用邏輯:Pool、變數管理、軟性限制式、Experiment。永不為某個問題修改。</div>
+          <div class="layer-tag">EngineBase · ModelElementBase</div>
+        </div>
+      </div>
+      <div class="t-helper nav-safe-bottom" data-anim="note" style="margin-top:3vh">旁掛模組:Generators(編譯期生成建模樣板)、Csv / Db.Oracle(資料載入)橫跨各層,作為工具不參與主依賴鏈。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 · S04 Six Cells · 六個工程核心 ============ -->
+<section class="slide light" data-layout="S04" data-animate="grid-reveal">
+  <div class="canvas-card">
+    <div class="chrome-min tight">
+      <div class="l">Engineering · Six Cores</div>
+      <div class="r">05 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:flex;flex-direction:column;min-height:0">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+        <div class="t-meta">每個痛點,都被下沉到它最該被解決的那一層</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">六個工程核心</h2>
+      </div>
+      <div class="sub-grid-3-2" style="margin-top:2.6vh">
+        <div class="sub-card" data-anim="card">
+          <i data-lucide="braces" class="lucide"></i>
+          <span class="nb-corner">01</span>
+          <div class="ttl">泛型引擎 EngineBase</div>
+          <div class="desc">&lt;TModel,TVar,TExpr,TConstr&gt; 四個型別參數把 solver 型別整個抽掉;新 solver 只實作 11 個合約方法。</div>
+        </div>
+        <div class="sub-card" data-anim="card">
+          <i data-lucide="key-round" class="lucide"></i>
+          <span class="nb-corner">02</span>
+          <div class="ttl">物件即 Key</div>
+          <div class="desc">ModelElementBase.ToString() = ClassName@v1@v2。建立變數與約束引用同一物件、同一 key,零手工字串。</div>
+        </div>
+        <div class="sub-card" data-anim="card">
+          <i data-lucide="boxes" class="lucide"></i>
+          <span class="nb-corner">03</span>
+          <div class="ttl">VariableBuilder</div>
+          <div class="desc">Expression 編譯建構子 + 笛卡爾積純字串產名,不建實例;熱路徑比反射版快 10 倍以上。</div>
+        </div>
+        <div class="sub-card" data-anim="card">
+          <i data-lucide="wand-2" class="lucide"></i>
+          <span class="nb-corner">04</span>
+          <div class="ttl">Source Generator</div>
+          <div class="desc">[OptVar] / [OptParam] 一行標記,AutoSetsGenerator 編譯期長出整個 class;attribute 注入使用端,零組件參考。</div>
+        </div>
+        <div class="sub-card" data-anim="card">
+          <i data-lucide="scale" class="lucide"></i>
+          <span class="nb-corner">05</span>
+          <div class="ttl">Pool API</div>
+          <div class="desc">LHS / RHS 雙池累積,送出時框架合併移項。人腦不做代數,限制式變成「照抄數學式」。</div>
+        </div>
+        <div class="sub-card accent" data-anim="card">
+          <i data-lucide="flask-conical" class="lucide"></i>
+          <span class="nb-corner">06</span>
+          <div class="ttl">Experiment 遙測</div>
+          <div class="desc">Trial.Capture 快照設定 + 收斂數據;CSV 給人對照,JSON 給 LLM 學「設定 → 結果」。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 · S06 KPI Tower · 程式碼分佈(grey) ============ -->
+<section class="slide grey" data-layout="S06" data-animate="measure-up">
+  <div class="canvas-card">
+    <div class="chrome-min tight">
+      <div class="l">Evidence · Lines of Code</div>
+      <div class="r">06 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:flex;flex-direction:column;min-height:0">
+      <div data-anim="head" style="display:grid;grid-template-columns:auto 1fr;gap:4vw;align-items:end">
+        <div style="display:flex;flex-direction:column;gap:1.2vh">
+          <div class="t-meta">SRC/* 實際行數 · 2026.07</div>
+          <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">抽象把複雜度壓到哪裡</h2>
+        </div>
+        <p class="t-body-sm" style="max-width:34ch;justify-self:end;align-self:end">共用邏輯沉進 EngineBase,各 solver 引擎只剩合約實作;CPLEX 最厚,因為它還背著 Config 翻譯與 Benders 支援。</p>
+      </div>
+      <div class="bar-towers" style="margin-top:3vh">
+        <div class="bar-tower" data-anim="tower">
+          <div class="cap"><i data-lucide="server" class="lucide"></i></div>
+          <div class="body-block h-4">
+            <div class="lbl">Cplex OptEngine</div>
+            <div class="nb">1067<span class="unit">行</span></div>
+            <div class="sub">合約實作 + Config 翻譯 + Benders / Thread 限制式</div>
+          </div>
+        </div>
+        <div class="bar-tower" data-anim="tower">
+          <div class="cap"><i data-lucide="database" class="lucide"></i></div>
+          <div class="body-block h-2 b-accent">
+            <div class="lbl">Core EngineBase</div>
+            <div class="nb">468<span class="unit">行</span></div>
+            <div class="sub">Pool、變數管理、軟約束 —— 全部 solver 共用</div>
+          </div>
+        </div>
+        <div class="bar-tower" data-anim="tower">
+          <div class="cap"><i data-lucide="cpu" class="lucide"></i></div>
+          <div class="body-block h-2">
+            <div class="lbl">Gurobi OptEngine</div>
+            <div class="nb">419<span class="unit">行</span></div>
+            <div class="sub">只剩 11 個合約方法的最小實作</div>
+          </div>
+        </div>
+        <div class="bar-tower" data-anim="tower">
+          <div class="cap"><i data-lucide="wand-2" class="lucide"></i></div>
+          <div class="body-block h-1">
+            <div class="lbl">AutoSetsGenerator</div>
+            <div class="nb">251<span class="unit">行</span></div>
+            <div class="sub">整套宣告式建模只花這些行數</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 · S08 Duo Compare · FORM 01 vs FORM 02 ============ -->
+<section class="slide light" data-layout="S08" data-animate="duo-mirror">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">Modeling · Two Forms, One Class</div>
+      <div class="r">07 / 14</div>
+    </div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+      <div class="t-meta">同一個 VariableB_ShiftAssign,兩種寫法,編譯後完全等價、可混用</div>
+      <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">手寫,或宣告</h2>
+    </div>
+    <div class="duo-compare" style="margin-top:5vh">
+      <div class="col" data-anim="col">
+        <div class="col-tag"><span class="num">01</span>FORM 01 · MANUAL</div>
+        <div class="col-ttl" style="font-size:min(3.2vw,5.6vh)">properties only</div>
+        <div class="col-desc">繼承 VariableBase,只宣告 properties,零建構子。宣告順序 = key 的 @ 順序。</div>
+        <ul class="col-list">
+          <li>public DateTime Date / string Employee / string Group</li>
+          <li>反射 InitClassBySets 填值,PropertyInfo 快取</li>
+          <li>紀律靠人守:順序錯 = KeyNotFoundException</li>
+        </ul>
+      </div>
+      <span class="vrule" data-anim="rule"></span>
+      <div class="col accent" data-anim="col">
+        <div class="col-tag"><span class="num">02</span>FORM 02 · DECLARATIVE</div>
+        <div class="col-ttl" style="font-size:min(3.2vw,5.6vh)">[OptVar] 一行</div>
+        <div class="col-desc">partial class + attribute 標記,AutoSetsGenerator 編譯期補出屬性、QTY 與建構子。</div>
+        <ul class="col-list">
+          <li>ForAttributeWithMetadataName 增量觸發,只掃標記節點</li>
+          <li>attribute 由 generator 注入使用端 —— 零組件參考</li>
+          <li>生成碼以 global:: 全名指向 Core,無 namespace 衝突</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 · S11 Horizontal Timeline · Pool API ============ -->
+<section class="slide light" data-layout="S11" data-animate="timeline-walk">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">Constraint Building · Pool API</div>
+      <div class="r">08 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:2vh;min-height:0">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+        <div class="t-meta">(LHS TERMS − RHS TERMS) {SENSE} (RHS CONST − LHS CONST)</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">嚴禁移項的限制式建構</h2>
+      </div>
+      <div class="timeline-h">
+        <div class="tl-row" style="grid-template-columns:repeat(4,1fr)">
+          <div class="th-node up">
+            <span class="dot"></span>
+            <div class="label"><span class="yr">01</span><span class="name">AddLHS</span><span class="desc">數學式左側的項,照抄進左池</span></div>
+          </div>
+          <div class="th-node down">
+            <span class="dot"></span>
+            <div class="label"><span class="yr">02</span><span class="name">AddRHS</span><span class="desc">右側的項照抄進右池,可放變數與常數</span></div>
+          </div>
+          <div class="th-node up accent">
+            <span class="dot"></span>
+            <div class="label"><span class="yr">03</span><span class="name">Create*</span><span class="desc">框架合併移項,建 =、≤、≥ 或 Soft 約束</span></div>
+          </div>
+          <div class="th-node down">
+            <span class="dot"></span>
+            <div class="label"><span class="yr">04</span><span class="name">Pool 自動清空</span><span class="desc">下一條約束零污染,不需手動 ClearPool</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="t-helper nav-safe-bottom-tight" data-anim="note">唯一不變式:左側項 → AddLHS、右側項 → AddRHS;嚴禁自己移項、改號、化簡、翻轉比較方向 —— 把「人腦做代數」從流程裡刪掉。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 · S14 Loop · Tuning 閉環(dark) ============ -->
+<section class="slide dark" data-layout="S14" data-animate="loop-form">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">Experiment · Tuning Loop</div>
+      <div class="r">09 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-columns:7fr 6fr;gap:4vw;align-items:center;min-height:0">
+      <div style="display:flex;flex-direction:column;gap:2.4vh" data-anim="steps">
+        <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh;margin-bottom:1.6vh">
+          <div class="t-meta">SOLVER-AGNOSTIC · ITUNABLECONFIG × SOLVEMETRICS</div>
+          <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.6vw,8.2vh);line-height:1.08;letter-spacing:-.025em">每次求解,<br/>都是可累積的實驗</h2>
+        </div>
+        <div data-anim="step" style="display:grid;grid-template-columns:3.2em 1fr;gap:1.4vw;border-top:1px solid rgba(255,255,255,.18);padding-top:1.6vh"><span class="t-meta" style="color:var(--accent)">01</span><div><div class="t-body-emp" style="color:#fff">Solve</div><p class="t-body-sm">既有專案照常求解,Capture 不接管 engine 生命週期</p></div></div>
+        <div data-anim="step" style="display:grid;grid-template-columns:3.2em 1fr;gap:1.4vw;border-top:1px solid rgba(255,255,255,.18);padding-top:1.6vh"><span class="t-meta" style="color:var(--accent)">02</span><div><div class="t-body-emp" style="color:#fff">Trial.Capture</div><p class="t-body-sm">ConfigSnapshot 抽象旋鈕 + reflection 補 concrete;SolveMetrics 回填 gap / bound / node / 軌跡</p></div></div>
+        <div data-anim="step" style="display:grid;grid-template-columns:3.2em 1fr;gap:1.4vw;border-top:1px solid rgba(255,255,255,.18);padding-top:1.6vh"><span class="t-meta" style="color:var(--accent)">03</span><div><div class="t-body-emp" style="color:#fff">Save → CSV + JSON</div><p class="t-body-sm">CSV 每 Trial 一列給人排序;JSON 巢狀含收斂軌跡,LLM 友善</p></div></div>
+        <div data-anim="step" style="display:grid;grid-template-columns:3.2em 1fr;gap:1.4vw;border-top:1px solid rgba(255,255,255,.18);padding-top:1.6vh"><span class="t-meta" style="color:var(--accent)">04</span><div><div class="t-body-emp" style="color:#fff">調旋鈕,再跑</div><p class="t-body-sm">先模型優化再 solver 參數;JSON 累積成「設定 → 結果」對應,鋪 LLM 自動調參的路</p></div></div>
+      </div>
+      <div data-anim="loop" style="position:relative;display:flex;align-items:center;justify-content:center;min-height:0">
+        <svg viewBox="0 0 400 400" style="width:min(30vw,52vh);height:min(30vw,52vh)" aria-hidden="true">
+          <circle cx="200" cy="200" r="150" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+          <circle cx="200" cy="200" r="110" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1" stroke-dasharray="4 6"/>
+          <circle cx="200" cy="200" r="150" fill="none" stroke="#002FA7" stroke-width="2" stroke-dasharray="235 707" transform="rotate(-90 200 200)" style="stroke:var(--accent)"/>
+          <rect x="194" y="44" width="12" height="12" fill="#fff"/>
+          <rect x="344" y="194" width="12" height="12" fill="#fff"/>
+          <rect x="194" y="344" width="12" height="12" fill="#fff"/>
+          <rect x="44" y="194" width="12" height="12" fill="var(--accent)" style="fill:var(--accent)"/>
+        </svg>
+        <div style="position:absolute;display:flex;flex-direction:column;align-items:center;gap:.6vh">
+          <span style="font-family:var(--sans);font-weight:200;font-size:min(3.4vw,6vh);letter-spacing:-.02em;color:#fff">LOOP</span>
+          <span class="t-meta" style="color:rgba(255,255,255,.55)">CAPTURE → LEARN → TUNE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · S02 Vertical Timeline · AI Pipeline ============ -->
+<section class="slide light" data-layout="S02" data-animate="progression">
+  <div class="canvas-card">
+    <div class="chrome-min tight">
+      <div class="l">ClaudeAIAssistant · NL → Optimal Solution</div>
+      <div class="r">10 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:1vh;min-height:0">
+      <div data-anim="line" style="display:flex;flex-direction:column;gap:1vh">
+        <div class="t-meta">建模端:把自然語言問題,變成可執行、可調校的 CPLEX 專案</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.6vw,8.2vh);line-height:1.05;letter-spacing:-.025em">三段管線,逐層收斂</h2>
+      </div>
+      <div class="timeline-v" style="margin-top:0">
+        <div class="tl-node">
+          <span class="dot"></span>
+          <span class="yr">MODELING</span>
+          <span class="multi">6<span class="unit">關卡</span></span>
+          <p class="desc"><b>Stage 0–4b</b> · 分類 → 結構化 → KeyInfo(JSON)→ AML(LaTeX)→ 驗證。數學對了才往下。</p>
+        </div>
+        <div class="tl-node">
+          <span class="dot"></span>
+          <span class="yr">CODING</span>
+          <span class="multi">10<span class="unit">步</span></span>
+          <p class="desc"><b>Stage 5–14</b> · Parameter → Dataload → Variable → Constraint → Program;build 失敗自動修復,能編譯能跑才往下。</p>
+        </div>
+        <div class="tl-node accent">
+          <span class="dot"></span>
+          <span class="yr">TUNING</span>
+          <span class="multi">1<span class="unit">gate</span></span>
+          <p class="desc"><b>正確性 gate</b> · 解對得上問題描述才准調參;先模型優化,再 ExperimentRunner 掃 solver 旋鈕。</p>
+        </div>
+      </div>
+      <div class="kpi-row-4 nav-safe-bottom-tight">
+        <div class="kpi-cell"><div class="lbl">Projects</div><div class="nb">10</div><div class="note">Projects/ 子專案(9 題 + 1 generator 庫)</div></div>
+        <div class="kpi-cell"><div class="lbl">Run Modes</div><div class="nb">2</div><div class="note">solve · experiment 雙模式</div></div>
+        <div class="kpi-cell"><div class="lbl">Build-Fix</div><div class="nb">≤5</div><div class="note">編譯錯誤自動修復迴圈</div></div>
+        <div class="kpi-cell"><div class="lbl">QTY 天條</div><div class="nb">0</div><div class="note">裸數字 —— 全部走 Parameter.QTY</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 · S16 Multi-card Brief · 建模端 6 組件(grey) ============ -->
+<section class="slide grey" data-layout="S16" data-animate="field-notes">
+  <div class="canvas-card">
+    <div class="chrome-min tight">
+      <div class="l">ClaudeAIAssistant · Repo Anatomy</div>
+      <div class="r">11 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:flex;flex-direction:column;min-height:0">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+        <div class="t-meta">兩個 REPO + 一份 DLL:框架 build 出 DLL,建模端 HintPath 引用</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">建模端六個部件</h2>
+      </div>
+      <div class="sub-grid-3-2" style="margin-top:2.6vh">
+        <div class="sub-card" data-anim="card"><span class="nb-corner">A</span><div class="ttl">Template_CPLEX</div><div class="desc">canonical 程式範本:Fluent OptModel + solve / experiment 雙模式,新題目從這裡長出來。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">B</span><div class="ttl">claudemdTemplate</div><div class="desc">各資料夾開發規範的單一來源:Parameter / Set / Variable / Objective / Constraint / Model。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">C</span><div class="ttl">truning</div><div class="desc">CPLEX 調校策略與旋鈕對照表:先模型後參數,單一變數測試再疊加。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">D</span><div class="ttl">tutorial</div><div class="desc">新手村、實戰教學、框架價值文件與本技術報告 —— 對人與對外的介面。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">E</span><div class="ttl">Projects</div><div class="desc">9 題實戰:排班、生產、選址…… Generator 版與 Manual 版並排對照。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">F</span><div class="ttl">dlls</div><div class="desc">OptimFoundation.Core / Cplex / Generators 發佈點;框架改了要重 build 複製,否則看不到新型別。</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 · S16 Multi-card Brief · 誠實的缺口清單 ============ -->
+<section class="slide light" data-layout="S16" data-animate="field-notes">
+  <div class="canvas-card">
+    <div class="chrome-min tight">
+      <div class="l">Engineering Debt · Known Gaps</div>
+      <div class="r">12 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:flex;flex-direction:column;min-height:0">
+      <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+        <div class="t-meta">修好它們,前面的主張才算完整兌現</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.8vw,8.4vh);line-height:1.05;letter-spacing:-.025em">誠實的缺口清單</h2>
+      </div>
+      <div class="sub-grid-3-2" style="margin-top:2.6vh">
+        <div class="sub-card" data-anim="card"><span class="nb-corner">01</span><div class="ttl">Generator 接線不全</div><div class="desc">框架 repo 內無任何專案以 Analyzer 參考 Generators,Templates 仍全 FORM 01;宣告式目前只在建模端透過 dlls 上線。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">02</span><div class="ttl">QTY 規則文檔不一致</div><div class="desc">docs 寫「已移除純 key 選項、QTY 強制」,code 仍留 HasValue=false。二選一收斂,別讓文件說謊。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">03</span><div class="ttl">ParseSet 型別字彙窄</div><div class="desc">宣告式只認 string / DateTime / int / double;runtime 已支援 long / decimal / enum,FORM 02 宣告不出來。</div></div>
+        <div class="sub-card accent" data-anim="card"><span class="nb-corner">04</span><div class="ttl">OptModel 綁死 CPLEX</div><div class="desc">組裝入口住在 Cplex 專案、Action&lt;OptEngine&gt; 吃 concrete 型別 —— solver-agnostic 在最後一哩破功。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">05</span><div class="ttl">軟約束 O(N²) 重建</div><div class="desc">每加一條 soft 就全量重建目標式(CPLEX 還先刪舊目標);應累積 penalty,solve 前一次套用。</div></div>
+        <div class="sub-card" data-anim="card"><span class="nb-corner">06</span><div class="ttl">解讀取逐筆 interop</div><div class="desc">GetSetVarValues 每個變數一次 native 呼叫;CPLEX 有批次 GetValues(INumVar[]),N 次可降為 1 次。</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 · S12 Manifesto + Ink Banner · 工程哲學 ============ -->
+<section class="slide light" data-layout="S12" data-animate="manifesto">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">Philosophy · What Holds It Together</div>
+      <div class="r">13 / 14</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-columns:8fr 5fr;gap:4vw;align-items:start">
+      <h2 data-anim="stmt" style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(5vw,8.8vh);line-height:1.16;letter-spacing:-.025em">抽象在對的層級。<br/>用約定換樣板,<br/>用<span style="color:var(--accent)">工具</span>守約定。</h2>
+      <div data-anim="side" style="display:flex;flex-direction:column;gap:2vh;padding-top:1.2vw">
+        <p class="t-body-sm">solver 型別收進泛型、樣板收進 source generator、代數收進 Pool、調參收進 Experiment —— 上層只剩純粹的問題描述。</p>
+        <p class="t-body-sm">「物件即 key」「只宣告 properties」靠約定省下大量 code;而 generator 正是把約定在編譯期釘死的位置,把執行期例外提前成紅色波浪線。</p>
+      </div>
+    </div>
+    <div data-anim="banner" style="margin:auto -5vw -4.4vh;padding:3.6vh 5vw;background:var(--ink);color:var(--paper);display:flex;justify-content:space-between;align-items:center;gap:3vw">
+      <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:max(18px,1.5vw);letter-spacing:-.01em">為下一步留好介面 —— LLM 自動調參的擴展點已經挖好。</div>
+      <div class="t-meta" style="color:rgba(255,255,255,.62);white-space:nowrap">ITUNABLECONFIG · ITRAJECTORYSOURCE · LLM-READY JSON</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14 · S10 Closing · IKB 半屏收束 ============ -->
+<section class="slide split" data-layout="SWISS-CLOSING-ASCII" data-animate="split-statement">
+  <div class="canvas-card">
+    <div class="split-half">
+      <div class="half b-accent" style="padding:5.6vh 3.6vw 4.4vh;justify-content:space-between;position:relative;overflow:hidden">
+        <canvas class="ascii-bg" aria-hidden="true"></canvas>
+        <div class="chrome-min" style="margin-bottom:0;position:relative;z-index:1">
+          <div class="l">14 / 14</div>
+          <div class="r">CLOSING</div>
+        </div>
+        <div data-anim="manifesto" style="display:flex;flex-direction:column;gap:2vh;position:relative;z-index:1">
+          <div class="t-meta" style="color:rgba(255,255,255,.78);letter-spacing:.22em;margin-bottom:1.6vh">MANIFESTO</div>
+          <h2 style="font-family:var(--sans),var(--sans-zh);font-size:min(7.2vw,12.6vh);line-height:.96;letter-spacing:-.025em;font-weight:200;color:#fff">Model once.<br/>Swap the <span style="font-style:italic;font-weight:300">solver</span>.</h2>
+          <div style="font-family:var(--sans),var(--sans-zh);font-size:max(14px,1vw);line-height:1.6;color:rgba(255,255,255,.82);font-weight:300;max-width:36ch;margin-top:1.4vh">一份模型,三個求解器;宣告即建模,快照即實驗。</div>
+        </div>
+        <div data-anim="signature" style="display:flex;justify-content:space-between;align-items:end;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh;position:relative;z-index:1">
+          <div class="t-meta" style="color:rgba(255,255,255,.62)">VIC · OPTIMIZATION FRAMEWORK</div>
+          <div class="t-meta" style="color:rgba(255,255,255,.62)">26.07.03</div>
+        </div>
+      </div>
+      <div class="half" style="padding:5.6vh 3.6vw 4.4vh;justify-content:space-between">
+        <div class="chrome-min"><div class="l">TAKEAWAYS</div><div class="r">03 RULES</div></div>
+        <div data-anim="rules" style="display:flex;flex-direction:column;gap:3.2vh">
+          <div style="display:grid;grid-template-columns:3.4em 1fr;gap:1.2vw;border-top:1px solid var(--grey-2);padding-top:2vh">
+            <span class="t-meta">01</span>
+            <div><div class="t-body-emp">模型層零 solver 依賴</div><p class="t-body-sm">變數、參數、限制式、目標式不 import 任何 solver 型別;換引擎只換 OptEngine + Config。</p></div>
+          </div>
+          <div style="display:grid;grid-template-columns:3.4em 1fr;gap:1.2vw;border-top:1px solid var(--grey-2);padding-top:2vh">
+            <span class="t-meta">02</span>
+            <div><div class="t-body-emp">宣告式 + 零建構子 = 樣板歸零</div><p class="t-body-sm">[OptVar] 一行長出 class;物件 ToString() 即變數 key,建立與引用永遠對得上。</p></div>
+          </div>
+          <div style="display:grid;grid-template-columns:3.4em 1fr;gap:1.2vw;border-top:1px solid var(--accent);padding-top:2vh">
+            <span class="t-meta" style="color:var(--accent)">03</span>
+            <div><div class="t-body-emp" style="color:var(--accent)">每次求解都是可累積的實驗</div><p class="t-body-sm">Trial.Capture → CSV + JSON;人看得懂、LLM 學得會,自動調參的資料底座已經在跑。</p></div>
+          </div>
+        </div>
+        <div class="t-meta" style="color:var(--text-helper);text-align:right">→ 完 · END OF TECHNICAL REPORT</div>
+      </div>
+    </div>
+  </div>
+</section>

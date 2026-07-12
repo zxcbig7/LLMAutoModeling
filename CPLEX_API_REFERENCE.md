@@ -162,12 +162,12 @@ public class Parameter_ShiftDemand : ParameterBase
 ```csharp
 using OptimModeling;   // 注意 namespace 是 OptimModeling
 
-[OptVar(VarType.Continuous, "SandwichType")]        public partial class VariableX_Sandwich { }
+[OptVar("SandwichType")]                            public partial class VariableX_Sandwich { }   // 型別由前綴 VariableX_ 決定
 [OptParam("Date:DateTime", "Group")]                public partial class Parameter_ShiftDemand { }
 [OptParam("Employee", "Group", HasValue = false)]   public partial class Parameter_PreAssign { }   // 純 key，無 QTY
 ```
 
-csproj 需以 analyzer 掛入 `OptimModeling.Generators`。詳見 `tutorial/` §5.4+ 與 `claudemdTemplate/Variable`、`claudemdTemplate/Parameter`；可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`）。
+`[OptVar]` 只帶 sets，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名），`OptParam` 非 `Parameter_` 前綴 → `OPTF002`。csproj 需以 analyzer 掛入 `OptimModeling.Generators`。詳見 `tutorial/` §5.4+ 與 `claudemdTemplate/Variable`、`claudemdTemplate/Parameter`；可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`）。
 
 ### 為何不需要寫建構子
 
@@ -359,7 +359,7 @@ public virtual void BuildBVs<T>(params object[] sets);                    // Bin
 
 **T 必須**：繼承 `VariableBase`，且**屬性順序 = sets 順序**。
 
-**sets 支援型別**：`List<string>` / `List<int>` / `List<double>` / `List<DateTime>`。
+**sets 支援型別**：任何 `IEnumerable<T>`（`List<T>`、`T[]` 皆可），T = `string` / `int` / `long` / `double` / `decimal` / `DateTime` / enum。單獨傳一個 `string[]` 也安全——framework 會自動還原 C# params 共變的誤攤平。
 
 ```csharp
 // 一維
@@ -514,11 +514,11 @@ public static class CsvCtrl
     public static void ClearData(string fileName);
 
     // ★ 輸出解答 → Solution/{TypeName}.csv
-    public static void SaveSolutionToCSV<T>(ISolverEngine engine, string dataId, string userId);
+    public static void WriteSolution<T>(ISolverEngine engine, string dataId, string userId);
 }
 ```
 
-### `SaveSolutionToCSV` 細節（CsvCtrl.cs:91-110）
+### `WriteSolution` 細節（CsvCtrl.cs:91-110）
 
 **輸出格式**：
 
@@ -535,7 +535,7 @@ DATA_ID,VAR_TYPE,{Set1},{Set2},...,QTY,USER
 
 ```csharp
 FolderDir.Solution.CreateFolder();
-CsvCtrl.SaveSolutionToCSV<VariableX_Sandwich>(engine, "SandwichProduction", "USER");
+CsvCtrl.WriteSolution<VariableX_Sandwich>(engine, "SandwichProduction", "USER");
 ```
 
 ---
@@ -574,7 +574,7 @@ public class FolderDir
 
 | 操作 | 必須先 CreateFolder? |
 |---|---|
-| `CsvCtrl.SaveSolutionToCSV` | ✅ `FolderDir.Solution.CreateFolder()` |
+| `CsvCtrl.WriteSolution` | ✅ `FolderDir.Solution.CreateFolder()` |
 | `Logging.Info` 等 | ❌（Logging 內部 `Directory.CreateDirectory`） |
 | `Solve()` 寫 LP/MPS/Sol | ❌（`Configuration()` 內已呼叫） |
 
@@ -798,11 +798,11 @@ public class VariableX_Foo : VariableBase
 
 ```csharp
 // 反模式 — 會在執行時拋 DirectoryNotFoundException
-CsvCtrl.SaveSolutionToCSV<VariableX_Foo>(engine, "X", "USER");
+CsvCtrl.WriteSolution<VariableX_Foo>(engine, "X", "USER");
 
 // 正確
 FolderDir.Solution.CreateFolder();
-CsvCtrl.SaveSolutionToCSV<VariableX_Foo>(engine, "X", "USER");
+CsvCtrl.WriteSolution<VariableX_Foo>(engine, "X", "USER");
 ```
 
 **❌ String 屬性沒初始化**：
@@ -926,7 +926,7 @@ namespace GlassFactory.Set
             Logging.Info($"  Profit = ${engine.GetObjectiveValue():F2}");
 
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableX_Production>(engine, "GlassFactory", "USER");
+            CsvCtrl.WriteSolution<VariableX_Production>(engine, "GlassFactory", "USER");
         }
     }
 }
@@ -1058,7 +1058,7 @@ namespace GlassFactory.Constraint
 |---|---|
 | `engine.GetVarSol(name)` | `engine.GetVariableValue(name)` |
 | `engine.GetSetVarSol<T>()` | `engine.GetSetVarValues<T>()` |
-| `CSVCtrl.SaveToCSV<T>(engine.GetSetVarSol<T>(), DATA_ID:, USER_ID:)` | `CsvCtrl.SaveSolutionToCSV<T>(engine, dataId, userId)` |
+| `CSVCtrl.SaveToCSV<T>(engine.GetSetVarSol<T>(), DATA_ID:, USER_ID:)` | `CsvCtrl.WriteSolution<T>(engine, dataId, userId)` |
 | `CSVCtrl.xxx` （大寫 V） | `CsvCtrl.xxx` |
 | `FolderDir.Result` | `FolderDir.Solution` |
 | `new OptEngineConfig { ... }` | `new CplexConfig { ... }` |
@@ -1219,7 +1219,7 @@ string[] names = engine.GetSetVarNames<VarX>();
 
 // === 輸出 CSV ===
 FolderDir.Solution.CreateFolder();                              // ★ 必須
-CsvCtrl.SaveSolutionToCSV<VarX>(engine, "DataId", "User");
+CsvCtrl.WriteSolution<VarX>(engine, "DataId", "User");
 
 // === 日誌 ===
 Logging.Info("...");                                            // INFO 級別

@@ -79,8 +79,8 @@ foreach (var e in dataload.Employees)
 double obj = engine.GetObjectiveValue();
 var sol = engine.GetSetVarValues<VariableX_Production>(); // {"VariableX_Production@Regular": 60.0}
 double v = engine.GetVariableValue("VariableB_Assign@E1@2026-01-01"); // DateTime 格式 @yyyy-MM-dd
-FolderDir.Solution.CreateFolder(); // ★ SaveSolutionToCSV 前必呼叫
-CsvCtrl.SaveSolutionToCSV<VariableX_Production>(engine, "<Project>", "USER");
+FolderDir.Solution.CreateFolder(); // ★ WriteSolution 前必呼叫
+CsvCtrl.WriteSolution<VariableX_Production>(engine, "<Project>", "USER");
 ```
 
 ## 禁止使用（Foundation 不存在這些方法）
@@ -88,7 +88,7 @@ CsvCtrl.SaveSolutionToCSV<VariableX_Production>(engine, "<Project>", "USER");
 ```csharp
 // ✗ engine.GetVarSol(...) → 不存在
 // ✗ engine.GetSetVarSol<T>() → 不存在
-// ✗ CsvCtrl.SaveToCSV<T>(...) → 不存在（正確：SaveSolutionToCSV）
+// ✗ CsvCtrl.SaveToCSV<T>(...) → 不存在（正確：WriteSolution）
 ```
 
 簽名有疑慮 → 查 [`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md)，NEVER 憑記憶發明 API。

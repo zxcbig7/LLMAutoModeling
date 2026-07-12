@@ -251,7 +251,7 @@ public static class ExperimentRunner
 
 ## References
 
-- 前一份（被本案部分推翻）：`specs/2026-06-21-claudeai-spec-refresh.md`
+- 前一份（被本案部分推翻）：spec-refresh，已併入 [`../ROADMAP.md`](../ROADMAP.md) §2、§3
 - 架構地圖：`CodeMap.md`
 - 新版 composition root：`Template_CPLEX/Program.cs`（OptModel 雙模式）
 - source generator：`Projects/OptimModeling.Generators/AutoSetsGenerator.cs`（`[OptVar]`/`[OptParam]`）

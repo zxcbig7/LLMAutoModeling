@@ -130,10 +130,10 @@ namespace SandBox.Data
             // 注意：ProjFolder 建構子不自動建目錄，必須先 CreateFolder()
             // 輸出至 Solution/VariableName.csv
             FolderDir.Solution.CreateFolder();
-            CsvCtrl.SaveSolutionToCSV<VariableB_ShiftAssign>(engine, "V1", "VIC");
-            CsvCtrl.SaveSolutionToCSV<VariableX_WeekendLT4> (engine, "V1", "VIC");
-            CsvCtrl.SaveSolutionToCSV<VariableX_BelowAVG>   (engine, "V1", "VIC");
-            CsvCtrl.SaveSolutionToCSV<VariableB_Off1Day>     (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableB_ShiftAssign>(engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableX_WeekendLT4> (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableX_BelowAVG>   (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableB_Off1Day>     (engine, "V1", "VIC");
         }
     }
 }
