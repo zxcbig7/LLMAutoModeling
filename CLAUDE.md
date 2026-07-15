@@ -1,7 +1,7 @@
 # AI Modeling — Claude Code 入口（router）
 
 > 本 repo 的操作規範**單一來源**在 [`AGENTS.md`](AGENTS.md) → [`interactive/`](interactive/) / [`automated/`](automated/)。
-> 本檔只做導引與最硬的天條；細則一律以那些檔為準，不在此重複。
+> 本檔只做導引（router）；**天條與細則一律以 AGENTS.md 為準，不在此重複**。
 
 ## 這是什麼
 
@@ -24,11 +24,6 @@ powershell -File scripts/setup-dlls.ps1
 
 自動偵測本機 CPLEX 安裝與 sibling `../OptimFoundation/` 建置輸出，把 6 個 DLL 就位。細節與手動步驟見 [`dlls/README.md`](dlls/README.md)。
 
-## 天條（最硬的，細則見 interactive/README.md）
+## 天條
 
-- NEVER 模型未經使用者確認就產任何 `.cs`（interactive 路線）
-- NEVER 移項 / 改號 / 翻轉比較方向 / 四捨五入數值
-- NEVER 在 Constraint / Objective 出現裸數字（一律 Parameter 的 QTY）
-- NEVER 呼叫 `CPLEX_API_REFERENCE.md` 沒列的 API（憑記憶發明 API）
-- NEVER 改 OptimFoundation 框架本體（唯讀）——擴充在專案端寫 helper
-- NEVER 用絕對路徑（`C:/Users/...`）——ALWAYS 相對本 repo
+全部天條（含數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用規則）唯一權威在 [`AGENTS.md`](AGENTS.md#天條全流程通用唯一權威在本檔其他文件只引用不重複)。動手前先讀。

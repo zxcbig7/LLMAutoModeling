@@ -12,7 +12,7 @@
   <!-- 架構 A（手寫）：不掛 source generator；所有變數/參數 class 手寫屬性。 -->
 
   <ItemGroup>
-    <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\ -->
+    <!-- 所有 DLL 統一參考 repo 根 dlls/ -->
     <Reference Include="ILOG.Concert">
       <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
     </Reference>

@@ -4,7 +4,7 @@
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Convert the mathematical constraints from the AML model into **C# Constraint classes** using the `OptimFoundation.Cplex` API.
+Convert the mathematical constraints from the Model into **C# Constraint classes** using the `OptimFoundation.Cplex` API.
 
 ```csharp
 using OptimFoundation.Core;
@@ -18,7 +18,7 @@ namespace Model
 
 ---
 
-## Step 1: AML Constraint Analysis (MANDATORY — do before coding)
+## Step 1: Model Constraint Analysis (MANDATORY — do before coding)
 
 Before writing any C# code, list out LHS and RHS terms for each constraint:
 
@@ -63,13 +63,13 @@ public class Constraint_<ConstraintName> : ConstraintBase
 
 ## LHS / RHS Rules (CRITICAL)
 
-- AML left-hand side → `engine.AddLHS(coefficient, new VariableX_Name(...))`
-- AML right-hand side → `engine.AddRHS(value)`
+- Model left-hand side → `engine.AddLHS(coefficient, new VariableX_Name(...))`
+- Model right-hand side → `engine.AddRHS(value)`
 - **ABSOLUTELY NO**: moving terms across sides, negating coefficients, or merging expressions
 
 ### Constraint Direction
 
-| AML operator | C# method |
+| Model operator | C# method |
 |---|---|
 | `>=` | `engine.CreateGreatEqual("Name")` |
 | `<=` | `engine.CreateLessEqual("Name")` |
@@ -81,10 +81,10 @@ public class Constraint_<ConstraintName> : ConstraintBase
 
 ## Loop Structure
 
-Match AML index sets:
+Match Model index sets:
 
 ```csharp
-// AML: subject to C1 {i in Set1, j in Set2}: ...
+// Model: subject to C1 {i in Set1, j in Set2}: ...
 dataload.Set1.ForEach(i =>
 {
     dataload.Set2.ForEach(j =>
@@ -147,8 +147,8 @@ x.RESOURCE_TYPE == "Nitrous Oxide"
 
 ## Inputs
 
-### AML Model
-{{AMLModel}}
+### Model
+{{Model}}
 
 ### Dataload Class
 ```csharp

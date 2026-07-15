@@ -24,7 +24,7 @@ flowchart TD
     end
     subgraph AUTO["automated 路線（全自動 16 階段）"]
       direction LR
-      S0["Stage0<br/>分類"] --> S4["Stage4<br/>AML 模型"] --> S5["Stage5-13<br/>逐檔生碼"] --> S14["Stage14<br/>Build 修復"]
+      S0["Stage0<br/>分類"] --> S4["Stage4<br/>Model"] --> S5["Stage5-13<br/>逐檔生碼"] --> S14["Stage14<br/>Build 修復"]
     end
   end
 
@@ -80,7 +80,7 @@ flowchart TD
 
 **AI 建模開發框架（上層）** — 把自然語言題目變成可求解 C# 專案，兩條路線：
 - **interactive**：三階段 phase gate（建模 → 轉譯 → 調校），模型經確認才寫 code
-- **automated**：16 階段全自動（Stage0 分類 → Stage4 AML 數學模型 → Stage5-13 逐檔生碼 → Stage14 Build 修復迴圈）
+- **automated**：16 階段全自動（Stage0 分類 → Stage4 Model 數學模型 → Stage5-13 逐檔生碼 → Stage14 Build 修復迴圈）
 
 **OptimFoundation（下層）** — solver-agnostic MILP 框架（C# / .NET 4.8）：
 - **Core**：EngineBase、ISolverEngine、VariableBuilder、Experiments、Csv/Db/Logging 工具

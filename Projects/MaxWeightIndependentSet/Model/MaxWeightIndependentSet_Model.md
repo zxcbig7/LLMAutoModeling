@@ -1,6 +1,6 @@
-# AML Verify — Max Weighted Independent Set
+# Model — Max Weighted Independent Set
 
-驗證 [04_aml.md](04_aml.md) 對照問題描述，結論：**通過，無需修正**。
+數學模型驗證（對照原問題描述），結論：**通過，無需修正**。
 
 ## 檢查項
 

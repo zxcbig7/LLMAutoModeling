@@ -3,7 +3,7 @@
 
 namespace HospitalRostering_Generator.Variable
 {
-    // [VarType=0] —— 由 AutoSetsGenerator 生成
+    // [VarType=Binary（由類別名前綴決定）] —— 由 AutoSetsGenerator 生成
     public partial class VariableB_DoubleOffLT2 : global::OptimFoundation.Core.VariableBase
     {
         public string Employee { get; set; } = string.Empty;

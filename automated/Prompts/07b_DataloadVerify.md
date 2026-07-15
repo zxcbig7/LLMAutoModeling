@@ -25,7 +25,7 @@ Rules:
 - **2D indexed**: `new Param_Distance("CityA", "CityB", 10.0)` — two strings + numeric
 
 ### 2. Data Coverage
-Every set and parameter declared in the AML model must be populated:
+Every set and parameter declared in the Model must be populated:
 - [ ] No empty `AddRange()` or `Add()` calls
 - [ ] All `List<string>` sets have entries
 - [ ] All `List<Param_XXX>` parameters have entries
@@ -73,8 +73,8 @@ Then return the **complete corrected Dataload.cs** file.
 ### Original Problem Description
 {{ProblemDescription}}
 
-### AML Model (for reference)
-{{AMLModel}}
+### Model (for reference)
+{{Model}}
 
 ### Parameter Classes
 ```csharp

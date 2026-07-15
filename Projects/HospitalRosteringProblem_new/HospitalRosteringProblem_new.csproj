@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\（與原專案同層，相對路徑一致） -->
+    <!-- 所有 DLL 統一參考 repo 根 dlls/ -->
     <Reference Include="ILOG.Concert">
       <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
     </Reference>
@@ -38,7 +38,7 @@
       <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
     </Reference>
     
-    <Analyzer Include="C:\Users\zxcbi\Desktop\Projects\OptimizationFramework\AI-Modeling\OptimFoundation\OptimFoundation\Templates\dlls\OptimFoundation.Generators.dll" />
+    <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 
 </Project>

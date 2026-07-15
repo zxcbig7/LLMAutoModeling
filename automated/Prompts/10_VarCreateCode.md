@@ -33,7 +33,7 @@ namespace Model
 
 ## Variable Type Mapping
 
-| AML Declaration | C# Method |
+| Model Declaration | C# Method |
 |---|---|
 | `var X{Set} >= 0;` (continuous) | `engine.BuildCVs<VariableX_X>(dataload.SET)` |
 | `var X{Set} >= 0, <= 1;` (bounded) | `engine.BuildCVs<VariableX_X>(0, 1, dataload.SET)` |
@@ -67,8 +67,8 @@ public void Build()
 
 ## Inputs
 
-### AML Model (variable declarations section)
-{{AMLModel}}
+### Model (variable declarations section)
+{{Model}}
 
 ### Variable Classes (use EXACT class names from here)
 ```csharp

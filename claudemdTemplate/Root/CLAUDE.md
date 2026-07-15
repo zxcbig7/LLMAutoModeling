@@ -69,4 +69,4 @@ using (var m = new OptModel("ProjectName")
 
 `dotnet run -- experiment` → `ExperimentRunner.Run()` 掃描多組 `CplexConfig`，
 記錄完整設定 + 收斂數據到 `Experiments/<name>.csv + .json`。
-規範見 `Experiment/CLAUDE.md`，旋鈕對照見 `truning/CLAUDE.md`。
+規範見 `Experiment/CLAUDE.md`，旋鈕對照見 `tuning/CLAUDE.md`。

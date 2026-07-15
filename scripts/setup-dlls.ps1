@@ -23,16 +23,16 @@
     powershell -File scripts/setup-dlls.ps1 -CplexBin "D:\CPLEX\cplex\bin\x64_win64"
 #>
 param(
-    [string] $CplexBin      = "",
+    [string] $CplexBin = "",
     [string] $FoundationDir = "",
-    [string] $Config        = "Release",
+    [string] $Config = "Release",
     [switch] $Build
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$Root    = Split-Path (Split-Path $MyInvocation.MyCommand.Path)   # scripts/ parent = repo root
+$Root = Split-Path (Split-Path $MyInvocation.MyCommand.Path) # scripts/ parent = repo root
 $DllsDir = Join-Path $Root "dlls"
 if (-not (Test-Path $DllsDir)) { New-Item -ItemType Directory -Path $DllsDir | Out-Null }
 
@@ -64,7 +64,7 @@ if (-not $CplexBin) {
 }
 if ($CplexBin) { Say "  CPLEX bin: $CplexBin" Gray } else { Say "  CPLEX install not found (pass -CplexBin)" Yellow }
 CopyIn (Join-Path $CplexBin "ILOG.Concert.dll") "ILOG.Concert.dll" | Out-Null
-CopyIn (Join-Path $CplexBin "ILOG.CPLEX.dll")   "ILOG.CPLEX.dll"   | Out-Null
+CopyIn (Join-Path $CplexBin "ILOG.CPLEX.dll") "ILOG.CPLEX.dll" | Out-Null
 
 # --- 2. OptimFoundation.* + NLog ---------------------------------------------
 Say "`n[2/2] OptimFoundation framework DLLs + NLog" Cyan
@@ -101,8 +101,33 @@ foreach ($n in $fwNames) {
 # --- verify ------------------------------------------------------------------
 $need = @("ILOG.Concert.dll","ILOG.CPLEX.dll","NLog.dll",
           "OptimFoundation.Core.dll","OptimFoundation.Cplex.dll","OptimFoundation.Generators.dll")
-$have    = $need | Where-Object { Test-Path (Join-Path $DllsDir $_) }
+$have = $need | Where-Object { Test-Path (Join-Path $DllsDir $_) }
 $missing = $need | Where-Object { -not (Test-Path (Join-Path $DllsDir $_)) }
+
+# --- provenance: dlls/VERSION.txt (staleness detection; ASCII-only, no BOM) ----
+$commit = "unknown"
+if ($FoundationDir) {
+    # git repo may sit at the shell dir or one level in (this workspace: inner OptimFoundation\OptimFoundation)
+    foreach ($gd in @($FoundationDir, (Join-Path $FoundationDir "OptimFoundation"))) {
+        if (Test-Path (Join-Path $gd ".git")) {
+            $c = & git -C $gd rev-parse --short HEAD 2>$null
+            if ($LASTEXITCODE -eq 0 -and $c) { $commit = "$c".Trim(); break }
+        }
+    }
+}
+$vlines = @(
+    "# OptimFoundation dlls/ provenance -- auto-written by setup-dlls.ps1, DO NOT edit by hand",
+    ("generated:     {0}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss")),
+    ("source_commit: {0}" -f $commit),
+    ("config:        {0}" -f $Config),
+    "--- dll last-write ---"
+)
+foreach ($n in $need) {
+    $p = Join-Path $DllsDir $n
+    if (Test-Path $p) { $vlines += ("{0}  {1}" -f (Get-Item $p).LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"), $n) }
+}
+Set-Content -Path (Join-Path $DllsDir "VERSION.txt") -Value $vlines -Encoding ascii
+Say "  wrote dlls/VERSION.txt (commit $commit)" Gray
 
 Say "`n============================================================" Yellow
 Say "  ready $($have.Count)/6" Yellow

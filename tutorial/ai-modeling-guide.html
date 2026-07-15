@@ -209,7 +209,7 @@ ClaudeAIAssistant/dlls/            <span class="c">← 各專案用 HintPath 參
 ClaudeAIAssistant/                 <span class="c">← 建模端</span>
   ├─ Template_CPLEX/      <span class="c">canonical code 範本（雙模式）</span>
   ├─ claudemdTemplate/    <span class="c">各資料夾開發規範（單一來源）</span>
-  ├─ truning/             <span class="c">CPLEX 調校策略與旋鈕對照</span>
+  ├─ tuning/             <span class="c">CPLEX 調校策略與旋鈕對照</span>
   └─ Projects/            <span class="c">題目專案</span></div>
   <div class="note warn">
     <span class="t">改了框架就要更新 DLL</span>
@@ -507,7 +507,7 @@ optEngine.CreateLessEqual(ConstraintName);
     <tr><td>改善 GAP</td><td>1st</td><td>加切割 → <code>nodeSelect=1</code> → 收 <code>epGap</code> / <code>mipEmphasis=2</code></td></tr>
     <tr><td>找可行解</td><td>1st</td><td><code>nodeSelect=0</code> → <code>intSolLimit</code>/<code>nodeLimit</code> → 放寬 <code>epGap</code> → <code>mipEmphasis=1</code></td></tr>
   </table>
-  <p>完整 CPLEX ↔ Foundation 旋鈕對照（含已接線 ✅ / 待補 ❌：如 Symmetry presolve、MIP start、ZeroHalf 切割、自動調參、callback）見 <code class="ic">truning/CLAUDE.md</code> §6.2。</p>
+  <p>完整 CPLEX ↔ Foundation 旋鈕對照（含已接線 ✅ / 待補 ❌：如 Symmetry presolve、MIP start、ZeroHalf 切割、自動調參、callback）見 <code class="ic">tuning/CLAUDE.md</code> §6.2。</p>
 </section>
 
 <!-- ============ 5 SOP ============ -->
@@ -589,7 +589,7 @@ var sol = engine.GetSetVarValues&lt;VariableX_Name&gt;();   <span class="cm">// 
     <tr><td>新建專案範本（code，雙模式）</td><td><code>Template_CPLEX/</code></td></tr>
     <tr><td>各資料夾規範（單一來源）</td><td><code>claudemdTemplate/&lt;Folder&gt;/CLAUDE.md</code></td></tr>
     <tr><td>Modeling 階段細節（Stage 0–4b）</td><td><code>tutorial/ai-modeling-framework-tutorial.md</code></td></tr>
-    <tr><td>調校策略 + 旋鈕對照（含缺口）</td><td><code>truning/CLAUDE.md</code></td></tr>
+    <tr><td>調校策略 + 旋鈕對照（含缺口）</td><td><code>tuning/CLAUDE.md</code></td></tr>
     <tr><td>tuning 可執行架構</td><td><code>claudemdTemplate/Experiment/CLAUDE.md</code></td></tr>
     <tr><td>端到端流程頂層導覽</td><td><code>tutorial/development-workflow.md</code></td></tr>
   </table>

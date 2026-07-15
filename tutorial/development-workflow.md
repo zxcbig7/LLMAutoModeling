@@ -2,7 +2,7 @@
 
 把「自然語言最佳化問題」變成「可執行、可調校的 OptimFoundation CPLEX 專案」的完整流程。
 本檔是**頂層導覽**：講清楚各階段做什麼、產物是什麼、用哪份規範、怎麼銜接。
-細節下鑽到 `claudemdTemplate/`（資料夾規範）、`truning/`（調校）、`ai-modeling-framework-tutorial.md`（Modeling 階段）。
+細節下鑽到 `claudemdTemplate/`（資料夾規範）、`tuning/`（調校）、`ai-modeling-framework-tutorial.md`（Modeling 階段）。
 
 ---
 
@@ -18,7 +18,7 @@ ClaudeAIAssistant/dlls/               ← 各專案用 HintPath 引用這兩個 
 ClaudeAIAssistant/                     ← 建模端（題目專案、範本、規範、教學）
   ├── Template_CPLEX/      canonical code 範本（雙模式）
   ├── claudemdTemplate/    各資料夾開發規範（單一來源）
-  ├── truning/             CPLEX 調校策略
+  ├── tuning/             CPLEX 調校策略
   ├── tutorial/            本流程 + Modeling 教學
   └── Projects/            題目專案
 ```
@@ -154,10 +154,10 @@ dotnet run -- experiment      →  掃多組 CplexConfig  →  Experiments/<name
 
 - 掃描單位 `(label, Action<CplexConfig> tune)`：baseline + 每次只動一個旋鈕。
 - 抽象旋鈕（跨引擎）：`Emphasis / Seed / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / MemoryLimitMb`。
-- CPLEX 專屬欄位 + 完整 ✅/❌ 對照：`truning/CLAUDE.md`。
+- CPLEX 專屬欄位 + 完整 ✅/❌ 對照：`tuning/CLAUDE.md`。
 - 每 Trial fresh Dataload + engine；掃描時關 log / export 加速；`timeLimit` 確保收斂。
 
-詳見 `claudemdTemplate/Experiment/CLAUDE.md` 與 `truning/CLAUDE.md`。
+詳見 `claudemdTemplate/Experiment/CLAUDE.md` 與 `tuning/CLAUDE.md`。
 
 ---
 
@@ -179,6 +179,6 @@ dotnet run -- experiment      →  掃多組 CplexConfig  →  Experiments/<name
 | 各資料夾規範（單一來源） | `claudemdTemplate/<Folder>/CLAUDE.md` |
 | Modeling 階段細節 | `tutorial/ai-modeling-framework-tutorial.md` Part 1 |
 | Coding 細節（Pool / Dataload / 命名） | 同上 Part 2 |
-| 調校策略 + 旋鈕對照 | `truning/CLAUDE.md` |
+| 調校策略 + 旋鈕對照 | `tuning/CLAUDE.md` |
 | tuning 可執行架構 | `claudemdTemplate/Experiment/CLAUDE.md` |
 | 框架窗口 / pipeline | `OptimFoundation`（`OptModel` / `EngineBase` / `Experiment` / `Trial`） |

@@ -34,10 +34,10 @@ namespace Model
 
 ## Rules
 
-- Read the objective direction from AML (`Minimize` → `CreateMinimize()`, `Maximize` → `CreateMaximize()`)
+- Read the objective direction from Model (`Minimize` → `CreateMinimize()`, `Maximize` → `CreateMaximize()`)
 - Accumulate ALL objective terms first, then call `CreateMinimize()`/`CreateMaximize()` once at the end
 - Retrieve parameter values via LINQ into local variables FIRST — never inline LINQ inside `AddLHS`
-- Match the AML's index sets exactly with ForEach loops
+- Match the Model's index sets exactly with ForEach loops
 - Field names in LINQ must match exactly what's declared in the provided Dataload class
 
 ## API
@@ -67,8 +67,8 @@ public void Build()
 
 ## Inputs
 
-### AML Model (objective function section)
-{{AMLModel}}
+### Model (objective function section)
+{{Model}}
 
 ### Parameter Classes
 ```csharp

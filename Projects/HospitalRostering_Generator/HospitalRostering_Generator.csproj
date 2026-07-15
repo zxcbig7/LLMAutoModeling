@@ -18,14 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- AutoSetsGenerator：以 analyzer 身分掛入，[OptVar]/[OptParam] 在編譯期生成 class body -->
-    <ProjectReference Include="..\OptimModeling.Generators\OptimModeling.Generators.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+    <!-- AutoSetsGenerator：以 analyzer DLL 掛入，[OptVar<>]/[OptParam<>] 在編譯期生成 class body -->
+    <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 所有 DLL 統一參考 ClaudeAIAssistant\dlls\ -->
+    <!-- 所有 DLL 統一參考 repo 根 dlls/ -->
     <Reference Include="ILOG.Concert">
       <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
     </Reference>

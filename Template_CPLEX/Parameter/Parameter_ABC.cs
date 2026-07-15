@@ -1,4 +1,4 @@
-using OptimModeling;
+using OptimFoundation.Modeling;
 
 namespace Template.Parameter
 {

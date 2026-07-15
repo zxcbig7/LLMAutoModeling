@@ -71,7 +71,7 @@ foreach (var e in dataload.Employees)
 ```
 
 - 約束名格式：`ConstraintName@index1@index2`
-- RHS 含變數（移項需求）→ `AddRHS(coef, variable)`，但 AML 原式怎麼寫就怎麼放，NEVER 自行移項
+- RHS 含變數（移項需求）→ `AddRHS(coef, variable)`，但 Model 原式怎麼寫就怎麼放，NEVER 自行移項
 
 ## 取解 API（存在的才用）
 

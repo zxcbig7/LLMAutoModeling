@@ -4,7 +4,7 @@
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Convert the AML `param` declarations into C# Parameter classes.
+Convert the Model `param` declarations into C# Parameter classes.
 
 ```csharp
 using OptimFoundation.Core;
@@ -19,7 +19,7 @@ namespace Model
 
 - Only generate code for `param` declarations (ignore `set`, `var`, objective, constraints).
 - Each parameter → C# class inheriting from `ParameterBase`.
-- Class name format: `Param_<AMLParamName>` in PascalCase.
+- Class name format: `Param_<ParamName>` in PascalCase.
 
 ### Property Naming
 - One property per index set, named by the **set name** (not element values).
@@ -54,7 +54,7 @@ public class Param_<ParamName> : ParameterBase
 
 ## Example
 
-**AML**: `param CostPerProduct {ProductType, MachineID};`
+**Model**: `param CostPerProduct {ProductType, MachineID};`
 
 **C#**:
 ```csharp
@@ -77,9 +77,9 @@ public class Param_CostPerProduct : ParameterBase
 
 ## Input
 
-### AML Model
+### Model
 ```
-{{AMLModel}}
+{{Model}}
 ```
 
 Return code only (no explanation).

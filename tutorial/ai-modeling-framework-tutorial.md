@@ -274,7 +274,7 @@ dotnet build → 失敗 → 擷取 compiler error → Fix Prompt 修正對應 .c
 | 要可重現實驗 | `parallelMode=1` + 固定 `randomSeed` + `detTimeLimit` |
 | 數值不穩 | `numericalEmphasis=true` |
 
-> 完整旋鈕全表與 Foundation 尚未提供的接口，見同層的 tuning 策略文件（`truning/CLAUDE.md`）。
+> 完整旋鈕全表與 Foundation 尚未提供的接口，見同層的 tuning 策略文件（`tuning/CLAUDE.md`）。
 
 ### Tuning 流程
 

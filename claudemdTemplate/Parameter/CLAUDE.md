@@ -5,7 +5,7 @@
 ### 預設：source generator（AI 首選）
 
 ```csharp
-using OptimModeling;
+using OptimFoundation.Modeling;
 
 [OptParam("Date:DateTime", "Group")]                       // 含值 → 自動補 QTY
 public partial class Parameter_ShiftDemand { }

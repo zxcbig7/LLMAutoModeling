@@ -45,9 +45,9 @@ exp.Save();   // → Experiments/projectname-tuning.csv + .json
 ## 旋鈕來源
 
 - **抽象旋鈕（跨引擎）**：`ITunableConfig` 的 `Seed / Emphasis / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / HeuristicEffort / MemoryLimitMb`
-- **CPLEX 專屬欄位**與完整 ✅/❌ 對照：見 `truning/CLAUDE.md`
+- **CPLEX 專屬欄位**與完整 ✅/❌ 對照：見 `tuning/CLAUDE.md`
 - **輸出**：`Experiments/<name>.csv + .json`（同名實驗 append，以 RunAt+Label 去重）
 
 ## 黃金順序
 
-先做模型優化（結構、變數型態、邊界、對稱性），再掃 solver 旋鈕。詳見 `truning/CLAUDE.md` §1 → §2。
+先做模型優化（結構、變數型態、邊界、對稱性），再掃 solver 旋鈕。詳見 `tuning/CLAUDE.md` §1 → §2。

@@ -12,10 +12,10 @@
 
 ### 預設：source generator（AI 首選）
 
-用 `AutoSetsGenerator` 一行 attribute 宣告，編譯期補完整 class，樣板最省、最不易錯。csproj 需以 analyzer 掛入 `OptimModeling.Generators`（範本 `Template_CPLEX` 已掛）。
+用 `AutoSetsGenerator` 一行 attribute 宣告，編譯期補完整 class，樣板最省、最不易錯。csproj 需以 `<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />` 掛入（範本 `Template_CPLEX` 已掛）。
 
 ```csharp
-using OptimModeling;
+using OptimFoundation.Modeling;
 
 [OptVar("Date:DateTime", "Employee", "Group")]   // 屬性順序＝Build*Vs 傳入順序；型別由類別名前綴決定
 public partial class VariableB_ShiftAssign { }

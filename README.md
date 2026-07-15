@@ -52,7 +52,7 @@ AI-Modeling/
 │   └── …（GlassFactory / SandwichProduction / ClinicVitamin / …）
 │
 ├── tutorial/                    ← 端到端教學（醫院排班，含兩架構對照）
-├── truning/                     ← CPLEX tuning 策略與旋鈕對照
+├── tuning/                     ← CPLEX tuning 策略與旋鈕對照
 └── specs/                       ← SDD 規格文件
 ```
 
@@ -73,7 +73,7 @@ AI-Modeling/
 ## 快速開始
 
 1. **複製範本**：把 `Template_CPLEX/` 複製到 `Projects/MyProject/`
-2. **改 `csproj` 兩處相對路徑**（複製後都會多一層，不改會編不過）：DLL HintPath `..\dlls\` → `..\..\dlls\`；generator 參考 `..\Projects\OptimModeling.Generators\` → `..\OptimModeling.Generators\`（範本 csproj 開頭也有此提示）
+2. **改 `csproj` 兩處相對路徑**（複製後都會多一層，不改會編不過）：DLL HintPath `..\dlls\` → `..\..\dlls\`；generator Analyzer `..\dlls\` → `..\..\dlls\`（範本 csproj 開頭也有此提示）
 3. **先寫數學模型**：在 `Model/MyProject_Model.md` 完成 Sets/Parameters/Variables/Objective/Constraints（確認前不寫 `.cs`）
 4. **再翻譯成 code**：變數/參數預設用 `[OptVar]`/`[OptParam]` 宣告
 5. **執行**：
@@ -84,9 +84,8 @@ AI-Modeling/
 
 ```xml
 <ItemGroup>
-  <!-- source generator：以 analyzer 掛入 -->
-  <ProjectReference Include="..\OptimModeling.Generators\OptimModeling.Generators.csproj"
-                    OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  <!-- source generator：以 analyzer DLL 掛入（repo 根 dlls/） -->
+  <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
 </ItemGroup>
 <ItemGroup>
   <Reference Include="ILOG.Concert"><HintPath>..\..\dlls\ILOG.Concert.dll</HintPath></Reference>
@@ -184,4 +183,4 @@ using (var m = new OptModel("MyProject")
 | [claudemdTemplate/](claudemdTemplate/) | 各資料夾規則的單一來源（few-shot 範本） |
 | [Template_CPLEX/CLAUDE.md](Template_CPLEX/CLAUDE.md) | 框架語法詳細範例（generator 預設） |
 | [tutorial/](tutorial/) | 端到端教學（醫院排班 + 兩架構對照） |
-| [truning/CLAUDE.md](truning/CLAUDE.md) | CPLEX tuning 策略與旋鈕對照 |
+| [tuning/CLAUDE.md](tuning/CLAUDE.md) | CPLEX tuning 策略與旋鈕對照 |

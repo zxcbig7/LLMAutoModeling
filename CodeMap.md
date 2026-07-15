@@ -1,5 +1,5 @@
 ---
-title: ClaudeAIAssistant — CPLEX 建模專案架構地圖
+title: AI-Modeling — CPLEX 建模專案架構地圖
 scope: 一個標準 CPLEX 題目專案 + 其依賴的 OptimFoundation pipeline
 updated: 2026-06-22
 related_spec: ROADMAP.md（原 specs/2026-06-21-claudeai-spec-refresh.md 已併入 ROADMAP §2、§3）

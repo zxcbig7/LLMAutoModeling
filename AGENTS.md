@@ -23,12 +23,21 @@
    - Phase 3 調校 → [`interactive/phase-3-tuning.md`](interactive/phase-3-tuning.md)
 3. API 簽名的權威來源在本 repo：[`CPLEX_API_REFERENCE.md`](CPLEX_API_REFERENCE.md)，NEVER 憑記憶發明 API
 
-## 不可退讓（全流程通用）
+## 天條（全流程通用，唯一權威在本檔——其他文件只引用不重複）
 
-- NEVER 模型未經使用者確認就產任何 `.cs`
+- NEVER 模型未經使用者確認就產任何 `.cs`（interactive 路線）
 - NEVER 移項 / 改號 / 翻轉比較方向 / 四捨五入數值
-- NEVER 在 Constraint / Objective 出現裸數字（一律 Parameter）
+- NEVER 在 Constraint / Objective 出現裸數字（一律 Parameter 的 QTY）
+- NEVER 呼叫 `CPLEX_API_REFERENCE.md` 沒列的 API（憑記憶發明 API）
+- NEVER 改 OptimFoundation 框架本體（唯讀）——擴充在專案端寫 helper
 - NEVER 用絕對路徑（`C:/Users/...`）—— ALWAYS 相對本 repo；本檔所在資料夾即專案根
+
+### DLL 引用規則（消費端 csproj）
+
+- 一般組件（`OptimFoundation.Core`/`Cplex`、`ILOG.*`、`NLog`）：`<Reference>` + `HintPath` 相對指 repo 根 `dlls/`（`Projects/<X>/` 用 `..\..\dlls\`、`Template_CPLEX/` 用 `..\dlls\`）
+- Source generator：唯一寫法 `<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />`（依巢狀深度調 `..`）—— NEVER `ProjectReference` 跨 repo、NEVER 絕對路徑、NEVER 指向 bin 輸出
+- OptimFoundation rebuild／public API 變更後 MUST 跑 `scripts/setup-dlls.ps1 -Build` 回填 `dlls/`（含 `VERSION.txt` provenance）—— Why: stale DLL 會遮住 API drift，看似 build 綠實則已編不過
+- `Generated/` 僅供檢視：csproj MUST `<Compile Remove="Generated/**/*.cs" />`，否則第二次 build 撞名炸
 
 ## repo 內資源（都在本 repo，相對可達）
 

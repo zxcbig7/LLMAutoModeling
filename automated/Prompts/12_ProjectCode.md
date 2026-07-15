@@ -66,7 +66,7 @@ namespace Model
 ### Variable Classes
 {{VarClasses}}
 
-### AML Model (for context)
-{{AMLModel}}
+### Model (for context)
+{{Model}}
 
 Return code only (no explanation).

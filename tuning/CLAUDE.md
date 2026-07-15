@@ -35,7 +35,7 @@
 - **緊湊上下界**：給變數設更嚴格的 `lb` / `ub`（`BuildCVs<>(lb, ub, ...)`），直接收斂 LP 鬆弛、減少分支。
 - **Big-M 取最小可行值**：M 過大會使 LP 鬆弛鬆散、節點爆增；取問題上界即可。
 
-> 模型精簡屬「modeling 層」，在 Stage 4（AML）重塑，不在 solver 旋鈕處理。
+> 模型精簡屬「modeling 層」，在 Stage 4（Model）重塑，不在 solver 旋鈕處理。
 
 ### 1.3 初始解（Warm Start）
 
@@ -160,7 +160,7 @@ dotnet run -- experiment
 
 樣板與完整規範見 `claudemdTemplate/Experiment/CLAUDE.md`。
 
-> 黃金順序不變：先在 Stage 4（AML）做模型優化（§1），再用此 runner 掃 solver 旋鈕（§2）。模型一刀的效益通常遠大於調十個參數。
+> 黃金順序不變：先在 Stage 4（Model）做模型優化（§1），再用此 runner 掃 solver 旋鈕（§2）。模型一刀的效益通常遠大於調十個參數。
 
 ---
 

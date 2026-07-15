@@ -16,9 +16,9 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 ## 1. North Star（從未改變）
 
 > 自然語言最佳化題目 → **幾分鐘內**產出可 build/run 的 OptimFoundation CPLEX C# 專案；
-> 中間的 **AML 數學模型當可審閱產物**，使用者在生 code 前先確認正確性。
+> 中間的 **Model 數學模型當可審閱產物**，使用者在生 code 前先確認正確性。
 
-痛點：手寫 CPLEX 要熟 `BuildCVs<>` / `AddLHS` / `CreateMinimize()` 等框架 API，又要把 NL 轉成嚴謹數學模型，門檻高、耗時數小時。目標是把這段從數小時壓到數分鐘，且不犧牲正確性（AML 中間產物是把關點）。
+痛點：手寫 CPLEX 要熟 `BuildCVs<>` / `AddLHS` / `CreateMinimize()` 等框架 API，又要把 NL 轉成嚴謹數學模型，門檻高、耗時數小時。目標是把這段從數小時壓到數分鐘，且不犧牲正確性（Model 中間產物是把關點）。
 
 ## 2. 架構全景（收斂後的最終形態）
 
@@ -57,8 +57,8 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 生成流程的關鍵是「**在生成中間夾驗證關卡**」：
 
 ```
-00 分類 → 01 簡化 → 02 標準化 → 03 KeyInfo(JSON) → 04 AML數學模型
-  → 04b AML驗證✓ → 05~13 逐檔生 C#(9檔) → 07b Dataload驗證✓
+00 分類 → 01 簡化 → 02 標準化 → 03 KeyInfo(JSON) → 04 Model數學模型
+  → 04b Model驗證✓ → 05~13 逐檔生 C#(9檔) → 07b Dataload驗證✓
   → 14 自動修復(build失敗迴圈≤5次) → WriteRagData 回寫知識庫
 ```
 
@@ -78,7 +78,7 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 
 | 目標 | 狀態 |
 | --- | --- |
-| NL → AML → C# 全流程走通 | ✅ 已實跑一次（`MaxWeightIndependentSet` 唯一產物） |
+| NL → Model → C# 全流程走通 | ✅ 已實跑一次（`MaxWeightIndependentSet` 唯一產物） |
 | Fluent OptModel + 可跑 tuning（`ExperimentRunner`） | ✅ 已落地 |
 | source generator 免手寫樣板 | ✅ 真有 code、有 build、實際被用 |
 | 雙架構教學（同模型 Manual vs Generator） | 🟡 兩專案 code 已完整、diff 確認等價；**只差本機 build + CPLEX 驗證** |

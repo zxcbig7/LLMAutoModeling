@@ -4,18 +4,12 @@ using System;
 
 namespace OptimFoundation.Modeling
 {
-    public enum VarType { Binary, Integer, Continuous }
-
+    // ── 字串式（逃生口 / 遷移用），原封保留 ──
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public sealed class OptVarAttribute : Attribute
     {
-        public VarType VarType { get; }
         public string[] Sets { get; }
-        public OptVarAttribute(VarType varType, params string[] sets)
-        {
-            VarType = varType;
-            Sets = sets;
-        }
+        public OptVarAttribute(params string[] sets) { Sets = sets; }
     }
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
@@ -24,9 +18,74 @@ namespace OptimFoundation.Modeling
         public string[] Sets { get; }
         /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
         public bool HasValue { get; set; } = true;
-        public OptParamAttribute(params string[] sets)
-        {
-            Sets = sets;
-        }
+        public OptParamAttribute(params string[] sets) { Sets = sets; }
     }
+
+    // ── Set 積木：元素型別由泛型參數帶（無參數 = 預設 string） ──
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptSetAttribute : Attribute { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptSetAttribute<T> : Attribute { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptVarAttribute<T1> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptParamAttribute<T1> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick
+    {
+        /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
+        public bool HasValue { get; set; } = true;
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptVarAttribute<T1, T2> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptParamAttribute<T1, T2> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick
+    {
+        /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
+        public bool HasValue { get; set; } = true;
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptVarAttribute<T1, T2, T3> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptParamAttribute<T1, T2, T3> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick
+    {
+        /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
+        public bool HasValue { get; set; } = true;
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptVarAttribute<T1, T2, T3, T4> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick where T4 : global::OptimFoundation.Core.ISetBrick { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptParamAttribute<T1, T2, T3, T4> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick where T4 : global::OptimFoundation.Core.ISetBrick
+    {
+        /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
+        public bool HasValue { get; set; } = true;
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptVarAttribute<T1, T2, T3, T4, T5> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick where T4 : global::OptimFoundation.Core.ISetBrick where T5 : global::OptimFoundation.Core.ISetBrick { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptParamAttribute<T1, T2, T3, T4, T5> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick where T4 : global::OptimFoundation.Core.ISetBrick where T5 : global::OptimFoundation.Core.ISetBrick
+    {
+        /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
+        public bool HasValue { get; set; } = true;
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptVarAttribute<T1, T2, T3, T4, T5, T6> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick where T4 : global::OptimFoundation.Core.ISetBrick where T5 : global::OptimFoundation.Core.ISetBrick where T6 : global::OptimFoundation.Core.ISetBrick { }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public sealed class OptParamAttribute<T1, T2, T3, T4, T5, T6> : Attribute where T1 : global::OptimFoundation.Core.ISetBrick where T2 : global::OptimFoundation.Core.ISetBrick where T3 : global::OptimFoundation.Core.ISetBrick where T4 : global::OptimFoundation.Core.ISetBrick where T5 : global::OptimFoundation.Core.ISetBrick where T6 : global::OptimFoundation.Core.ISetBrick
+    {
+        /// <summary>true（預設）會生成 QTY 值欄位；純 key 參數設 false。</summary>
+        public bool HasValue { get; set; } = true;
+    }
+
 }

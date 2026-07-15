@@ -36,7 +36,7 @@ Fix the C# compilation or runtime error in the provided code file.
 | `CS0103` — name not found | Wrong variable/class name | Match exact class name from Variables.cs |
 | `CS1061` — method not found | Wrong API call | Use `AddLHS`/`AddRHS`/`CreateGreatEqual` etc. |
 | `NullReferenceException` | LINQ returning null | Add `?? defaultValue` after `?.QTY` |
-| Wrong constraint direction | Flipped `>=`/`<=` | Match original AML operator |
+| Wrong constraint direction | Flipped `>=`/`<=` | Match original Model operator |
 | `AddLHS(null, ...)` | Passing null variable | Check set iteration produces correct values |
 
 ## OptimFoundation CPLEX API Reference

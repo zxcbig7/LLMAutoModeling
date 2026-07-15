@@ -104,8 +104,8 @@ namespace Model
 ### Problem Description
 {{ProblemDescription}}
 
-### AML Model
-{{AMLModel}}
+### Model
+{{Model}}
 
 ### Parameter Classes
 ```csharp

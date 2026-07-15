@@ -1,10 +1,10 @@
-# Stage 4b: AML Model Verification
+# Stage 4b: Model Verification
 
 ## Role
 You are a master optimization modeling auditor.
 
 ## Task
-Validate the generated AML Markdown model against the original problem description. Fix any issues and return the corrected model.
+Validate the generated Model Markdown model against the original problem description. Fix any issues and return the corrected model.
 
 ---
 
@@ -60,7 +60,7 @@ The model must contain these sections:
 - Fix 1: ...
 ```
 
-### Corrected AML Model
+### Corrected Model
 
 Return the full corrected Markdown model after the validation report.
 
@@ -71,8 +71,8 @@ Return the full corrected Markdown model after the validation report.
 ### Original Problem Description
 {{ProblemDescription}}
 
-### Generated AML Model
-{{AMLModel}}
+### Generated Model
+{{Model}}
 
 ---
 

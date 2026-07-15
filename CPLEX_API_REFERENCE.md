@@ -4,6 +4,7 @@
 > **權威來源**：`dlls/` 內編譯版 OptimFoundation 的公開簽名；原始碼在 sibling 資料夾 `../OptimFoundation/`（本 repo 外，非硬相依）。
 > **天條**：所有 API 呼叫必須能在編譯版 OptimFoundation 找到對應定義；本文件未列出的方法視為「不存在」。
 > **NEVER**：禁止修改 OptimFoundation 框架本體（唯讀）。
+> **鏡像同步**：源頭 = `../OptimFoundation/specs/developer-guide.md`；本檔為鏡像。最近同步 **2026-07-14**（新增 §7.5 OptSet 積木）。改框架 public API 時 MUST 兩邊一起更新。
 
 ---
 
@@ -160,14 +161,14 @@ public class Parameter_ShiftDemand : ParameterBase
 💡 **預設改用 source generator**：上面的手寫 class 是「後路」。框架附 `AutoSetsGenerator`，可用一行 attribute 取代整段樣板（編譯期生成相同的 `: VariableBase`/`: ParameterBase` + 屬性 + QTY + 建構子）：
 
 ```csharp
-using OptimModeling;   // 注意 namespace 是 OptimModeling
+using OptimFoundation.Modeling;   // generator 注入的 attribute namespace
 
-[OptVar("SandwichType")]                            public partial class VariableX_Sandwich { }   // 型別由前綴 VariableX_ 決定
+[OptVar("SandwichType")]                            public partial class VariableX_Sandwich { }   // 字串式：型別由前綴 VariableX_ 決定
 [OptParam("Date:DateTime", "Group")]                public partial class Parameter_ShiftDemand { }
 [OptParam("Employee", "Group", HasValue = false)]   public partial class Parameter_PreAssign { }   // 純 key，無 QTY
 ```
 
-`[OptVar]` 只帶 sets，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名），`OptParam` 非 `Parameter_` 前綴 → `OPTF002`。csproj 需以 analyzer 掛入 `OptimModeling.Generators`。詳見 `tutorial/` §5.4+ 與 `claudemdTemplate/Variable`、`claudemdTemplate/Parameter`；可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`）。
+上為**字串式**（逃生口）；paved path 用泛型 Set 積木語法見 §7.5（`[OptSet<T>]` + `[OptVar<Set_X>]`）。`[OptVar]` 型別由類別名前綴決定（`VariableB_/X_/I_`），前綴非法 → `OPTF001`；`OptParam` 非 `Parameter_` 前綴 → `OPTF002`。csproj 以 analyzer 掛入 `..\dlls\OptimFoundation.Generators.dll`。可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`）。
 
 ### 為何不需要寫建構子
 
@@ -232,7 +233,7 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
 > ★ **抽象旋鈕 vs camelCase 欄位**：兩者指向同一設定（`config.Seed = 7` 等同 `config.randomSeed = 7`）。
 > 用抽象旋鈕（`ITunableConfig`）寫的 tuning code 可跨 Cplex / Gurobi / Solver；用 camelCase 欄位則是 CPLEX 專屬。
 >
-> ★ **上面是常用欄位的代表性子集，非全部**。CPLEX 專屬的切割族（`gomoryCuts`/`coverCuts`/`cliqueCuts`/`mirCuts`/`flowCoverCuts`）、`probe`、`parallelMode`、`numericalEmphasis`、`cutsFactor`、`treeMemoryLimit`、`detTimeLimit`、`epAGap`、`epInt` 等，連同各自的 CPLEX `Param.*` 路徑與取值範圍，**完整對照表見 [`truning/CLAUDE.md`](truning/CLAUDE.md) §6.2**。
+> ★ **上面是常用欄位的代表性子集，非全部**。CPLEX 專屬的切割族（`gomoryCuts`/`coverCuts`/`cliqueCuts`/`mirCuts`/`flowCoverCuts`）、`probe`、`parallelMode`、`numericalEmphasis`、`cutsFactor`、`treeMemoryLimit`、`detTimeLimit`、`epAGap`、`epInt` 等，連同各自的 CPLEX `Param.*` 路徑與取值範圍，**完整對照表見 [`tuning/CLAUDE.md`](tuning/CLAUDE.md) §6.2**。
 
 **標準寫法**：
 
@@ -486,6 +487,48 @@ public static class VariableBuilder
 ### 笛卡兒積展開
 
 `BuildBVs<T>(setA, setB, setC)` → 變數總數 = `|setA| × |setB| × |setC|`。
+
+---
+
+## 7.5 `SetBase` 積木 + 泛型宣告（OptSet，2026-07 新增）
+
+**檔案**：`Foundation\src\OptimFoundation.Core\SetBase.cs` + `AutoSetsGenerator.cs`
+
+純加法：字串式 `[OptVar("Date:DateTime")]` / `[OptParam(...)]` 永久保留（逃生口）；泛型式為 paved path。
+
+### 宣告（generator 自動生成 class body）
+
+```csharp
+[OptSet<DateTime>] public partial class Set_Date { }      // → : SetBase<DateTime>
+[OptSet]           public partial class Set_Employee { }  // 無參數 = 預設 string
+
+[OptParam<Set_Date, Set_Employee>] public partial class Parameter_ShiftDemand { }
+// → ParameterBase + Date(DateTime) + Employee(string) + QTY + 兩個 ctor
+
+[OptVar<Set_Date, Set_Employee>] public partial class VariableB_ShiftAssign { }
+// → VariableBase + Date + Employee（型別由前綴 B/X/I 決定）
+```
+
+- property 名 = 積木類名去 `Set_` 前綴；型別從 `[OptSet<T>]` 自動抓；泛型參數順序 = key 組成順序
+- 引用非積木 → CS0311（`where T : ISetBrick`）；元素型別非法 → OPTF004；缺 `[OptSet]` → OPTF005
+- 合法元素型別：`string / DateTime / int / long / double / decimal`
+
+### `SetBase<T>` API
+
+```csharp
+public abstract class SetBase<T> : ISetBrick, IEnumerable<T>
+{
+    public string SetName { get; }              // 去 Set_ 前綴的積木名
+    public int Count { get; }                   // 未載入 → InvalidOperationException
+    public bool Contains(T item);
+    public void LoadInline(params T[] items);
+    public void LoadFrom(IEnumerable<T> items);
+    public void LoadCsv(string fileName);       // 依 T dispatch CsvCtrl.Read*Set
+    public void LoadDb(DbDataSource source);    // set 名取自類名
+}
+```
+
+四道防呆（全丟例外）：未載入即用 / 載入後為空 / 二次載入 / 重複成員。`SetBase<T>` 實作 `IEnumerable<T>`，可直接傳入 `BuildBVs/BuildIVs/BuildCVs(params object[])`。
 
 ---
 

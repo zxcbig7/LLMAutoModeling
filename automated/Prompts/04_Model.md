@@ -1,4 +1,4 @@
-# Stage 4: AML Model (AMPL-Style Markdown)
+# Stage 4: Model (AMPL-Style Markdown)
 
 ## Role
 You are an expert in optimization modeling.

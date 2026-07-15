@@ -1,7 +1,6 @@
 # AI Modeling — 三階段流程總綱（天條層）
 
-> 規範單一來源。任何 AI agent 從 [`../AGENTS.md`](../AGENTS.md) 進來，先讀本檔。
-> 本檔是硬規則（天條）；各階段細則在同資料夾的 `phase-*.md`。所有路徑相對本 repo。
+> **通用天條唯一權威在 [`../AGENTS.md`](../AGENTS.md)**；本檔是 interactive 路線的三階段流程細則（phase gate / 建模轉譯專屬規則），各階段細節在同資料夾的 `phase-*.md`。所有路徑相對本 repo。
 
 ## 系統脈絡
 
@@ -24,7 +23,7 @@ MILP / LP / IP 數學模型開發，服務 OptimFoundation CPLEX C# 框架。
 
 ## 數學一致性（天條）
 
-- NEVER 移項、改號、翻轉比較方向、合併化簡 —— ALWAYS AML 左側項 → `AddLHS(...)`、右側項 → `AddRHS(...)`，`>=` → `CreateGreatEqual`、`<=` → `CreateLessEqual`、`=` → `CreateEqual` —— Why: 轉譯必須逐條對照 Model.md 驗證
+- NEVER 移項、改號、翻轉比較方向、合併化簡 —— ALWAYS Model 左側項 → `AddLHS(...)`、右側項 → `AddRHS(...)`，`>=` → `CreateGreatEqual`、`<=` → `CreateLessEqual`、`=` → `CreateEqual` —— Why: 轉譯必須逐條對照 Model.md 驗證
 - MUST 數值保真：所有數值與題目描述完全一致，NEVER 四捨五入、推算、填佔位符
 - ★ 禁止 Hardcode：模型所有數值一律定義在 `Parameter` 類別的 `QTY` 欄位、經 `Dataload` 取得；`Constraint` / `Objective` 內不得出現任何裸數字
 
@@ -45,10 +44,6 @@ MILP / LP / IP 數學模型開發，服務 OptimFoundation CPLEX C# 框架。
 
 ## Fatal
 
-- NEVER 模型未確認就產 `.cs`（使用者明說「模型我確認過了直接寫」視同通過 gate）
-- NEVER 移項 / 改號 / 翻轉比較方向 / 四捨五入數值
-- NEVER Constraint / Objective 出現裸數字
-- NEVER 呼叫不存在的 API（見 phase-2 禁止清單）
-- NEVER 改 OptimFoundation 框架本體（唯讀）——要擴充在專案端寫 helper
+通用天條（數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用）**全量見 [`../AGENTS.md`](../AGENTS.md)**——不在此重複。本檔上方的 phase gate / 命名 / 數學一致性為 interactive 路線專屬補充。interactive 額外硬規則：**模型未經使用者確認前 NEVER 產任何 `.cs`**（使用者明說「模型確認過直接寫」視同通過 gate）。
 - NEVER 用絕對路徑
 </content>

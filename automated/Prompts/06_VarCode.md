@@ -4,7 +4,7 @@
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Convert AML `var` declarations into C# Variable classes.
+Convert Model `var` declarations into C# Variable classes.
 
 ```csharp
 using OptimFoundation.Core;
@@ -45,7 +45,7 @@ public class VariableX_<VarName> : VariableBase
 
 ## Examples
 
-**AML**: `var UnitsShipped {CABIN, PRODUCT} integer >= 0;`
+**Model**: `var UnitsShipped {CABIN, PRODUCT} integer >= 0;`
 ```csharp
 public class VariableY_UnitsShipped : VariableBase
 {
@@ -61,7 +61,7 @@ public class VariableY_UnitsShipped : VariableBase
 }
 ```
 
-**AML**: `var TotalCost >= 0;` (no index set)
+**Model**: `var TotalCost >= 0;` (no index set)
 ```csharp
 public class VariableX_TotalCost : VariableBase
 {
@@ -76,9 +76,9 @@ public class VariableX_TotalCost : VariableBase
 
 ## Input
 
-### AML Model
+### Model
 ```
-{{AMLModel}}
+{{Model}}
 ```
 
 Return code only (no explanation).

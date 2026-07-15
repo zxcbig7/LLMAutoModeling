@@ -27,26 +27,26 @@ OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線
 ```
 MyProject/
 ├── Program.cs
-├── MyProblem.cs                 # 主問題類別（IDisposable）
+├── MyProblem.cs # 主問題類別（IDisposable）
 ├── MyProject.csproj
 │
 ├── Set\
-│   └── Dataload.cs              # Sets、Parameters、罰分權重
+│   └── Dataload.cs # Sets、Parameters、罰分權重
 │
 ├── Parameter\
-│   └── Parameter_Xxx.cs         # 繼承 ParameterBase
+│   └── Parameter_Xxx.cs # 繼承 ParameterBase
 │
 ├── Variable\
-│   ├── VariableB_Xxx.cs         # Binary（繼承 VariableBase）
-│   ├── VariableX_Xxx.cs         # Continuous（繼承 VariableBase）
-│   └── VariableCreate.cs        # BuildBVs / BuildCVs 呼叫
+│   ├── VariableB_Xxx.cs # Binary（繼承 VariableBase）
+│   ├── VariableX_Xxx.cs # Continuous（繼承 VariableBase）
+│   └── VariableCreate.cs # BuildBVs / BuildCVs 呼叫
 │
 ├── Objective\
 │   └── ObjectiveFunction.cs
 │
 └── Constraint\
     ├── BuildModel.cs
-    └── Constraint_Xxx.cs        # 繼承 ConstraintBase
+    └── Constraint_Xxx.cs # 繼承 ConstraintBase
 ```
 
 ---
@@ -58,13 +58,13 @@ MyProject/
 ```csharp
 CplexConfig config = new CplexConfig
 {
-    epGap       = 0.03,    // MIP gap 容忍度（3%）
-    timeLimit   = 300,     // 求解時間上限（秒）
-    workThreads = 8,       // 平行執行緒數
-    enableLog   = true,    // 顯示 CPLEX log
-    exportSol   = true,    // 匯出 .sol 檔
-    exportLP    = true,    // 匯出 .lp 檔（可讀模型）
-    exportMPS   = true     // 匯出 .mps 檔
+    epGap = 0.03, // MIP gap 容忍度（3%）
+    timeLimit = 300, // 求解時間上限（秒）
+    workThreads = 8, // 平行執行緒數
+    enableLog = true, // 顯示 CPLEX log
+    exportSol = true, // 匯出 .sol 檔
+    exportLP = true, // 匯出 .lp 檔（可讀模型）
+    exportMPS = true // 匯出 .mps 檔
 };
 ```
 
@@ -72,9 +72,9 @@ CplexConfig config = new CplexConfig
 
 ```csharp
 optEngine = new OptEngine(config);
-optEngine.Build();              // 初始化 CPLEX 環境
-bool isOK = optEngine.Solve();  // 執行求解，回傳是否找到可行解
-int  vars  = optEngine.varCount; // 目前變數數量
+optEngine.Build(); // 初始化 CPLEX 環境
+bool isOK = optEngine.Solve(); // 執行求解，回傳是否找到可行解
+int vars = optEngine.varCount; // 目前變數數量
 ```
 
 ---
@@ -86,7 +86,7 @@ int  vars  = optEngine.varCount; // 目前變數數量
 本範本**預設**用 `AutoSetsGenerator` 宣告變數——一行 attribute，編譯期自動補完整 class，樣板最省、最不易錯（AI 協作首選）。屬性順序對應 `BuildBVs` 傳入 sets 的順序。
 
 ```csharp
-using OptimModeling;
+using OptimFoundation.Modeling;
 
 // Binary：三維。生成 Item/Machine/Date 屬性；型別由前綴 VariableB_ 決定
 [OptVar("Item", "Machine", "Date:DateTime")]
@@ -97,7 +97,7 @@ public partial class VariableB_Assign { }
 public partial class VariableX_Slack { }
 ```
 
-> `[OptVar]` 只帶 sets，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名）。set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別。csproj 需以 analyzer 掛入 `OptimModeling.Generators`（本範本已掛）。
+> `[OptVar]` 只帶 sets，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名）。set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別。csproj 需以 `<Analyzer Include="..\dlls\OptimFoundation.Generators.dll" />` 掛入（本範本已掛）。也可用泛型 Set 積木語法 `[OptSet<T>]` + `[OptVar<Set_X>]`（見 OptimFoundation `specs/2026-07-13-optset-basic-objects.md`）。
 
 ### 定義（後路：手寫）
 
@@ -106,9 +106,9 @@ generator 不適用時（特殊型別、需逐行 debug 生成碼）才手寫，
 ```csharp
 public class VariableB_Assign : VariableBase
 {
-    public string   Item    { get; set; } = string.Empty;
-    public string   Machine { get; set; } = string.Empty;
-    public DateTime Date    { get; set; }
+    public string Item { get; set; } = string.Empty;
+    public string Machine { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
 }
 ```
 
@@ -144,8 +144,8 @@ optEngine.AddRHS(1.0, new VariableB_OtherVar { Item = i });
 optEngine.AddRHS(-1); // 負常數（繼續累加）
 
 // 建立約束（名稱格式：ConstraintName@idx1@idx2）
-optEngine.CreateEqual      ($"{ConstraintName}@{i}@{d:yyyy_MM_dd}");
-optEngine.CreateLessEqual  ($"{ConstraintName}@{i}@{m}");
+optEngine.CreateEqual ($"{ConstraintName}@{i}@{d:yyyy_MM_dd}");
+optEngine.CreateLessEqual ($"{ConstraintName}@{i}@{m}");
 optEngine.CreateGreatEqual ($"{ConstraintName}@{i}");
 
 ConstraintCount++;
@@ -176,7 +176,7 @@ ConstraintCount++;
 dataload.Items.ForEach(i =>
     optEngine.AddLHS(penaltyWeight, new VariableX_Slack { Item = i }));
 
-optEngine.CreateMinimize();   // 或 CreateMaximize()
+optEngine.CreateMinimize(); // 或 CreateMaximize()
 ```
 
 ---
@@ -214,7 +214,7 @@ CsvCtrl.WriteSolution<VariableB_Assign>(engine, dataId: "V1", userId: "USER");
 ### 預設：source generator
 
 ```csharp
-using OptimModeling;
+using OptimFoundation.Modeling;
 
 // 含值參數（生成 Item/Date/QTY + 兩個建構子）
 [OptParam("Item", "Date:DateTime")]
@@ -232,21 +232,21 @@ public partial class Parameter_PreAssign { }
 ```csharp
 public class Parameter_Demand : ParameterBase
 {
-    public string   Item  { get; set; } = string.Empty;
-    public DateTime Date  { get; set; }
-    public double   QTY   { get; set; }
+    public string Item { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public double QTY { get; set; }
 
     public Parameter_Demand() { }
-    public Parameter_Demand(params object[] sets) => InitClassBySets(sets);  // 動態建構需要時
+    public Parameter_Demand(params object[] sets) => InitClassBySets(sets); // 動態建構需要時
 }
 ```
 
 CSV 讀取：
 
 ```csharp
-SetA         = CsvCtrl.ReadStrSet   ("Set_A.csv");
-SetC         = CsvCtrl.ReadDateSet  ("Set_C.csv");
-paramList    = CsvCtrl.BuildParameter<Parameter_Demand>("Param_Demand");
+SetA = CsvCtrl.ReadStrSet ("Set_A.csv");
+SetC = CsvCtrl.ReadDateSet ("Set_C.csv");
+paramList = CsvCtrl.BuildParameter<Parameter_Demand>("Param_Demand");
 ```
 
 ---

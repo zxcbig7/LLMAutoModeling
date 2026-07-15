@@ -9,22 +9,22 @@
     <RootNamespace>MaxWeightIndependentSet</RootNamespace>
   </PropertyGroup>
 
-  <!-- 所有 DLL 統一參考 repo 根的 dlls/（此專案多一層 csharp/ → ..\..\..\dlls\）。設置見 dlls/README.md -->
+  <!-- 所有 DLL 統一參考 repo 根的 dlls/（Projects/<X>/ 此層 → ..\..\dlls\）。設置見 dlls/README.md -->
   <ItemGroup>
     <Reference Include="ILOG.Concert">
-      <HintPath>..\..\..\dlls\ILOG.Concert.dll</HintPath>
+      <HintPath>..\..\dlls\ILOG.Concert.dll</HintPath>
     </Reference>
     <Reference Include="ILOG.CPLEX">
-      <HintPath>..\..\..\dlls\ILOG.CPLEX.dll</HintPath>
+      <HintPath>..\..\dlls\ILOG.CPLEX.dll</HintPath>
     </Reference>
     <Reference Include="NLog">
-      <HintPath>..\..\..\dlls\NLog.dll</HintPath>
+      <HintPath>..\..\dlls\NLog.dll</HintPath>
     </Reference>
     <Reference Include="OptimFoundation.Core">
-      <HintPath>..\..\..\dlls\OptimFoundation.Core.dll</HintPath>
+      <HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath>
     </Reference>
     <Reference Include="OptimFoundation.Cplex">
-      <HintPath>..\..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
+      <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
     </Reference>
   </ItemGroup>
 
