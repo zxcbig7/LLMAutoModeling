@@ -30,7 +30,7 @@ MILP / LP / IP 數學模型開發，服務 OptimFoundation CPLEX C# 框架。
 ## 標準流程（新題目）
 
 1. **Model Design** → [`phase-1-model-design.md`](phase-1-model-design.md)：4 階段降維（去故事化+單位 → 語義判別+Terminology → SET/PARAM/VAR/CONSTRAINT/OBJ 抽取 → 建模自驗）產 `Projects/<Project>/Model/<Project>_Model.md`（LaTeX，每條 constraint 標 pattern tag，手法見 [`linearization-patterns.md`](linearization-patterns.md)）→ 歧義追問 → 等使用者確認
-2. **Foundation Coding** → [`phase-2-coding.md`](phase-2-coding.md)：在 [`../Projects/`](../Projects/)`<Project>/` 依五資料夾逐條轉譯 → `dotnet build` → fix loop（≤5）→ `dotnet run` → 解驗證協定（四步）
+2. **Foundation Coding** → [`phase-2-coding.md`](phase-2-coding.md)：在 [`../Projects/`](../Projects/)`<Project>/` 依六資料夾逐條轉譯 → `dotnet build` → fix loop（≤5）→ `dotnet run` → 解驗證協定（四步）
 3. **Foundation Tuning** → [`phase-3-tuning.md`](phase-3-tuning.md)（使用者提出才做）：正確性 gate → 依觸發類型走 solver / IIS / structure 路線
 
 ## repo 內權威參考（相對可達，讀來參照不複製）

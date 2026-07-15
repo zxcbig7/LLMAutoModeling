@@ -14,32 +14,36 @@ MIP — 機台台數（VariableI_Machine）為整數，資源流量（VariableX_
 
 ## 執行流程
 
+`Program.cs` 為 OptModel Fluent composition root（無手寫 `Problem.Execute()` 類別）：
+
 ```
 Program.cs
-  └─ FactorioOptimizationProblem.Execute()
-       ├─ VariableCreate.Build()     建機台（整數）+ 資源（連續）變數
-       └─ BuildModel.Build()
-            ├─ ObjectiveFunction     max R
-            ├─ Constraint_InputCap       C1 石油上限、C2 固定潤滑廠
-            ├─ Constraint_ResourceFlowDef C3~C8 資源流量定義
-            ├─ Constraint_ResourceCap    C9~C11 資源可用上限
-            ├─ Constraint_OilRatio       C12~C13 5:9:11 比例
-            └─ Constraint_Downstream     C14 固體燃料消耗
+  └─ new OptModel("FactorioOptimization")
+       ├─ .AddVariables(e => new VariableCreate(dataload, e).Build()) 建機台（整數）+ 資源（連續）變數
+       ├─ .AddModel(e => new BuildModel(dataload, e).Build())
+       │    ├─ ObjectiveFunction max R
+       │    ├─ Constraint_InputCap C1 石油上限、C2 固定潤滑廠
+       │    ├─ Constraint_ResourceFlowDef C3~C8 資源流量定義
+       │    ├─ Constraint_ResourceCap C9~C11 資源可用上限
+       │    ├─ Constraint_OilRatio C12~C13 5:9:11 比例
+       │    └─ Constraint_Downstream C14 固體燃料消耗
+       ├─ .OnSolved(e => dataload.WriteToCSV(e))
+       └─ m.Execute()
 ```
 
 ## 機台與資源命名
 
 | 變數 | MachineType / ResourceType |
-|------|---------------------------|
-| x    | Refinery |
-| c1   | ChemPlant_Lube |
-| c2   | ChemPlant_LightSolid |
-| c3   | ChemPlant_GasSolid |
-| c4   | ChemPlant_HeavySolid |
-| a    | Assembler_Rocket |
-| H    | HeavyOil |
-| L    | LightOil |
-| G    | Gas |
-| S    | SolidFuel |
-| P    | Lubricant |
-| R    | RocketFuel |
+|---|---|
+| x | Refinery |
+| c1 | ChemPlant_Lube |
+| c2 | ChemPlant_LightSolid |
+| c3 | ChemPlant_GasSolid |
+| c4 | ChemPlant_HeavySolid |
+| a | Assembler_Rocket |
+| H | HeavyOil |
+| L | LightOil |
+| G | Gas |
+| S | SolidFuel |
+| P | Lubricant |
+| R | RocketFuel |

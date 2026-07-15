@@ -22,13 +22,16 @@ OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線
 
 ---
 
-## 專案結構（5-component）
+## 專案結構（六資料夾）
 
 ```
 MyProject/
 ├── Program.cs
 ├── MyProblem.cs # 主問題類別（IDisposable）
 ├── MyProject.csproj
+│
+├── Model\
+│   └── Glossary.md # 名詞定義、數學模型文件
 │
 ├── Set\
 │   └── Dataload.cs # Sets、Parameters、罰分權重

@@ -17,7 +17,7 @@
 - MUST Variable class 只放 properties、不寫 constructor（框架用 reflection 組 key）
 - MUST build 失敗走 fix loop：擷取 compiler error → 修正 → 重 build，**至多 5 次**；仍失敗 → 停下回報，NEVER 硬掰
 
-## 專案結構（五資料夾，逐條對應 Model.md）
+## 專案結構（六資料夾，逐條對應 Model.md）
 
 ```text
 Projects/<Project>/

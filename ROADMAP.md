@@ -9,7 +9,7 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 
 > 本檔是**方向與目標的單一入口**：把原本散在多份 spec 的「願景 / 決策轉折 / 現況」串成一條線。
 > 操作規範看 [`AGENTS.md`](AGENTS.md) → [`interactive/`](interactive/) / [`automated/`](automated/)；
-> 仍在進行中的細部 spec 見文末「Spec 索引」。
+> 已併入本檔的舊 spec 清單見文末「Spec 索引」；已刪除規格的決策記錄見 §3。
 
 [TOC]
 
@@ -44,11 +44,12 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 
 | 日期 | 來源 | 方向決策 |
 | --- | --- | --- |
-| 2026-05-20 | env spec（保留） | 定調**兩個 Framework**：①Claude Code 互動（先做）②Web API+RAG（後續）。16-stage pipeline、Semantic Kernel RAG 全在此 |
+| 2026-05-20 | ~~env spec~~（已刪 2026-07-15） | 定調**兩個 Framework**：①Claude Code 互動（先做）②Web API+RAG（後續）。16-stage pipeline、Semantic Kernel RAG 全在此 |
 | 2026-05-29 | ~~cplex 開發說明書~~（已併入本檔） | 舊資料夾慣例：`Data/` / `VariablesClass/` / `Constraints/` + 手寫 `Problem.Execute()`。**已全面被取代** |
 | 2026-06-21 | ~~spec-refresh~~（已併入本檔） | **第一次轉彎**：收斂成「**唯一** Fluent `OptModel` pattern」+ 每專案標配可跑 tuning（`ExperimentRunner`），淘汰手寫 Problem |
-| 2026-06-21 | tuning-protocol（保留） | 加 **Stage 15 調校協定**：碰模型必先讀，**正確性 gate → 效能 tuning**，實驗回饋接 `Trial.Capture` / `SolveMetrics` |
-| 2026-06-22 | dual-architecture（保留） | **第二次轉彎（部分推翻 06-21）**：不再「唯一 OptModel」，改**雙 pattern 並存**；Manual 保留為教學/後路，AI 預設偏好 Generator |
+| 2026-06-21 | ~~tuning-protocol~~（已刪 2026-07-15） | 加 **Stage 15 調校協定**：碰模型必先讀，**正確性 gate → 效能 tuning**，實驗回饋接 `Trial.Capture` / `SolveMetrics` |
+| 2026-06-22 | ~~dual-architecture~~（已刪 2026-07-15） | **第二次轉彎（部分推翻 06-21）**：不再「唯一 OptModel」，改**雙 pattern 並存**；Manual 保留為教學/後路，AI 預設偏好 Generator |
+| 2026-07-15 | wave2 Phase A（`LLMDevFramework` repo `specs/2026-07-14-ai-modeling-governance-wave2.md`） | D15：四份 draft spec 刪除（翻案「point-in-time 記錄保留」原則，Vic 拍板：舊規範致混亂優先於保史，git 歷史即封存）+ D16：`HospitalRosteringProblem_new/` 整案刪除 |
 
 **淨結果**：路線 = interactive / automated 並存；建構法 = Generator（預設）/ Manual（後路）並存。舊的「`Data/`+`VariablesClass/`+手寫 Problem」慣例正式作廢，資料夾標準統一為 `Model/ Parameter/ Set/ Variable/ Objective/ Constraint/`，namespace `ProjectName.*`。
 
@@ -99,21 +100,9 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 - [ ] `MaxWeightIndependentSet` 標準化為六資料夾 + 雙模式（stages 數學文件歸入 `Model/`）
 - [ ] Framework 2 Web API：依 env spec 的 Stub → 逐層實作
 - [ ] tutorial 未提交工作收尾（tech-report / ppt splice / why-optimfoundation）
-
-**`HospitalRosteringProblem_new/` 刪除條件（原 delete-list §F）**
-
-`_new` 是舊命名（`SandBox`/`MyApp` namespace、`Data/`+`VariablesClass/`+`Constraints/` 資料夾）但**目前是唯一保有完整實作參考的版本**。刪除前提：`_Generator`/`_Manual` 的限制式/目標式/Dataload 移植完成 + 本機 build + 求解驗證通過後，才可 `Remove-Item Projects/HospitalRosteringProblem_new -Recurse`。（其餘 delete-list A/B/C/E 已於 2026-06-22 執行完畢。）
+- [x] ~~`HospitalRosteringProblem_new/` 刪除條件（原 delete-list §F）~~ 2026-07-15 wave2 Phase A 整案刪除（Vic 拍板 D16 直接覆蓋原定完成條件，見 §3 決策史）
 
 ## 7. Spec 索引
-
-**仍在進行中 / 實作藍圖（保留）**
-
-| Spec | 狀態 | 為何保留 |
-| --- | --- | --- |
-| [`automated/specs/2026-05-20-...env.md`](automated/specs/2026-05-20-ai-modeling-optim-cplex-env.md) | draft | F2 Web API+RAG 唯一完整藍圖（endpoints/DTO/module 互動），未實作 |
-| [`automated/specs/2026-06-21-model-tuning-protocol.md`](automated/specs/2026-06-21-model-tuning-protocol.md) | draft | Stage 15 協定細節，Prompt 產物未生 |
-| [`specs/2026-06-22-dual-architecture-tutorial.md`](specs/2026-06-22-dual-architecture-tutorial.md) | implementing | 雙架構教學，尚有 build 驗證待辦 |
-| [`specs/2026-06-22-dual-architecture-CodeMap.md`](specs/2026-06-22-dual-architecture-CodeMap.md) | reference | 雙架構骨架地圖 + 變數/限制式對照 |
 
 **已併入本檔（原 spec 已刪除）**
 
