@@ -4,28 +4,30 @@
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Generate the `BuildConstraints` class that instantiates and calls each Constraint class.
+Generate the `BuildConstraints` class that instantiates and calls each Constraint class plus the `ObjectiveFunction`, under `Constraint/` (`namespace <ProjectName>.Constraint`).
 
 ```csharp
 using OptimFoundation.Core;
 using OptimFoundation.Cplex;
+using <ProjectName>.Set;
+using <ProjectName>.Objective;
 
-namespace Model
+namespace <ProjectName>.Constraint
 {
     public class BuildConstraints
     {
-        private Dataload dataload;
-        private OptEngine engine;
+        private readonly Dataload _dataload;
+        private readonly OptEngine _engine;
 
         public BuildConstraints(Dataload dataload, OptEngine engine)
         {
-            this.dataload = dataload;
-            this.engine = engine;
+            _dataload = dataload;
+            _engine = engine;
         }
 
         public void Build()
         {
-            // Instantiate and call Build() on each Constraint_XXX
+            // Instantiate and call Build() on the ObjectiveFunction, then each Constraint_XXX
         }
     }
 }
@@ -36,11 +38,15 @@ namespace Model
 ```csharp
 public void Build()
 {
-    new Constraint_BudgetConstraint(dataload, engine).Build();
-    new Constraint_MinimumInvestment(dataload, engine).Build();
+    new ObjectiveFunction(_dataload, _engine).Build();
+
+    new Constraint_BudgetConstraint(_dataload, _engine).Build();
+    new Constraint_MinimumInvestment(_dataload, _engine).Build();
     // ... one line per constraint class
 }
 ```
+
+- `BuildConstraints` only calls into `ObjectiveFunction` / `Constraint_Xxx`; NEVER write raw `AddLHS`/`AddRHS` calls directly in this class.
 
 ---
 

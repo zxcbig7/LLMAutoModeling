@@ -1,15 +1,16 @@
-# Stage 6: Variables.cs (OptimFoundation CPLEX)
+# Stage 6: Variable Classes (OptimFoundation CPLEX)
 
 ## Role
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Convert Model `var` declarations into C# Variable classes.
+Convert Model `var` declarations into C# Variable classes, one per variable, under `Variable/` (`namespace <ProjectName>.Variable`).
 
 ```csharp
-using OptimFoundation.Core;
+using OptimFoundation.Modeling;
+using <ProjectName>.Set;
 
-namespace Model
+namespace <ProjectName>.Variable
 {
     <Design Variable classes here>
 }
@@ -18,28 +19,43 @@ namespace Model
 ## Rules
 
 - Only process `var` declarations (ignore `set`, `param`, objective, constraints).
-- Each var → class inheriting from `VariableBase`.
-- Class name:
-  - Continuous (`>= 0` or bounded) → `VariableX_<Name>`
-  - Integer or binary → `VariableY_<Name>`
-- Each index set → one property named after the **set name** (ALL UPPERCASE with underscores).
-- No `QTY`, `Value`, or data properties — variables hold no data.
-- If no index set → class with no properties except constructor.
+- Class name prefix is **load-bearing** — it decides the variable's solver type, not just its name:
+  - `VariableB_<Name>` → Binary (0/1)
+  - `VariableX_<Name>` → Continuous
+  - `VariableI_<Name>` → Integer
+  - A prefix outside these three is a generator **compile error `OPTF001`**.
+- **Default path (paved path)**: source generator. Declare a bare `[OptVar]` + one `[OptDim<Set_X>("Name")]` per index set (attribute order = key order). Do NOT hand-write the class body.
+- No `QTY`, `Value`, or data properties — variables hold no data, only key dimensions.
+- No index set → bare `[OptVar]` with no `[OptDim]` at all: a 0-dimensional (scalar) variable, key = class name only, no `@` suffix.
+- **Fallback** (only when the generator genuinely doesn't fit): hand-write `: VariableBase`, PascalCase properties, **no constructor** — the framework builds the variable's key via reflection off property declaration order, so a hand-written class must never declare one.
 
-## Class Structure
+## Class Structure (paved path — source generator)
 
 ```csharp
-public class VariableX_<VarName> : VariableBase
-{
-    #region Members
-    public string SET_NAME_1 { get; set; }
-    public string SET_NAME_2 { get; set; }
-    #endregion
+using OptimFoundation.Modeling;
+using <ProjectName>.Set;
 
-    #region Constructors
-    public VariableX_<VarName>(params object[] sets) => InitClassBySets(sets);
-    public VariableX_<VarName>() { }
-    #endregion
+namespace <ProjectName>.Variable
+{
+    [OptVar]
+    [OptDim<Set_SetName1>("SetName1")]
+    [OptDim<Set_SetName2>("SetName2")]
+    public partial class VariableX_VarName { }
+}
+```
+
+## Class Structure (fallback — hand-written)
+
+```csharp
+using OptimFoundation.Core;
+
+namespace <ProjectName>.Variable
+{
+    public class VariableI_VarName : VariableBase
+    {
+        public string SetName1 { get; set; } = string.Empty;
+        public string SetName2 { get; set; } = string.Empty;
+    }
 }
 ```
 
@@ -47,30 +63,32 @@ public class VariableX_<VarName> : VariableBase
 
 **Model**: `var UnitsShipped {CABIN, PRODUCT} integer >= 0;`
 ```csharp
-public class VariableY_UnitsShipped : VariableBase
-{
-    #region Members
-    public string CABIN { get; set; }
-    public string PRODUCT { get; set; }
-    #endregion
-
-    #region Constructors
-    public VariableY_UnitsShipped(params object[] sets) => InitClassBySets(sets);
-    public VariableY_UnitsShipped() { }
-    #endregion
-}
+[OptVar]
+[OptDim<Set_Cabin>("Cabin")]
+[OptDim<Set_Product>("Product")]
+public partial class VariableI_UnitsShipped { }
 ```
 
-**Model**: `var TotalCost >= 0;` (no index set)
+**Model**: `var TotalCost >= 0;` (no index set, continuous)
 ```csharp
-public class VariableX_TotalCost : VariableBase
-{
-    #region Constructors
-    public VariableX_TotalCost(params object[] sets) => InitClassBySets(sets);
-    public VariableX_TotalCost() { }
-    #endregion
-}
+[OptVar]
+public partial class VariableX_TotalCost { }
 ```
+
+**Model**: `var UseRoute {ORIGIN, DEST} binary;`
+```csharp
+[OptVar]
+[OptDim<Set_Origin>("Origin")]
+[OptDim<Set_Dest>("Dest")]
+public partial class VariableB_UseRoute { }
+```
+
+## Do NOT emit — outdated API
+
+- ❌ The old two-prefix scheme `VariableX_<Name>` (continuous) / `VariableY_<Name>` (integer-or-binary) — that scheme no longer exists. Current framework uses **three** prefixes: `VariableB_` (binary) / `VariableX_` (continuous) / `VariableI_` (integer). Never emit a `VariableY_` class.
+- ❌ `ALL_CAPS_WITH_UNDERSCORES` property names (`CABIN`, `PRODUCT`) — PascalCase dimension names only.
+- ❌ Hand-written constructor `VariableX_VarName(params object[] sets) => InitClassBySets(sets)` — Variable classes never declare a constructor.
+- `[OptVar("Date:DateTime")]` (string-form) / `[OptVar<Set_A, Set_B>]` (multi-generic form, arity 1..6) — **not deprecated, not errors**: the generator still fully supports both and they remain legal, compilable code. This pipeline simply always emits the `[OptVar]` + `[OptDim<TSet>("Name")]` form instead, for consistent per-dimension role naming — do not describe either form as outdated/removed/wrong if you encounter them in existing code.
 
 ---
 

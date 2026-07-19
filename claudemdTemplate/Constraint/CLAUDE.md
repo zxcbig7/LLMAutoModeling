@@ -8,6 +8,18 @@
 - 每條限制式建立後 `ConstraintCount++`
 - Build() 結尾：`Logging.Info($"[{ConstraintName}] {ConstraintCount}")`
 
+## Set 積木迭代
+
+`dataload` 的 Set 欄位是 `Set_<Name>` 積木（`IReadOnlyList<T>`/`IEnumerable<T>`），不是 `List<T>` —— 一律用 `foreach`，NEVER `.ForEach(...)`（那是 `List<T>` 專屬方法，積木上呼叫是 compile error `CS1061`）：
+
+```csharp
+// ✓ 正確
+foreach (var p in _dataload.PRODUCT) { ... }
+
+// ✗ 禁止：Set 積木沒有 .ForEach
+_dataload.PRODUCT.ForEach(p => { ... });
+```
+
 ## 係數來源（天條）
 
 所有數值係數透過 `dataload` 從 `Parameter.QTY` 取得，不得 hardcode 任何裸數字。

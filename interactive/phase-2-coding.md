@@ -10,8 +10,10 @@
 ## 硬規則
 
 - MUST 專案建在 [`../Projects/`](../Projects/)`<Project>/`，DLL 一律參考 [`../dlls/`](../dlls/)（csproj HintPath `..\..\dlls\Xxx.dll`）—— Why: DLL 唯一來源天條，路徑亂掉 build 就靠運氣
-- MUST `Parameter\` 資料夾必須存在；Sets 由 Parameters 衍生（`=> parameter_Xxx.Select(...).Distinct().ToList()`）—— Why: 資料只進一次，Set 與 Parameter 永不失同步
-- MUST 建模方式預設 source generator（`[OptVar]` / `[OptParam]`）+ Fluent `OptModel`；需逐行掌控引擎生命週期才退回手寫 `: VariableBase` / `XxxProblem.Execute()` —— 範例見 `../Projects/HospitalRostering_Generator` 與 `../Projects/HospitalRostering_Manual`
+- MUST `Parameter\` 資料夾必須存在；Sets 用 `Set_<Name>` 積木（`[OptSet<T>]`）宣告，由 Parameters 衍生時先建好 Parameter 資料、再 `SET.LoadFrom(parameter_Xxx.Select(...).Distinct())`（NEVER 裸 `List<string>` 欄位）—— Why: 資料只進一次，Set 與 Parameter 永不失同步；積木化才能被框架註冊驗證
+- MUST `Dataload` 宣告為 `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可），建構點一律 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()` —— Why: `OptData.Load` 才會觸發框架的參照完整性 / 重複 key / 數值 sanity 驗證，裸建構仍可編譯但靜默跳過全部檢查
+- MUST NEVER 在 `Dataload` 或任何專案檔手寫驗證邏輯（如 `ValidateSetsCoverParameters()`）—— 機械邏輯集中在框架 `DataContext`，一次聚合列出所有問題；專案端只留顯式宣告
+- MUST 建模方式預設 source generator（`[OptVar]` / `[OptParam]` 光桿 attribute + 逐維 `[OptDim<Set_X>("Name")]`）+ Fluent `OptModel`；需逐行掌控引擎生命週期才退回手寫 `: VariableBase` / `XxxProblem.Execute()` —— 範例見 `../Projects/HospitalRostering_Generator` 與 `../Projects/HospitalRostering_Manual`（註：兩範例專案建於本波資料防護規格之前，尚未套用 `DataContext`/`OptData.Load`，示範的是 generator/手寫二選一而非最新建構路徑）
 - MUST 參數讀取先 LINQ 存局部變數再傳入 `AddLHS` / `AddRHS`，NEVER 把 LINQ 內嵌在呼叫裡 —— Why: 可 debug、可驗值，內嵌讀不出中間值
 - MUST `BuildModel.cs` 只呼叫各 `Constraint_Xxx.Build()` 與 `ObjectiveFunction`，NEVER 在裡面直接寫 `AddLHS` / `AddRHS`
 - MUST Variable class 只放 properties、不寫 constructor（框架用 reflection 組 key）
@@ -25,7 +27,7 @@ Projects/<Project>/
 ├── Program.cs # 唯一進入點（solve / experiment 雙模式）
 ├── ExperimentRunner.cs # Phase 3 參數掃描用
 ├── Model/ # <Project>_Model.md + Glossary.md（Phase 1 產物）
-├── Set/ # Dataload.cs（Sets 由 Parameters 衍生 + WriteToCSV）
+├── Set/ # Set_* 積木（[OptSet<T>]）+ Dataload.cs（: DataContext，Sets 由 Parameters 衍生 + WriteToCSV）
 ├── Parameter/ # Parameter_Xxx.cs（[OptParam] 生成，QTY 欄位）
 ├── Variable/ # VariableB_/X_/I_Xxx.cs + VariableCreate.cs
 ├── Objective/ # ObjectiveFunction.cs
@@ -39,7 +41,7 @@ Namespace = `<Project>.<資料夾名>`（根目錄 = `<Project>`）。
 ```csharp
 if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }
 
-var dataload = new Dataload();
+var dataload = OptData.Load(() => new Dataload());   // 唯一建構路徑——觸發框架自動驗證
 using (var m = new OptModel("<Project>")
     .UseConfig(() => new CplexConfig { epGap = 1e-4, timeLimit = 300, workThreads = 8, enableLog = true, exportSol = true })
     .AddVariables(e => new VariableCreate(dataload, e).Build())
@@ -59,11 +61,11 @@ using (var m = new OptModel("<Project>")
 ## Pool API（限制式）
 
 ```csharp
-foreach (var e in dataload.Employees)
+foreach (var e in dataload.EMPLOYEE)     // Set_Employee 積木，foreach 迭代（非 .ForEach，Set 積木不是 List<T>）
 {
-    foreach (var d in dataload.Dates)
-        engine.AddLHS(1.0, new VariableB_Assign { EMPLOYEE = e, DATE = d });
-    var maxDays = dataload.parameter_MaxWorkDays.FirstOrDefault(p => p.EMPLOYEE == e)?.QTY ?? 0.0;
+    foreach (var d in dataload.DATE)
+        engine.AddLHS(1.0, new VariableB_Assign { Employee = e, Date = d });   // PascalCase 屬性名 = [OptDim] 宣告名
+    var maxDays = dataload.parameter_MaxWorkDays.FirstOrDefault(p => p.Employee == e)?.QTY ?? 0.0;
     engine.AddRHS(maxDays);
     engine.CreateLessEqual($"MaxWorkDays@{e}");
     ConstraintCount++;
@@ -83,12 +85,14 @@ FolderDir.Solution.CreateFolder(); // ★ WriteSolution 前必呼叫
 CsvCtrl.WriteSolution<VariableX_Production>(engine, "<Project>", "USER");
 ```
 
-## 禁止使用（Foundation 不存在這些方法）
+## 禁止使用（Foundation 不存在這些方法 / 已淘汰的建構路徑）
 
 ```csharp
 // ✗ engine.GetVarSol(...) → 不存在
 // ✗ engine.GetSetVarSol<T>() → 不存在
 // ✗ CsvCtrl.SaveToCSV<T>(...) → 不存在（正確：WriteSolution）
+// ✗ new Dataload() 當成建構終點 → 仍可編譯但跳過框架驗證，正確：OptData.Load(() => new Dataload())
+// ✗ Dataload 內手寫 ValidateXxx() / 手動掃 dangling reference → 框架 DataContext 已聚合處理，NEVER 專案端重寫
 ```
 
 簽名有疑慮 → 查 [`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md)，NEVER 憑記憶發明 API。
@@ -97,14 +101,15 @@ CsvCtrl.WriteSolution<VariableX_Production>(engine, "<Project>", "USER");
 
 ✅ Good
 ```csharp
-var profit = dataload.parameter_Profit.FirstOrDefault(p => p.GLASS_TYPE == g)?.QTY ?? 0.0;
-engine.AddLHS(profit, new VariableX_Production { GLASS_TYPE = g });
+var profit = dataload.parameter_Profit.FirstOrDefault(p => p.GlassType == g)?.QTY ?? 0.0;
+engine.AddLHS(profit, new VariableX_Production { GlassType = g });
 ```
 
 ❌ Bad
 ```csharp
-engine.AddLHS(dataload.parameter_Profit.First(p => p.GLASS_TYPE == g).QTY, new VariableX_Production { GLASS_TYPE = g }); // LINQ 內嵌
-engine.AddLHS(300.0, new VariableX_Production { GLASS_TYPE = g }); // 裸數字
+engine.AddLHS(dataload.parameter_Profit.First(p => p.GlassType == g).QTY, new VariableX_Production { GlassType = g }); // LINQ 內嵌
+engine.AddLHS(300.0, new VariableX_Production { GlassType = g }); // 裸數字
+engine.AddLHS(profit, new VariableX_Production { GLASS_TYPE = g }); // ALL-CAPS 屬性名——現行 [OptDim] 命名一律 PascalCase
 ```
 
 ## 解驗證協定（`dotnet run` 後必跑，全過才算「會動」）

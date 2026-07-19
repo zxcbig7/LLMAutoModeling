@@ -218,7 +218,7 @@ composition root **預設**用框架內建的 Fluent `OptModel`（手寫 `XxxPro
 // Program.cs — 唯一進入點
 if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }
 
-var dataload = new Dataload();
+var dataload = OptData.Load(() => new Dataload());   // 唯一建構路徑（Dataload : DataContext）——觸發框架驗證；NEVER 裸 new Dataload()
 using (var m = new OptModel("ProjectName")
     .UseConfig(() => new CplexConfig { epGap = 0.01, timeLimit = 300, workThreads = 8, enableLog = true, exportSol = true })
     .AddVariables(e => new VariableCreate(dataload, e).Build())
@@ -329,6 +329,6 @@ engine.CreateMinimize();                              // 或 CreateMaximize
 engine.Build();
 bool ok = engine.Solve();
 double obj = engine.GetObjectiveValue();
-var sol = engine.GetSetVarSol<VariableX_Name>();      // List<T>，只含值 > 0 的變數
+var sol = engine.GetSetVarValues<VariableX_Name>();   // Dictionary<string,double>，key = 完整變數名（含 @ 索引）
 engine.Dispose();
 ```

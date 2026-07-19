@@ -214,21 +214,46 @@ CsvCtrl.WriteSolution<VariableB_Assign>(engine, dataId: "V1", userId: "USER");
 
 ## 參數類別
 
-### 預設：source generator
+### 預設：source generator（paved path = `[OptParam]` + 每維一個 `[OptDim<TSet>("Name")]`）
 
 ```csharp
 using OptimFoundation.Modeling;
 
-// 含值參數（生成 Item/Date/QTY + 兩個建構子）
-[OptParam("Item", "Date:DateTime")]
+[OptSet] public partial class Set_Item { }   // 無參數 = string 元素
+[OptSet<DateTime>] public partial class Set_Date { }
+[OptSet] public partial class Set_Employee { }
+[OptSet] public partial class Set_Group { }
+
+// 含值參數（生成 Item/Date/QTY + 兩個建構子）；TSet 決定該維型別
+[OptParam]
+[OptDim<Set_Item>("Item")]
+[OptDim<Set_Date>("Date")]
 public partial class Parameter_Demand { }
 
 // 純 key 參數（無 QTY）→ HasValue = false
-[OptParam("Employee", "Group", HasValue = false)]
+[OptParam(HasValue = false)]
+[OptDim<Set_Employee>("Employee")]
+[OptDim<Set_Group>("Group")]
 public partial class Parameter_PreAssign { }
 ```
 
-> generator 自動補 `QTY`（除非 `HasValue = false`）、無參數建構子（object initializer / `CsvCtrl.BuildParameter<T>` 用）與 `params object[]` 建構子（動態建構）。
+> generator 自動補 `QTY`（除非 `HasValue = false`）、無參數建構子（object initializer / `CsvCtrl.BuildParameter<T>` 用）與 `params object[]` 建構子（動態建構）。`Set_*` 須另掛 `[OptSet]`/`[OptSet<T>]`（見 `CPLEX_API_REFERENCE.md` §7.5）。
+
+### 逃生口：多參數泛型 / 字串式（仍受支援，NEVER 標成已淘汰／已移除／錯誤）
+
+```csharp
+// 多參數泛型（arity 1..6）：維度名固定 = 積木類名去 Set_ 前綴，無法像 [OptDim] 同顆 Set 取多個角色名
+[OptParam<Set_Item, Set_Date>] public partial class Parameter_Demand2 { }
+
+// 字串式（遷移用途，永久保留）：型別用 "Name:Type" 表示，省略型別＝string
+[OptParam("Item", "Date:DateTime")]
+public partial class Parameter_Demand3 { }
+
+[OptParam("Employee", "Group", HasValue = false)]
+public partial class Parameter_PreAssign2 { }
+```
+
+> 兩者合法、可編譯、可用於簡單情境；新專案優先教 `[OptDim<TSet>("Name")]`，既有程式碼用這兩種寫法不需遷移。
 
 ### 後路：手寫
 

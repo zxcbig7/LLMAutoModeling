@@ -4,13 +4,16 @@
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Convert the mathematical constraints from the Model into **C# Constraint classes** using the `OptimFoundation.Cplex` API.
+Convert the mathematical constraints from the Model into **C# Constraint classes** using the `OptimFoundation.Cplex` API, under `Constraint/` (`namespace <ProjectName>.Constraint`).
 
 ```csharp
 using OptimFoundation.Core;
 using OptimFoundation.Cplex;
+using <ProjectName>.Set;
+using <ProjectName>.Parameter;
+using <ProjectName>.Variable;
 
-namespace Model
+namespace <ProjectName>.Constraint
 {
     <Design the constraints here>
 }
@@ -39,20 +42,22 @@ RHS Terms:
 ```csharp
 public class Constraint_<ConstraintName> : ConstraintBase
 {
-    private Dataload dataload;
-    private OptEngine engine;
+    private readonly Dataload _dataload;
+    private readonly OptEngine _engine;
 
     public Constraint_<ConstraintName>(Dataload dataload, OptEngine engine)
     {
-        this.dataload = dataload;
-        this.engine = engine;
+        _dataload = dataload;
+        _engine = engine;
     }
 
-    public override void Build()
+    public void Build()
     {
         // LHS terms → engine.AddLHS(coef, variable)
         // RHS terms → engine.AddRHS(value)
         // CreateGreatEqual / CreateLessEqual / CreateEqual
+        // ConstraintCount++ once per created constraint
+        // Logging.Info($"[{ConstraintName}] {ConstraintCount}") at the end
     }
 }
 ```
@@ -63,7 +68,7 @@ public class Constraint_<ConstraintName> : ConstraintBase
 
 ## LHS / RHS Rules (CRITICAL)
 
-- Model left-hand side → `engine.AddLHS(coefficient, new VariableX_Name(...))`
+- Model left-hand side → `engine.AddLHS(coefficient, new VariableX_Name { ... })`
 - Model right-hand side → `engine.AddRHS(value)`
 - **ABSOLUTELY NO**: moving terms across sides, negating coefficients, or merging expressions
 
@@ -81,24 +86,26 @@ public class Constraint_<ConstraintName> : ConstraintBase
 
 ## Loop Structure
 
-Match Model index sets:
+Match Model index sets. Iterate `Set_*` bricks with plain `foreach` — they are `IReadOnlyList<T>` / `IEnumerable<T>`, **not** `List<T>`, so `.ForEach(...)` is not available on them:
 
 ```csharp
 // Model: subject to C1 {i in Set1, j in Set2}: ...
-dataload.Set1.ForEach(i =>
+foreach (var i in _dataload.SET1)
 {
-    dataload.Set2.ForEach(j =>
+    foreach (var j in _dataload.SET2)
     {
-        var coef = dataload.param_Coef.FirstOrDefault(x => x.SET1 == i && x.SET2 == j)?.QTY ?? 0.0;
-        engine.AddLHS(coef, new VariableX_Amount(i, j));
-    });
-    engine.AddRHS(rhsValue);
-    engine.CreateLessEqual($"C1@{i}");
+        var coef = _dataload.parameter_Coef.FirstOrDefault(x => x.Set1 == i && x.Set2 == j)?.QTY ?? 0.0;
+        _engine.AddLHS(coef, new VariableX_Amount { Set1 = i, Set2 = j });
+    }
+    _engine.AddRHS(rhsValue);
+    _engine.CreateLessEqual($"{ConstraintName}@{i}");
     ConstraintCount++;
-});
+}
 ```
 
-**If no index set → no loop, write terms directly.**
+- Variable instances are always built with the **object-initializer** form (`new VariableX_Amount { Set1 = i, Set2 = j }`), matching the properties the Variable class declares via `[OptDim<...>("Name")]` — never a positional constructor.
+- `DateTime`-typed index values format as `{date:yyyy-MM-dd}` in constraint-name strings (e.g. `$"{ConstraintName}@{date:yyyy-MM-dd}"`).
+- **If no index set → no loop, write terms directly.**
 
 ---
 
@@ -109,11 +116,11 @@ dataload.Set1.ForEach(i =>
 
 ```csharp
 // ✅ Correct
-var budget = dataload.param_Budget.FirstOrDefault(x => x.SET1 == i)?.QTY ?? 0.0;
-engine.AddRHS(budget);
+var budget = _dataload.parameter_Budget.FirstOrDefault(x => x.Set1 == i)?.QTY ?? 0.0;
+_engine.AddRHS(budget);
 
 // ❌ Wrong
-engine.AddRHS(dataload.param_Budget.FirstOrDefault(x => x.SET1 == i)?.QTY ?? 0.0);
+_engine.AddRHS(_dataload.parameter_Budget.FirstOrDefault(x => x.Set1 == i)?.QTY ?? 0.0);
 ```
 
 Default values:
@@ -129,11 +136,13 @@ Set member strings must be **CamelCase** in comparisons:
 
 ```csharp
 // ✅ Correct
-x.RESOURCE_TYPE == "NitrousOxide"
+x.ResourceType == "NitrousOxide"
 
 // ❌ Wrong
 x.RESOURCE_TYPE == "Nitrous Oxide"
 ```
+
+Property names on Parameter/Variable classes are always the PascalCase dimension name declared via `[OptDim<...>("Name")]` in Stage 5/6 (`x.ResourceType`, `x.Product`) — never `ALL_CAPS_WITH_UNDERSCORES` (`x.RESOURCE_TYPE`).
 
 ---
 
@@ -142,6 +151,14 @@ x.RESOURCE_TYPE == "Nitrous Oxide"
 - Do NOT add `AddLHS(0.0, ...)` — skip terms with zero coefficients.
 - Do NOT add `AddRHS(1E100)` — skip unconstrained upper bounds.
 - Do NOT pass `null` as a variable to `AddLHS` or `AddRHS`.
+
+---
+
+## Do NOT emit — outdated API
+
+- ❌ `dataload.Set1.ForEach(i => { ... })` — `Set_*` bricks don't have `.ForEach`; use `foreach (var i in dataload.SET1)`.
+- ❌ `new VariableX_Amount(i, j)` positional constructor — always the object-initializer form with PascalCase property names.
+- ❌ `x.SET1 == i` / `x.RESOURCE_TYPE` ALL-CAPS property references.
 
 ---
 

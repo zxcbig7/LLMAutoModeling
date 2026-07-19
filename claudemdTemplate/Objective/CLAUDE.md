@@ -13,8 +13,8 @@
 ```csharp
 public void Build()
 {
-    _dataload.Items.ForEach(i =>
-        _engine.AddLHS(_dataload.GetProfit(i), new VariableX_Xxx { Item = i }));
+    foreach (var i in _dataload.ITEM)   // Set_Item 積木，foreach 迭代（非 .ForEach，積木不是 List<T>）
+        _engine.AddLHS(_dataload.GetProfit(i), new VariableX_Xxx { Item = i });
     _engine.CreateMaximize();
     Logging.Info("目標函數：max ...");
 }

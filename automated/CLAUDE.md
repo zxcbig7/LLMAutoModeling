@@ -70,17 +70,27 @@ Projects/<ProjectName>/
 
 ## 生成 Code 命名規則（注入每個 Prompt）
 
-paved path = Set 積木 + 泛型宣告（generator 自動生成 class body，完整見 `../../OptimFoundation/OptimFoundation/specs/2026-07-13-optset-basic-objects.md`）：
+paved path = Set 積木 + 光桿 `[OptVar]`/`[OptParam]` + 逐維 `[OptDim<TSet>("Name")]`（generator 自動生成 class body，完整見 `../../OptimFoundation/OptimFoundation/specs/developer-guide.md` §3.5）：
 
 ```csharp
 [OptSet<DateTime>] public partial class Set_Date { } // 元素型別；[OptSet] 預設 string
-[OptParam<Set_Date, Set_Group>] public partial class Parameter_ShiftDemand { } // → Date/Group/QTY + ctor
-[OptVar<Set_Date, Set_Employee>] public partial class VariableB_ShiftAssign { } // 型別由前綴 B/X/I 決定
+
+[OptParam]
+[OptDim<Set_Date>("Date")]
+[OptDim<Set_Group>("Group")]
+public partial class Parameter_ShiftDemand { } // → Date/Group/QTY + ctor
+
+[OptVar]
+[OptDim<Set_Date>("Date")]
+[OptDim<Set_Employee>("Employee")]
+public partial class VariableB_ShiftAssign { } // 型別由前綴 B/X/I 決定
 ```
 
-- property 名 = 積木類名去 `Set_` 前綴；泛型參數順序 = key 組成順序；`QTY` 永遠最後
+- property 名 = `[OptDim<TSet>("Name")]` 傳入的字串（PascalCase）；attribute 順序 = key 組成順序；`QTY` 永遠最後
 - 前綴天條：`VariableB_`=Binary / `VariableX_`=Continuous / `VariableI_`=Integer（違反 → OPTF001）
-- 字串式 `[OptVar("Date:DateTime")]` 為逃生口，永久保留
+- 逃生口（仍受支援、NEVER 標成已淘汰/已移除/錯誤，只是本 pipeline 不首選輸出）：多參數泛型 `[OptParam<Set_A, Set_B>]`/`[OptVar<Set_A, Set_B>]`（arity 1..6，同 set 多維度時角色名固定=積木類名）；字串式 `[OptVar("Date:DateTime")]` 為遷移期逃生口，永久保留
+- `Dataload` MUST `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可）；建構一律 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()` 當終點——仍可編譯但跳過框架驗證（參照完整性 / 重複 key / 數值 sanity，聚合丟 `DataValidationException`）
+- NEVER 在 Dataload 手寫驗證邏輯（如手動掃 dangling reference）——`DataContext` 建構時自動聚合檢查
 - 數值保真：所有數值與原始問題描述完全一致，NEVER 四捨五入 / 推算 / 佔位符
 
 ### Constraint 分類（Stage 02/04 標記）
@@ -132,4 +142,5 @@ dotnet build 失敗 → 擷取 compiler error → GetFixPrompt(error, failedCode
 - 天條（數值保真 / API 白名單 / 框架唯讀 / 相對路徑 / DLL 引用）→ [`../AGENTS.md`](../AGENTS.md)
 - CPLEX API 簽名 → [`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md)
 - solver 旋鈕全表 + tuning 策略 → [`../tuning/CLAUDE.md`](../tuning/CLAUDE.md)
-- 建模基本物件（Set 積木 / SetBase / 三檔位讀取）→ OptimFoundation `specs/2026-07-13-optset-basic-objects.md`
+- 建模基本物件（Set 積木 / SetBase / OptDim 逐維宣告）→ OptimFoundation `specs/developer-guide.md` §3.5
+- 資料防護層（DataContext / OptData / SafeRatio / FullGrid / OPTF006）→ OptimFoundation `specs/2026-07-18-framework-data-guard.md`；速查見 [`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md) §7.6

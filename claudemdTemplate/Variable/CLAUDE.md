@@ -2,35 +2,41 @@
 
 ## 型別與命名
 
-| 前綴 | 型別 | Build 方法 |
-|------|------|-----------|
-| `VariableB_` | Binary（0/1） | `BuildBVs<T>(sets...)` |
-| `VariableX_` | Continuous | `BuildCVs<T>(sets...)` |
-| `VariableI_` | Integer | `BuildIVs<T>(sets...)` |
+| 前綴 | 型別 | 預設 Build（依前綴推型） | 自訂 bounds |
+|------|------|-----------|-----------|
+| `VariableB_` | Binary（0/1） | `BuildVars<T>(sets...)` | `BuildBVs<T>(sets...)` |
+| `VariableX_` | Continuous | `BuildVars<T>(sets...)` | `BuildCVs<T>(sets...)` / `BuildCVs<T>(lb, ub, sets...)` |
+| `VariableI_` | Integer | `BuildVars<T>(sets...)` | `BuildIVs<T>(sets...)` / `BuildIVs<T>(lb, ub, sets...)` |
 
 ## 定義規範
 
 ### 預設：source generator（AI 首選）
 
-用 `AutoSetsGenerator` 一行 attribute 宣告，編譯期補完整 class，樣板最省、最不易錯。csproj 需以 `<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />` 掛入（範本 `Template_CPLEX` 已掛）。
+用 `AutoSetsGenerator` 光桿 `[OptVar]` + 逐維 `[OptDim<Set_X>("Name")]` 宣告，編譯期補完整 class，樣板最省、最不易錯（2026-07-15 定版的唯一 paved path）。csproj 需以 `<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />` 掛入（範本 `Template_CPLEX` 已掛）。
 
 ```csharp
 using OptimFoundation.Modeling;
+using ProjectName.Set;
 
-[OptVar("Date:DateTime", "Employee", "Group")]   // 屬性順序＝Build*Vs 傳入順序；型別由類別名前綴決定
+[OptVar]                                 // 光桿，不帶型別——型別由類別名前綴決定
+[OptDim<Set_Date>("Date")]
+[OptDim<Set_Employee>("Employee")]
+[OptDim<Set_Group>("Group")]
 public partial class VariableB_ShiftAssign { }
 ```
 
-- `[OptVar]` 只帶 sets，**不帶型別**——型別由類別名前綴決定（`VariableB_`→Binary / `VariableX_`→Continuous / `VariableI_`→Integer）
-- 前綴不合法（非 B_/X_/I_）→ compile error `OPTF001`，訊息會教正確取名；`OptParam` 非 `Parameter_` 前綴 → `OPTF002`
-- set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別
-- Namespace：`ProjectName.Variable`；前綴同時對應 Build 方法（見上表）
-- 可運作範例：`Projects/HospitalRostering_Generator`
+- `[OptVar]` 只光桿宣告，**不帶型別**——型別由類別名前綴決定（`VariableB_`→Binary / `VariableX_`→Continuous / `VariableI_`→Integer）
+- 前綴不合法（非 B_/X_/I_）→ compile error `OPTF001`，訊息會教正確取名
+- Variable 類別漏掛 `[OptVar]` → generator 不生成屬性/建構子，該 partial class 留空，下游用到屬性處變成一般 C# 錯誤（如 `CS1061`）——務必掛，不要漏（`OPTF006` 是 `Parameter_*`/`Set_*` 專屬：只在它們被 `Dataload : DataContext` 的欄位引用卻漏掛 attribute 時才觸發，Variable 類別不會被 Dataload 引用，不適用此代碼）
+- `[OptDim<TSet>("Name")]` 泛型參數 = 已宣告 `[OptSet<T>]` 的 `Set_<Name>` 積木；attribute 順序 = property 順序 = `BuildVars`/`Build*Vs` 傳入 sets 的順序，property 名 = `[OptDim]` 字串參數（PascalCase）
+- Namespace：`ProjectName.Variable`
+- 可運作範例：`Projects/HospitalRostering_Generator`（註：建於本波規格之前，仍用舊字串式 `[OptVar("Date:DateTime", "Employee", "Group")]`——那是遷移期逃生口，新專案 NEVER 照抄，一律用上面的 `[OptDim]` 寫法）
 
 ### 後路：手寫（generator 不適用時）
 
 - 繼承 `VariableBase`，Namespace：`ProjectName.Variable`
-- string 屬性加 `= string.Empty;`，屬性順序對應 `Build*Vs` 傳入 sets 的順序
+- PascalCase 屬性名（不是 `ALL_CAPS`），string 屬性加 `= string.Empty;`，屬性順序對應 `Build*Vs` 傳入 sets 的順序
+- NEVER 寫建構子——框架用 reflection 讀屬性順序組 key
 - 完整手寫示範：`Projects/HospitalRostering_Manual`
 
 ## VariableCreate 規範
@@ -38,7 +44,8 @@ public partial class VariableB_ShiftAssign { }
 ```csharp
 public void Build()
 {
-    _engine.BuildXVs<VariableX_Xxx>(_dataload.SetA, _dataload.SetB);
+    _engine.BuildVars<VariableX_Xxx>(_dataload.SetA, _dataload.SetB);   // 預設：型別由前綴推斷
+    _engine.BuildCVs<VariableX_Bounded>(0, 1, _dataload.SetA);          // 需要自訂 bounds 才用顯式 Build*Vs
     Logging.Info($"Variables created: {_engine.varCount}");
 }
 ```

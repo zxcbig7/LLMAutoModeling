@@ -10,6 +10,25 @@
 
 ---
 
+## 0. Tuning 前置：資料驗證必須先過
+
+**動任何 solver 參數或模型結構之前**，先確認資料驗證有通過——這是 tuning 判斷的前提，不是本文件範圍外的事。
+
+框架現況：`OptData.Load<T>(...)` 載入後自動觸發 `DataContext.ValidateData()`，四類檢查全跑：
+
+- **參照完整性**：index 欄位值需在對應 Set 內；區分「型別不符」（`TypeMismatch`，宣告打錯）與「純缺值」（`Dangling`，值真的不在 Set 內）。
+- **index key 唯一性**：同一 parameter 出現重複 index-key（`DuplicateKey`）。
+- **數值 sanity**：`NaN` / `Infinity` / 超過量級門檻 **1e15**（原始資料值的門檻，與 §1.2 BigM 用的 `Numeric.SafeRatio` 1e9 刻意不同，見該節說明）。
+- **`[FullGrid]`（opt-in）**：標了此 attribute 的 parameter 缺格即報（未標則不檢查完整性）。
+
+任一違規 → 丟 `DataValidationException`，**一次列出全部問題**（非遇到第一個就中止）。
+
+> **資料錯了就別調參數**——重複的 index key 過去被 `FirstOrDefault` 靜默吃掉，模型會拿到錯的係數；這時 tuning 只是「更快地算出錯答案」。實例佐證：`Template_CPLEX` 上線此防護後當場揪出 9 筆長期潛藏的 `DuplicateKey`。
+
+Gate 順序：**資料驗證（載入時自動）→ 正確性 gate（`Foundation Coding` 解驗證協定：Status 三分診斷 → 可行性代回 → 單位一致 → LP bound sanity）→ 才進本文件的模型 / solver tuning**。
+
+---
+
 ## 1. 模型設計與架構優化（最高優先）
 
 ### 1.1 變數型態選擇
@@ -33,8 +52,10 @@
 - **聚合限制式**：將多條同型限制式合併（e.g. 逐項上界 → 一條總量上界）。
 - **移除冗餘限制式**：刪掉被其他限制式涵蓋（dominated）的式子。
 - **緊湊上下界**：給變數設更嚴格的 `lb` / `ub`（`BuildCVs<>(lb, ub, ...)`），直接收斂 LP 鬆弛、減少分支。
-- **Big-M 取最小可行值**：M 過大會使 LP 鬆弛鬆散、節點爆增；取問題上界即可。
+- **Big-M 取最小可行值**：M 過大會使 LP 鬆弛鬆散、節點爆增；取問題上界即可。BigM 由資料推導時（e.g. `maxCap / min(正 MachineHours)`），用 `Numeric.SafeRatio(分子, 分母, magnitudeCeiling: 1e9, context)` 取代裸除法：除零 / 結果非有限 / 超過量級門檻一律丟明確例外（訊息含 context），不讓除零或爆量級的 BigM 悄悄流進模型。
 
+> **兩個門檻刻意不同、NEVER 統一**：`Numeric.SafeRatio` 用 **1e9**（衍生值如 BigM 的門檻，較嚴——BigM 過大會讓 LP relaxation 鬆弛、branch 爆炸，是數值不穩的頭號來源）；§0 提到的 `DataValidator` 對**原始資料值**用 **1e15**（較寬——超過此值 double 連整數精度都保不住）。一個防「衍生計算」爆掉，一個防「原始資料」本身就壞，tuning 判斷數值穩定性時要分清楚是哪一層出的問題。
+>
 > 模型精簡屬「modeling 層」，在 Stage 4（Model）重塑，不在 solver 旋鈕處理。
 
 ### 1.3 初始解（Warm Start）
@@ -54,6 +75,12 @@
 - **打斷對稱性**：對等價變數加排序限制式（e.g. `x_1 ≥ x_2 ≥ … ≥ x_n`）。
 - **連結 / bridge 限制式**：為等價變數建立順序或 lexicographic 關聯。
 - **CPLEX symmetry presolve**：`Param.Preprocessing.Symmetry`（-1 自動…5 積極）—— **Foundation 尚未提供旋鈕**（見 §5）。
+
+### 1.5 規模預警（Scale Guard）
+
+`ISolverConfig.ScaleWarnThreshold`（default interface member，預設 **10,000,000**）：`EngineBase.Solve()` 在呼叫 `SolveCore()` 前先跑 `PreSolveGuard()`，`TotalVarCount` 超過門檻就 `Logging.Warn`（**只警告不中止**，大但合法的模型不該被擋）。
+
+要點：模型太大時，solve 前就有明確訊號，不必等卡住再回頭猜規模；這條屬**模型層**判斷（該縮 set / 拆問題），**優先於**調 solver 參數（§2）——看到警告先回 §1.1–1.2 檢討模型規模，而非急著調 `workThreads` 或切割。門檻可經 `Config` override（不破壞既有實作者）。
 
 ---
 

@@ -4,7 +4,8 @@
 > **權威來源**：`dlls/` 內編譯版 OptimFoundation 的公開簽名；原始碼在 sibling 資料夾 `../OptimFoundation/`（本 repo 外，非硬相依）。
 > **天條**：所有 API 呼叫必須能在編譯版 OptimFoundation 找到對應定義；本文件未列出的方法視為「不存在」。
 > **NEVER**：禁止修改 OptimFoundation 框架本體（唯讀）。
-> **鏡像同步**：源頭 = `../OptimFoundation/specs/developer-guide.md`；本檔為鏡像。最近同步 **2026-07-14**（新增 §7.5 OptSet 積木）。改框架 public API 時 MUST 兩邊一起更新。
+> **鏡像同步**：源頭 = `../OptimFoundation/specs/developer-guide.md`；本檔為鏡像。最近同步 **2026-07-19**（修正 §7.5 OptDim/泛型定位、新增 §7.6 `DataContext`/`OptData` 資料防護層、§8 補 `ISolutionSink` batch/transaction、§5.2 修正 `Build()`/`Solve()` 為 template method）。
+> 註：`developer-guide.md` 截至本次同步**尚未**跟進框架 2026-07-18「資料防護」規格（`DataContext`/`OptData`/`SafeRatio`/`FullGrid`/`OPTF006`），故本次新增內容改以框架原始碼（`OptimFoundation.Core`）+ `../OptimFoundation/specs/2026-07-18-framework-data-guard.md` 為準；待來源文件補齊後兩邊再對齊。改框架 public API 時 MUST 兩邊一起更新。
 
 ---
 
@@ -168,7 +169,7 @@ using OptimFoundation.Modeling;   // generator 注入的 attribute namespace
 [OptParam("Employee", "Group", HasValue = false)]   public partial class Parameter_PreAssign { }   // 純 key，無 QTY
 ```
 
-上為**字串式**（逃生口）；paved path 用泛型 Set 積木語法見 §7.5（`[OptSet<T>]` + `[OptVar<Set_X>]`）。`[OptVar]` 型別由類別名前綴決定（`VariableB_/X_/I_`），前綴非法 → `OPTF001`；`OptParam` 非 `Parameter_` 前綴 → `OPTF002`。csproj 以 analyzer 掛入 `..\dlls\OptimFoundation.Generators.dll`。可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`）。
+上為**字串式**（逃生口，永久保留、仍受支援）；**paved path** 是 Set 積木 + 逐維具名宣告見 §7.5（`[OptSet<T>]` + 光桿 `[OptVar]`/`[OptParam]` + `[OptDim<TSet>("Name")]`）；同節也列了多參數泛型 `[OptVar<Set_X>]` 這條**同樣受支援**的逃生口。`[OptVar]` 型別由類別名前綴決定（`VariableB_/X_/I_`），前綴非法 → `OPTF001`；`OptParam` 非 `Parameter_` 前綴 → `OPTF002`。csproj 以 analyzer 掛入 `..\dlls\OptimFoundation.Generators.dll`。可運作範例 `Projects/HospitalRostering_Generator`（vs 手寫版 `Projects/HospitalRostering_Manual`，註：該範例建於 OptDim 定案之前，仍用舊字串式）。
 
 ### 為何不需要寫建構子
 
@@ -272,21 +273,24 @@ public OptEngine();   // 用預設 CplexConfig
 ### 5.2 生命週期
 
 ```csharp
-public override void Build();          // 初始化 CPLEX Model + 套用 Config
-public override bool Solve();          // 求解；回傳 true = Optimal or Feasible
-public override void Dispose();        // 釋放 native resources
+public void Build();                   // EngineBase 具體方法（非 virtual）：呼叫 BuildCore()
+public bool Solve();                   // EngineBase 具體方法（非 virtual）：先 PreSolveGuard() 再呼叫 SolveCore()
+public void Dispose();                 // 釋放 native resources
 ```
+
+> ★ **2026-07 起 `Build()`/`Solve()` 是 `EngineBase` 的 template method、已改為非 virtual**——`OptEngine` 內部只實作 `protected override void BuildCore()` / `protected override bool SolveCore()`。消費端呼叫方式不變（`engine.Build()`/`engine.Solve()`）；但**若要繼承 `OptEngine` 自訂行為，NEVER `override Build()`/`override Solve()`（已非 virtual，直接編譯錯誤）——改覆寫 `BuildCore()`/`SolveCore()`**（`developer-guide.md` 第 13 節「進階：繼承 OptEngine」尚未更新此節，以本檔與框架原始碼為準）。
 
 `Solve()` 行為：
 
-1. 若 `exportLP=true` → 寫 `Models/{ProjectName}_LP_{timestamp}.lp`
-2. 若 `exportMPS=true` → 寫 `Models/{ProjectName}_MPS_{timestamp}.mps`
-3. 呼叫 `Model.Solve()`
-4. 設定 `Status`（Optimal / Feasible / Infeasible / Unbounded / Error）
-5. 若解可行且 `exportSol=true` → 寫 `Sols/{ProjectName}_Solution_{timestamp}.sol`
-6. 若 Infeasible → 自動執行 `RefineConflict` 寫 IIS `IISs/{ProjectName}_IIS_{timestamp}.ilp`
-7. 印出 `ObjVal / BestBound / MIPGap`
-8. 回填 `LastMetrics`（`SolveMetrics`）：wall time / status / 目標值 / bound / gap / node·iter 數 / var·constraint 數（+ 收斂軌跡，若有啟用）
+1. **`PreSolveGuard()`**（新增）：`TotalVarCount` 超過 `Config.ScaleWarnThreshold`（`ISolverConfig` 的 default interface member，預設 **10,000,000**，可由具體 config 覆寫）→ `Logging.Warn` 一則（含實際變數數與門檻），**只警告、不阻擋、不中止求解**
+2. 若 `exportLP=true` → 寫 `Models/{ProjectName}_LP_{timestamp}.lp`
+3. 若 `exportMPS=true` → 寫 `Models/{ProjectName}_MPS_{timestamp}.mps`
+4. 呼叫 `Model.Solve()`
+5. 設定 `Status`（Optimal / Feasible / Infeasible / Unbounded / Error）
+6. 若解可行且 `exportSol=true` → 寫 `Sols/{ProjectName}_Solution_{timestamp}.sol`
+7. 若 Infeasible → 自動執行 `RefineConflict` 寫 IIS `IISs/{ProjectName}_IIS_{timestamp}.ilp`
+8. 印出 `ObjVal / BestBound / MIPGap`
+9. 回填 `LastMetrics`（`SolveMetrics`）：wall time / status / 目標值 / bound / gap / node·iter 數 / var·constraint 數（+ 收斂軌跡，若有啟用）
 
 ```csharp
 public SolveMetrics LastMetrics { get; }   // EngineBase；Solve() 後填入，未求解為 null
@@ -490,28 +494,48 @@ public static class VariableBuilder
 
 ---
 
-## 7.5 `SetBase` 積木 + 泛型宣告（OptSet，2026-07 新增）
+## 7.5 `SetBase` 積木 + 逐維具名宣告（OptSet + OptDim，2026-07 新增，**2026-07-15 定版**）
 
 **檔案**：`Foundation\src\OptimFoundation.Core\SetBase.cs` + `AutoSetsGenerator.cs`
 
-純加法：字串式 `[OptVar("Date:DateTime")]` / `[OptParam(...)]` 永久保留（逃生口）；泛型式為 paved path。
+### paved path：`[OptDim<TSet>("Name")]` 逐維具名宣告
 
-### 宣告（generator 自動生成 class body）
+**唯一 paved path** = Set 積木 + 光桿 `[OptVar]`/`[OptParam]` + 每維一個 `[OptDim<TSet>("Name")]`。`TSet` = 引用哪顆 Set 積木（決定型別），字串參數 = 這一維在本 Variable/Parameter 裡的角色名（PascalCase，供同一顆 Set 積木在同一個類別上取多個角色，如 `LotA`/`LotB`）：
 
 ```csharp
 [OptSet<DateTime>] public partial class Set_Date { }      // → : SetBase<DateTime>
 [OptSet]           public partial class Set_Employee { }  // 無參數 = 預設 string
 
-[OptParam<Set_Date, Set_Employee>] public partial class Parameter_ShiftDemand { }
+[OptParam]
+[OptDim<Set_Date>("Date")]
+[OptDim<Set_Employee>("Employee")]
+public partial class Parameter_ShiftDemand { }
 // → ParameterBase + Date(DateTime) + Employee(string) + QTY + 兩個 ctor
 
-[OptVar<Set_Date, Set_Employee>] public partial class VariableB_ShiftAssign { }
+[OptVar]
+[OptDim<Set_Date>("Date")]
+[OptDim<Set_Employee>("Employee")]
+public partial class VariableB_ShiftAssign { }
 // → VariableBase + Date + Employee（型別由前綴 B/X/I 決定）
 ```
 
-- property 名 = 積木類名去 `Set_` 前綴；型別從 `[OptSet<T>]` 自動抓；泛型參數順序 = key 組成順序
+- property 名 = `[OptDim<TSet>("Name")]` 傳入的字串（PascalCase）；型別從 `TSet` 的 `[OptSet<T>]` 自動抓；attribute 順序 = key 組成順序
 - 引用非積木 → CS0311（`where T : ISetBrick`）；元素型別非法 → OPTF004；缺 `[OptSet]` → OPTF005
 - 合法元素型別：`string / DateTime / int / long / double / decimal`
+- 光桿 `[OptVar]`/`[OptParam]` 不加任何 `[OptDim]` = 0 維純量，key = 類名、無 `@` 索引
+
+### 逃生口（仍受支援，NEVER 標成「已淘汰／已移除／錯誤」——generator 持續產碼，只是新專案不首選）
+
+```csharp
+// 多參數泛型（arity 1..6）：維度名固定 = 積木類名去 Set_ 前綴，無法像 [OptDim] 一樣同一顆 Set 取多個角色名
+[OptParam<Set_Date, Set_Employee>] public partial class Parameter_ShiftDemand2 { }
+[OptVar<Set_Date, Set_Employee>]   public partial class VariableB_ShiftAssign2 { }
+
+// 字串式（遷移用）：永久保留
+[OptParam("Date:DateTime", "Group")]
+```
+
+兩者**合法、可編譯、可用於簡單情境**——差別只在「同一顆 Set 積木要在同一個類別取多個角色名」這種需求做不到（固定綁積木類名）。治理文件與新專案一律優先教 `[OptDim<TSet>("Name")]`，但既有程式碼用泛型式/字串式**不算錯誤，不需要遷移**。
 
 ### `SetBase<T>` API
 
@@ -529,6 +553,91 @@ public abstract class SetBase<T> : ISetBrick, IEnumerable<T>
 ```
 
 四道防呆（全丟例外）：未載入即用 / 載入後為空 / 二次載入 / 重複成員。`SetBase<T>` 實作 `IEnumerable<T>`，可直接傳入 `BuildBVs/BuildIVs/BuildCVs(params object[])`。
+
+---
+
+## 7.6 `DataContext` / `OptData` — 資料防護層（2026-07-18 新增）
+
+**檔案**：`OptimFoundation.Core/DataContext.cs`、`OptData.cs`、`DataValidator.cs`、`Numeric.cs`（權威範本：`../OptimFoundation/OptimFoundation/Templates/Tutorial/Data/Dataload.cs`）
+
+### `Dataload` 唯一建構路徑
+
+```csharp
+public partial class Dataload : DataContext   // partial + 繼承缺一不可，否則 generator 註冊碼不會產生
+{
+    public Set_Product PRODUCT = new();
+    public List<Parameter_Demand> parameter_Demand = new();
+
+    public Dataload() : this(new CsvDataSource()) { }   // 預設來源 = CSV
+    public Dataload(IDataSource source)
+    {
+        // 每行一句、顯式讀檔——這幾行 MUST 不變
+        PRODUCT.Load(source, "Set_Product");
+        parameter_Demand = source.LoadParam<Parameter_Demand>("Parameter_Demand");
+    }
+}
+
+// 唯一建構入口：new + generator 註冊 + 聚合驗證一次到位
+var dataload = OptData.Load(() => new Dataload());
+```
+
+```csharp
+public static class OptData
+{
+    public static T Load<T>(Func<T> factory) where T : DataContext;   // 唯一多載——無 IDataSource 多載
+}
+```
+
+- `OptData.Load<T>(Func<T> factory)` 是**唯一多載**；`OptData.Load<T>(IDataSource)` **不存在**——多來源／自訂 ctor 照樣支援，factory 內部想怎麼 `new Dataload(...)` 都可以，只是要包一層 lambda
+- 裸 `new Dataload()` / `new Dataload(source)` 仍可編譯，**但跳過驗證**——NEVER 在文件或範例把它當成建構終點
+- **`Set_*`/`Parameter_*` 忘記掛 `[OptSet]`/`[OptParam]`**：一旦被 `Dataload : DataContext` 的欄位引用 → **compile error `OPTF006`**（否則會靜默不註冊、永遠不受驗證）
+
+### 建構時自動驗證（`DataValidationException`）
+
+```csharp
+public sealed class DataValidationException : Exception
+{
+    public IReadOnlyList<DataIssue> Issues { get; }   // 一次列出全部問題，不是遇到第一個就停
+}
+public enum DataIssueKind { MissingSet, TypeMismatch, Dangling, DuplicateKey, MissingCell, Numeric }
+```
+
+四類檢查（`OptData.Load` 建構時聚合跑）：**參照完整性**（parameter 值不在對應 Set 內 → `Dangling`；型別不符 → `TypeMismatch`；set 名打錯 → `MissingSet`）、**index key 唯一性**（`DuplicateKey`）、**`[FullGrid]` 完整性**（見下）、**數值 sanity**（`double`/`QTY` 欄為 `NaN`/`±Infinity`/超過量級門檻 **1e15** → `Numeric`）。專案端**永遠不用手寫**這類檢查（如舊式 `ValidateSetsCoverParameters()`）——邏輯集中框架、零複製。
+
+### `[FullGrid]` — opt-in 完整性檢查
+
+```csharp
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class FullGridAttribute : Attribute { }
+```
+
+只標在語意上必須全格覆蓋的 parameter（例：每機每日每班都要有產能值）；**預設 NEVER 加**，MILP 資料多半稀疏、稀疏且未標的 parameter 不會被誤報：
+
+```csharp
+[FullGrid]
+[OptParam]
+[OptDim<Set_Machine>("Machine")]
+[OptDim<Set_Date>("Date")]
+public partial class Parameter_Capacity { }   // 缺任一 (Machine,Date) 組合 → 建構時報 MissingCell
+```
+
+### `Numeric.SafeRatio` — 由數據推導的比值防呆
+
+```csharp
+public static double SafeRatio(double numerator, double denominator,
+    double magnitudeCeiling = 1e9, string context = null);
+// den==0 / 結果非有限（NaN/Infinity）/ |結果|>magnitudeCeiling → throw 明確例外（含 context）；否則回傳比值
+```
+
+```csharp
+// BigM 由數據推導，NEVER 手寫裸除法
+public double BigM => Numeric.SafeRatio(
+    parameter_Capacity.Max(c => c.QTY),
+    parameter_MachineHours.Where(h => h.QTY > 0).Min(h => h.QTY),
+    context: "BigM");
+```
+
+> `SafeRatio` 的量級門檻（預設 1e9）與 `DataValidator` 數值 sanity 的門檻（1e15）刻意不同——前者是「衍生值」的較嚴防呆，後者是「原始資料」的寬鬆防呆，勿混用同一門檻。
 
 ---
 
@@ -579,6 +688,33 @@ DATA_ID,VAR_TYPE,{Set1},{Set2},...,QTY,USER
 ```csharp
 FolderDir.Solution.CreateFolder();
 CsvCtrl.WriteSolution<VariableX_Sandwich>(engine, "SandwichProduction", "USER");
+```
+
+### `ISolutionSink` — 多變數型別批次輸出 / transaction（2026-07-18 新增）
+
+**檔案**：`OptimFoundation.Core/IO/IDataSource.cs`（介面）、`CsvSolutionSink`、`OracleSolutionSink`
+
+```csharp
+public interface ISolutionSink
+{
+    void WriteSolution<TVariableClass>(ISolverEngine engine, string dataId = null, string userId = null);
+    ISolutionBatch BeginBatch(string dataId = null, string userId = null);   // 多型別原子寫入
+}
+public interface ISolutionBatch : IDisposable
+{
+    void Write<TVariableClass>(ISolverEngine engine);
+    void Commit();   // 未 Commit 即 Dispose = rollback
+}
+```
+
+- `CsvSolutionSink.BeginBatch`：no-op batch（逐檔寫，行為與直接呼叫 `WriteSolution` 逐字相同）
+- `OracleSolutionSink.BeginBatch`：真 transaction——單一 `IDbCtrl.ExecuteInTransaction` 內用 `IDbCtrl.ExecuteBatch`（array-bind，非逐列 `Execute`）寫多個變數型別；任一步失敗全 rollback，DB 無殘留
+
+```csharp
+using var batch = sink.BeginBatch(dataId: "V1", userId: "USER");
+batch.Write<VariableB_Assign>(engine);
+batch.Write<VariableX_Makespan>(engine);
+batch.Commit();   // 忘記呼叫 = 整批 rollback
 ```
 
 ---
@@ -864,6 +1000,8 @@ public string Employee { get; set; } = string.Empty;
 
 **問題**：玻璃工廠 LP。決策：`x[Regular], x[Tempered] ≥ 0`，最大化 `8·x[R] + 10·x[T]`，限制 `3·x[R] + 5·x[T] ≤ 300`、`5·x[R] + 8·x[T] ≤ 300`。
 
+> 本節示範**現行建構路徑**：`DataContext` + `OptData.Load`（§7.6）+ `OptModel` fluent；Parameter/Variable 用 §7.5 的 paved path `[OptDim<TSet>]`。與 §7.6 一致，無矛盾。
+
 ### `GlassFactory.csproj`
 
 ```xml
@@ -880,92 +1018,74 @@ public string Employee { get; set; } = string.Empty;
     <Reference Include="NLog"><HintPath>..\..\dlls\NLog.dll</HintPath></Reference>
     <Reference Include="OptimFoundation.Core"><HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath></Reference>
     <Reference Include="OptimFoundation.Cplex"><HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath></Reference>
+    <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 </Project>
 ```
 
-### `Program.cs`
+### `Set/Set_GlassType.cs`
 
 ```csharp
-using GlassFactory;
+using OptimFoundation.Modeling;
 
-using (var problem = new GlassFactoryProblem())
-    problem.Execute();
+namespace GlassFactory.Set
+{
+    [OptSet] public partial class Set_GlassType { }   // 無參數 = string 元素
+}
 ```
 
-### `GlassFactoryProblem.cs`
+### `Parameter/Parameter_HeatingTime.cs`（`Parameter_CoolingTime`/`Parameter_Profit` 同構，省略）
 
 ```csharp
-using OptimFoundation.Cplex;
-using OptimFoundation.Core;
+using OptimFoundation.Modeling;
 using GlassFactory.Set;
-using GlassFactory.Variable;
-using GlassFactory.Constraint;
 
-namespace GlassFactory
+namespace GlassFactory.Parameter
 {
-    public class GlassFactoryProblem : IDisposable
-    {
-        public OptEngine? optEngine;
-        public GlassDataload dataload;
-
-        public GlassFactoryProblem()
-        {
-            dataload = new GlassDataload();
-            Logging.SetLogFileName(GetType().Name);
-        }
-
-        public bool Execute()
-        {
-            var config = new CplexConfig
-            {
-                epGap = 0.0, timeLimit = 60, workThreads = 4,
-                enableLog = true, exportSol = true, exportLP = true
-            };
-
-            optEngine = new OptEngine(config);
-            optEngine.Build();
-
-            new VariableCreate(dataload, optEngine).Build();
-            new BuildModel(dataload, optEngine).Build();
-
-            bool ok = optEngine.Solve();
-            if (ok) dataload.WriteToCSV(optEngine);
-            return ok;
-        }
-
-        public void Dispose() => optEngine?.Dispose();
-    }
+    [OptParam]
+    [OptDim<Set_GlassType>("GlassType")]
+    public partial class Parameter_HeatingTime { }
 }
 ```
 
 ### `Set/GlassDataload.cs`
 
 ```csharp
-using OptimFoundation.Cplex;
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
+using OptimFoundation.Cplex;
+using GlassFactory.Parameter;
 using GlassFactory.Variable;
 
 namespace GlassFactory.Set
 {
-    public class GlassDataload
+    // 資料層唯一入口：ctor 就是「寫讀檔的家」，每行顯式讀檔
+    public partial class GlassDataload : DataContext
     {
-        public List<string> GlassTypes = ["Regular", "Tempered"];
+        public Set_GlassType GLASSTYPE = new();
 
-        public Dictionary<string, double> HeatingTime = new() { ["Regular"] = 3, ["Tempered"] = 5 };
-        public Dictionary<string, double> CoolingTime = new() { ["Regular"] = 5, ["Tempered"] = 8 };
-        public Dictionary<string, double> Profit      = new() { ["Regular"] = 8, ["Tempered"] = 10 };
+        public List<Parameter_HeatingTime> parameter_HeatingTime = new();
+        public List<Parameter_CoolingTime> parameter_CoolingTime = new();
+        public List<Parameter_Profit> parameter_Profit = new();
+
         public double HeatingCapacity = 300;
         public double CoolingCapacity = 300;
 
-        public void WriteToCSV(OptEngine engine)
+        public GlassDataload() : this(new CsvDataSource()) { }
+
+        public GlassDataload(IDataSource source)
         {
-            var solution = engine.GetSetVarValues<VariableX_Production>();
-            foreach (var kvp in solution)
-            {
-                string label = kvp.Key.Split('@').Last();
-                Logging.Info($"  {label,-10}: {kvp.Value,6:F1}");
-            }
+            GLASSTYPE.Load(source, "Set_GlassType");
+            parameter_HeatingTime = source.LoadParam<Parameter_HeatingTime>("Parameter_HeatingTime");
+            parameter_CoolingTime = source.LoadParam<Parameter_CoolingTime>("Parameter_CoolingTime");
+            parameter_Profit = source.LoadParam<Parameter_Profit>("Parameter_Profit");
+        }
+
+        public void WriteSolution(OptEngine engine)
+        {
+            var produce = engine.GetSetVarValues<VariableX_Production>();
+            foreach (var kvp in produce)
+                Logging.Info($"  {kvp.Key.Split('@').Last()}: {kvp.Value:F1}");
             Logging.Info($"  Profit = ${engine.GetObjectiveValue():F2}");
 
             FolderDir.Solution.CreateFolder();
@@ -978,34 +1098,48 @@ namespace GlassFactory.Set
 ### `Variable/VariableX_Production.cs`
 
 ```csharp
-using OptimFoundation.Core;
-
-namespace GlassFactory.Variable
-{
-    public class VariableX_Production : VariableBase
-    {
-        public string GlassType { get; set; } = string.Empty;
-    }
-}
-```
-
-### `Variable/VariableCreate.cs`
-
-```csharp
-using OptimFoundation.Cplex;
+using OptimFoundation.Modeling;
 using GlassFactory.Set;
 
 namespace GlassFactory.Variable
 {
-    public class VariableCreate
-    {
-        private readonly GlassDataload dataload;
-        private readonly OptEngine optEngine;
-        public VariableCreate(GlassDataload d, OptEngine e) { dataload = d; optEngine = e; }
+    [OptVar]
+    [OptDim<Set_GlassType>("GlassType")]
+    public partial class VariableX_Production { }
+}
+```
 
-        public void Build()
+### `Model/GlassFactoryModel.cs`（模型積木：組裝順序，plug 進 `OptModel`）
+
+```csharp
+using GlassFactory.Set;
+using GlassFactory.Variable;
+using GlassFactory.Objective;
+using GlassFactory.Constraint;
+using OptimFoundation.Cplex;
+
+namespace GlassFactory.Model
+{
+    public class GlassFactoryModel
+    {
+        private readonly GlassDataload _d;
+        public GlassFactoryModel(GlassDataload data) => _d = data;
+
+        public void CreateVariables(OptEngine engine)
+            => engine.BuildVars<VariableX_Production>(_d.GLASSTYPE);
+
+        public void CreateModel(OptEngine engine)
         {
-            optEngine.BuildCVs<VariableX_Production>(dataload.GlassTypes);
+            new ObjectiveFunction(_d, engine).Build();
+            new Constraint_Heating(_d, engine).Build();
+            new Constraint_Cooling(_d, engine).Build();
+        }
+
+        // 一次組全（experiment / 手動建 engine 用）
+        public void Build(OptEngine engine)
+        {
+            CreateVariables(engine);
+            CreateModel(engine);
         }
     }
 }
@@ -1014,23 +1148,23 @@ namespace GlassFactory.Variable
 ### `Objective/ObjectiveFunction.cs`
 
 ```csharp
-using OptimFoundation.Cplex;
 using GlassFactory.Set;
 using GlassFactory.Variable;
+using OptimFoundation.Cplex;
 
 namespace GlassFactory.Objective
 {
     public class ObjectiveFunction
     {
-        private readonly GlassDataload dataload;
-        private readonly OptEngine optEngine;
-        public ObjectiveFunction(GlassDataload d, OptEngine e) { dataload = d; optEngine = e; }
+        private readonly GlassDataload _d;
+        private readonly OptEngine _engine;
+        public ObjectiveFunction(GlassDataload d, OptEngine e) { _d = d; _engine = e; }
 
         public void Build()
         {
-            foreach (var g in dataload.GlassTypes)
-                optEngine.AddLHS(dataload.Profit[g], new VariableX_Production { GlassType = g });
-            optEngine.CreateMaximize();
+            foreach (var p in _d.parameter_Profit)
+                _engine.AddLHS(p.QTY, new VariableX_Production { GlassType = p.GlassType });
+            _engine.CreateMaximize();
         }
     }
 }
@@ -1039,53 +1173,57 @@ namespace GlassFactory.Objective
 ### `Constraint/Constraint_Heating.cs`
 
 ```csharp
-using OptimFoundation.Cplex;
-using OptimFoundation.Core;
 using GlassFactory.Set;
 using GlassFactory.Variable;
+using OptimFoundation.Cplex;
 
 namespace GlassFactory.Constraint
 {
-    public class Constraint_Heating : ConstraintBase
+    public class Constraint_Heating
     {
         private const string Name = "C1_Heating";
-        private readonly GlassDataload dataload;
-        private readonly OptEngine optEngine;
-        public int ConstraintCount = 0;
-        public Constraint_Heating(GlassDataload d, OptEngine e) { dataload = d; optEngine = e; }
+        private readonly GlassDataload _d;
+        private readonly OptEngine _engine;
+        public Constraint_Heating(GlassDataload d, OptEngine e) { _d = d; _engine = e; }
 
         public void Build()
         {
-            foreach (var g in dataload.GlassTypes)
-                optEngine.AddLHS(dataload.HeatingTime[g], new VariableX_Production { GlassType = g });
-            optEngine.AddRHS(dataload.HeatingCapacity);
-            optEngine.CreateLessEqual($"{Name}");
-            ConstraintCount++;
+            foreach (var h in _d.parameter_HeatingTime)
+                _engine.AddLHS(h.QTY, new VariableX_Production { GlassType = h.GlassType });
+            _engine.AddRHS(_d.HeatingCapacity);
+            _engine.CreateLessEqual(Name);
         }
     }
 }
 ```
 
-### `Constraint/BuildModel.cs`
+> `Constraint_Cooling`（`parameter_CoolingTime` / `CoolingCapacity`）同構，省略。
+
+### `Program.cs`
 
 ```csharp
-using OptimFoundation.Cplex;
-using GlassFactory.Objective;
 using GlassFactory.Set;
+using GlassFactory.Model;
+using OptimFoundation.Core;
+using OptimFoundation.Cplex;
 
-namespace GlassFactory.Constraint
+namespace GlassFactory
 {
-    public class BuildModel
+    internal class Program
     {
-        private readonly GlassDataload dataload;
-        private readonly OptEngine optEngine;
-        public BuildModel(GlassDataload d, OptEngine e) { dataload = d; optEngine = e; }
-
-        public void Build()
+        static void Main(string[] args)
         {
-            new ObjectiveFunction(dataload, optEngine).Build();
-            new Constraint_Heating(dataload, optEngine).Build();
-            new Constraint_Cooling(dataload, optEngine).Build();
+            var dataload = OptData.Load(() => new GlassDataload());   // 唯一建構入口：註冊 + 聚合驗證
+            var def = new GlassFactoryModel(dataload);
+
+            using var model = new OptModel("GlassFactory")
+                .UseConfig(() => new CplexConfig { epGap = 0.0, timeLimit = 60, workThreads = 4, enableLog = true, exportSol = true, exportLP = true })
+                .AddVariables(def.CreateVariables)
+                .AddModel(def.CreateModel)
+                .OnSolved(engine => dataload.WriteSolution(engine));
+
+            bool ok = model.Execute();
+            Logging.Info($"[GlassFactory] success={ok}, status={model.optEngine.Status}");
         }
     }
 }
@@ -1177,27 +1315,31 @@ public class Experiment
 
 ### 16.2 標準用法（tuning 掃描）
 
+> 資料建構走 §7.6 的 `OptData.Load` 唯一入口（各 Trial 共用同一份 dataload）；模型組裝沿用 §14 的 `GlassFactoryModel`（`CreateVariables`/`CreateModel`/`Build`），與 §7.6、§14 一致。
+
 ```csharp
 using OptimFoundation.Core;
+using OptimFoundation.Cplex;
+using GlassFactory.Set;
+using GlassFactory.Model;
 
+var dataload = OptData.Load(() => new GlassDataload());
 var exp = new Experiment("glass-tuning", "比較 mipEmphasis 對求解時間與 gap 的影響");
 
 // 要掃的設定（用 ITunableConfig 抽象旋鈕，跨引擎一致）
 foreach (var (label, tune) in new (string, Action<CplexConfig>)[]
 {
-    ("baseline",          _ => { }),
+    ("baseline", _ => { }),
     ("emphasis=feasible", c => c.Emphasis = 1),
-    ("emphasis=optimal",  c => { c.Emphasis = 2; c.Seed = 7; }),
+    ("emphasis=optimal", c => { c.Emphasis = 2; c.Seed = 7; }),
 })
 {
     var config = new CplexConfig { epGap = 0.03, timeLimit = 60, enableLog = false };
     tune(config);
 
-    var dataload = new GlassDataload();
     using var engine = new OptEngine(config);   // 每個 Trial 用全新 engine
     engine.Build();
-    new VariableCreate(dataload, engine).Build();
-    new BuildModel(dataload, engine).Build();
+    new GlassFactoryModel(dataload).Build(engine);   // CreateVariables + CreateModel 一次組全
 
     // 一行擷取：完整設定 + 收斂數據（CPLEX 自動含收斂軌跡）
     var trial = Trial.Capture(engine, label, () => engine.Solve());

@@ -134,7 +134,7 @@ Projects/MyProject/
 // Program.cs
 if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }
 
-var dataload = new Dataload();
+var dataload = OptData.Load(() => new Dataload());   // 唯一建構路徑——觸發框架驗證（Dataload : DataContext）
 using (var m = new OptModel("MyProject")
     .UseConfig(() => new CplexConfig { epGap = 0.03, timeLimit = 300, workThreads = 8 })
     .AddVariables(e => new VariableCreate(dataload, e).Build())
@@ -145,6 +145,8 @@ using (var m = new OptModel("MyProject")
 }
 ```
 
+> `Dataload` MUST `public partial class Dataload : DataContext`；NEVER 裸 `new Dataload()` 當建構終點——仍可編譯但跳過框架的參照完整性 / 重複 key / 數值 sanity 驗證。細節見 [`CPLEX_API_REFERENCE.md`](CPLEX_API_REFERENCE.md) §7.6。
+>
 > 需逐行掌控引擎生命週期時，可退回手寫 `MyProblem : IDisposable` 的 `Execute()`（完整示範見 `Projects/HospitalRostering_Manual`）。
 
 ---
