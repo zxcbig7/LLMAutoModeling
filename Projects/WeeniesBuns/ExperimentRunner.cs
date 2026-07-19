@@ -50,7 +50,7 @@ namespace WeeniesBuns
                 };
                 tune(config);
 
-                var dataload = new WeeniesBunsDataload();
+                var dataload = OptData.Load(() => new WeeniesBunsDataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(dataload, engine).Build();

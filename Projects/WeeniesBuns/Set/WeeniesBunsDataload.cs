@@ -6,8 +6,11 @@ using WeeniesBuns.Variable;
 
 namespace WeeniesBuns.Set
 {
-    public class WeeniesBunsDataload
+    public partial class WeeniesBunsDataload : DataContext
     {
+        // ── Sets ──────────────────────────────────────────────────────────
+        public Set_ProductType PRODUCTTYPE = new();
+
         // ── Resource capacities ───────────────────────────────────────────
         public double FlourCapacity  = 200;     // lbs / week
         public double PorkCapacity   = 800;     // lbs / week
@@ -20,8 +23,13 @@ namespace WeeniesBuns.Set
             new() { ProductType = "Bun",         FlourPerUnit = 0.1,  PorkPerUnit = 0,    LaborPerUnit = 2, Profit = 0.33 }
         };
 
-        // ── Sets（由 Parameters 衍生） ────────────────────────────────────
+        // ── Sets（供 Variable 建構用；成員與 PRODUCTTYPE 一致） ───────────────
         public List<string> ProductTypes => parameter_ProductSpec.Select(p => p.ProductType).ToList();
+
+        public WeeniesBunsDataload()
+        {
+            PRODUCTTYPE.LoadInline("Frankfurter", "Bun");
+        }
 
         public void WriteToCSV(OptEngine engine)
         {

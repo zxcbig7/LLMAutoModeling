@@ -14,7 +14,7 @@ if (args.Contains("experiment"))
     return;
 }
 
-var dataload = new GlassDataload();
+var dataload = OptData.Load(() => new GlassDataload());
 
 using (var m = new OptModel("GlassFactory")
     .UseConfig(() => new CplexConfig

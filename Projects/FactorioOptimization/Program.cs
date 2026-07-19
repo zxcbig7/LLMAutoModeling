@@ -14,7 +14,7 @@ if (args.Contains("experiment"))
     return;
 }
 
-var dataload = new FactorioOptimizationDataload();
+var dataload = OptData.Load(() => new FactorioOptimizationDataload());
 
 using (var m = new OptModel("FactorioOptimization")
     .UseConfig(() => new CplexConfig

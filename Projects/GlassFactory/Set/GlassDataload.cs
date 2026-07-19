@@ -6,8 +6,11 @@ using GlassFactory.Variable;
 
 namespace GlassFactory.Set
 {
-    public class GlassDataload
+    public partial class GlassDataload : DataContext
     {
+        // ── Sets ──────────────────────────────────────────────────────────
+        public Set_GlassType GLASSTYPE = new();
+
         // ── Parameters ────────────────────────────────────────────────────
         public List<Parameter_GlassSpec> parameter_GlassSpec = new()
         {
@@ -19,8 +22,13 @@ namespace GlassFactory.Set
         public double HeatingCapacity = 300;
         public double CoolingCapacity = 300;
 
-        // ── Sets（由 Parameters 衍生） ────────────────────────────────────
+        // ── Sets（供 Variable 建構用；成員與 GLASSTYPE 一致） ───────────────
         public List<string> GlassTypes => parameter_GlassSpec.Select(s => s.GlassType).ToList();
+
+        public GlassDataload()
+        {
+            GLASSTYPE.LoadInline("Regular", "Tempered");
+        }
 
         public void WriteToCSV(OptEngine engine)
         {

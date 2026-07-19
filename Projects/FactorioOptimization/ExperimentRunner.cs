@@ -48,7 +48,7 @@ namespace FactorioOptimization
                 };
                 tune(config);
 
-                var dataload = new FactorioOptimizationDataload();
+                var dataload = OptData.Load(() => new FactorioOptimizationDataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(dataload, engine).Build();

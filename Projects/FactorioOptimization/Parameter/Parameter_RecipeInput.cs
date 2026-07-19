@@ -1,11 +1,11 @@
-using OptimFoundation.Core;
+using OptimFoundation.Modeling;
+using FactorioOptimization.Set;
 
 namespace FactorioOptimization.Parameter
 {
-    public class Parameter_RecipeInput : ParameterBase
-    {
-        public string MachineName  { get; set; } = string.Empty;
-        public string ResourceName { get; set; } = string.Empty;
-        public double QTY     { get; set; }
-    }
+    /// <summary>配方輸入參數（每單位加工時間消耗量）。MachineName / ResourceName 為 index-set。</summary>
+    [OptParam]
+    [OptDim<Set_Machine>("MachineName")]
+    [OptDim<Set_Commodity>("ResourceName")]
+    public partial class Parameter_RecipeInput { }
 }

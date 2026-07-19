@@ -19,6 +19,8 @@ ProjectName/
 └── Constraint/ ← ConstraintBase 子類別 + BuildModel
 ```
 
+> paved path 是逐維具名宣告 `[OptDim<TSet>("Name")]`（見 `CPLEX_API_REFERENCE.md` §7.5 / `Template_CPLEX/CLAUDE.md`）；上圖 `[OptParam<Set_X>]`/`[OptVar<Set_X>]` 泛型式為仍受支援的逃生口，非首選。
+
 ## resume（automated 斷點續跑，D6）
 
 `status.json`：`{ "completed": ["00","01",...], "current": "05", "projectType": "MILP" }`

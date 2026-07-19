@@ -6,8 +6,12 @@ using FactorioOptimization.Variable;
 
 namespace FactorioOptimization.Set
 {
-    public class FactorioOptimizationDataload
+    public partial class FactorioOptimizationDataload : DataContext
     {
+        // ── Sets（供框架資料驗證用；成員與各 Parameter 的字面資料一致） ───────
+        public Set_Machine MACHINE = new();
+        public Set_Commodity COMMODITY = new();
+
         // ── 全域上限 ───────────────────────────────────────────────────────
         public double CrudeOilCap     = 958.3;
         public double FixedLubePlants = 20;
@@ -77,6 +81,17 @@ namespace FactorioOptimization.Set
 
         public List<string> ProducerMachines(string resource)
             => parameter_RecipeOutput.Where(r => r.ResourceName == resource).Select(r => r.MachineName).ToList();
+
+        public FactorioOptimizationDataload()
+        {
+            // 成員與 parameter_Machine 一致（見上方字面資料）
+            MACHINE.LoadInline("Refinery", "ChemPlant_Lube", "ChemPlant_LightSolid",
+                "ChemPlant_GasSolid", "ChemPlant_HeavySolid", "Assembler_Rocket");
+
+            // 比 ResourceTypes 更廣：多納入 CrudeOil / Water 這兩個只當配方輸入的原料
+            COMMODITY.LoadInline("CrudeOil", "Water", "HeavyOil", "LightOil", "Gas",
+                "SolidFuel", "Lubricant", "RocketFuel");
+        }
 
         // ── 輸出結果 ───────────────────────────────────────────────────────
         public void WriteToCSV(OptEngine engine)

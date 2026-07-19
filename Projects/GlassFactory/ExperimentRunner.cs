@@ -48,7 +48,7 @@ namespace GlassFactory
                 };
                 tune(config);
 
-                var dataload = new GlassDataload();
+                var dataload = OptData.Load(() => new GlassDataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(dataload, engine).Build();

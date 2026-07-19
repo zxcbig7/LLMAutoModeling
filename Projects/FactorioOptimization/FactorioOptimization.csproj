@@ -24,6 +24,9 @@
     <Reference Include="OptimFoundation.Cplex">
       <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
     </Reference>
+
+    <!-- AutoSetsGenerator：以 analyzer DLL 掛入，[OptSet]/[OptParam<>] 在編譯期生成 class body -->
+    <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 
 </Project>

@@ -15,7 +15,7 @@ if (args.Contains("experiment"))
     return;
 }
 
-var dataload = new WeeniesBunsDataload();
+var dataload = OptData.Load(() => new WeeniesBunsDataload());
 
 using (var m = new OptModel("WeeniesBuns")
     .UseConfig(() => new CplexConfig
