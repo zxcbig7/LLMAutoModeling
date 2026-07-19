@@ -4,12 +4,16 @@
 
 MIP（混合整數規劃）— 醫院護理人員月排班，加權懲罰最小化。
 
-## 架構：手寫 class + Problem.Execute（後路）
+## 架構：手寫 composition root（後路）
 
-- 變數 / 參數：全手寫 `: VariableBase` / `: ParameterBase`（不掛 generator）
-- composition root：手寫 `HospitalRosteringProblem : IDisposable` 的 `Execute()`，自行 new/Build/Solve/Dispose `OptEngine`
+- composition root：手寫 `HospitalRosteringProblem : IDisposable` 的 `Execute()`，自行 new/Build/Solve/Dispose `OptEngine` —— **這才是本專案「後路」定位的實質內容**
+- Variable / Parameter：**已改為 attribute 驅動**（`[OptVar]`/`[OptParam]` + `[OptDim<Set_X>]`），與 Generator 版結構相同
+- `Dataload` 為 `partial class ... : DataContext`，建構走 `OptData.Load(() => new Dataload())`，載入後框架自動驗資料
 - 與 `Projects/HospitalRostering_Generator`（預設架構）用**同一份數學模型**、跑**同一組 tuning**，專供兩架構對照（見 `tutorial/` §5.8）
-- ⚠ 這是**示範用的後路**；新題目請優先用 generator 版的寫法
+- ⚠ 這是**示範用的後路**；新題目請優先用 Generator 版的寫法
+
+> **2026-07-19 定位變更**：框架資料防護上線後，`OPTF006` 要求所有 `Parameter_*` 走 attribute 路徑（漏掛即 compile error），且 generator 會無條件重 emit 該型別的屬性——手寫屬性與 generator 產出並存會 `CS0102` 重複定義。因此本專案的 Parameter 層**已無法維持純手寫**，與 Generator 版結構收斂。
+> 兩者現存差異僅剩 composition root 與 Constraint 組法。**若對照價值已不足，可考慮合併為單一範例。**
 
 ## 開發兩階段原則
 
