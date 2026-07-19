@@ -6,8 +6,12 @@ using ClinicVitamin.Variable;
 
 namespace ClinicVitamin.Set
 {
-    public class ClinicDataload
+    public partial class ClinicDataload : DataContext
     {
+        // ── Sets（供框架資料驗證用；成員與各 Parameter 的字面資料一致） ───────
+        public Set_ProductType PRODUCTTYPE = new();
+        public Set_Vitamin VITAMIN = new();
+
         // ── Parameters ────────────────────────────────────────────────────
         public List<Parameter_ProductSpec> parameter_ProductSpec = new()
         {
@@ -35,6 +39,13 @@ namespace ClinicVitamin.Set
         // ── Sets（由 Parameters 衍生） ────────────────────────────────────
         public List<string> Products => parameter_ProductSpec.Select(s => s.ProductType).ToList();
         public List<string> Vitamins  => parameter_VitaminStock.Select(s => s.Vitamin).ToList();
+
+        public ClinicDataload()
+        {
+            // 成員與 parameter_ProductSpec / parameter_VitaminStock 一致（見上方字面資料）
+            PRODUCTTYPE.LoadInline("Shots", "Pills");
+            VITAMIN.LoadInline("C", "D");
+        }
 
         public void WriteToCSV(OptEngine engine)
         {

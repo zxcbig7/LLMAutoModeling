@@ -48,7 +48,7 @@ namespace ClinicVitamin
                 };
                 tune(config);
 
-                var dataload = new ClinicDataload();
+                var dataload = OptData.Load(() => new ClinicDataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(dataload, engine).Build();

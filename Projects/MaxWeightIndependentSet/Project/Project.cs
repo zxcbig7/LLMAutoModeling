@@ -18,7 +18,7 @@ namespace MaxWeightIndependentSet.Project
 
         public MwisProject()
         {
-            dataload = new Dataload();
+            dataload = OptData.Load(() => new Dataload());
             Logging.SetLogFileName(ProjectName);
         }
 

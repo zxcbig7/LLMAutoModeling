@@ -48,7 +48,7 @@ namespace SandwichProduction
                 };
                 tune(config);
 
-                var dataload = new SandwichDataload();
+                var dataload = OptData.Load(() => new SandwichDataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(dataload, engine).Build();

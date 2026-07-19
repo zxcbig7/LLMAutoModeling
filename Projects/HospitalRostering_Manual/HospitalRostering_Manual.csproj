@@ -7,9 +7,19 @@
     <Nullable>enable</Nullable>
     <RootNamespace>HospitalRostering_Manual</RootNamespace>
     <AssemblyName>HospitalRostering_Manual</AssemblyName>
+    <!-- 讓 source generator 產出的 .g.cs 落地到 Generated/，方便檢視生成碼 -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
-  <!-- 架構 A（手寫）：不掛 source generator；所有變數/參數 class 手寫屬性。 -->
+  <!-- 架構 A（手寫）：composition root 手寫 new/Build/Solve/Dispose（不用 OptModel fluent）。
+       框架資料防護上線後，Parameter/Set 積木改掛 attribute 交由 AutoSetsGenerator 生成 index 屬性 +
+       DataContext 註冊碼；手寫的是 composition root 與各 Constraint 的建模邏輯，非資料層樣板。 -->
+
+  <ItemGroup>
+    <!-- Generated/ 只是 generator 落地供檢視，不可當一般原始碼編譯（否則與 in-memory 輸出撞名） -->
+    <Compile Remove="Generated/**/*.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- 所有 DLL 統一參考 repo 根 dlls/ -->
@@ -28,6 +38,9 @@
     <Reference Include="OptimFoundation.Cplex">
       <HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath>
     </Reference>
+
+    <!-- AutoSetsGenerator：以 analyzer DLL 掛入，[OptSet]/[OptDim<>]/[OptParam] 在編譯期生成 class body -->
+    <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 
 </Project>

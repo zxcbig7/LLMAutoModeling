@@ -14,7 +14,7 @@ if (args.Contains("experiment"))
     return;
 }
 
-var dataload = new ClinicDataload();
+var dataload = OptData.Load(() => new ClinicDataload());
 
 using (var m = new OptModel("ClinicVitamin")
     .UseConfig(() => new CplexConfig

@@ -19,7 +19,7 @@ namespace MaxWeightIndependentSet.Project
         public void Build()
         {
             Logging.Info("【建構目標式】");
-            new ObjectiveFunction(_data.NODE, _data.param_Weight, _engine).Build();
+            new ObjectiveFunction(_data.NODE, _data.parameter_Weight, _engine).Build();
 
             Logging.Info("【建構限制式】");
             new Constraint_EdgeConflict(_data.EDGE, _engine).Build();

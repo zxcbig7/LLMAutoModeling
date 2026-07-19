@@ -14,7 +14,7 @@ if (args.Contains("experiment"))
     return;
 }
 
-var dataload = new SandwichDataload();
+var dataload = OptData.Load(() => new SandwichDataload());
 
 using (var m = new OptModel("SandwichProduction")
     .UseConfig(() => new CplexConfig

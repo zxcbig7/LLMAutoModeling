@@ -10,10 +10,10 @@ namespace MaxWeightIndependentSet.Model
     public class ObjectiveFunction
     {
         private readonly OptEngine _engine;
-        private readonly List<string> _nodes;
-        private readonly List<Param_Weight> _weights;
+        private readonly IReadOnlyList<string> _nodes;
+        private readonly List<Parameter_Weight> _weights;
 
-        public ObjectiveFunction(List<string> nodes, List<Param_Weight> weights, OptEngine engine)
+        public ObjectiveFunction(IReadOnlyList<string> nodes, List<Parameter_Weight> weights, OptEngine engine)
         {
             _nodes = nodes;
             _weights = weights;

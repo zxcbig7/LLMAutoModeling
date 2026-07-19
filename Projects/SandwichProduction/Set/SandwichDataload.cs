@@ -6,8 +6,12 @@ using SandwichProduction.Variable;
 
 namespace SandwichProduction.Set
 {
-    public class SandwichDataload
+    public partial class SandwichDataload : DataContext
     {
+        // ── Sets（供框架資料驗證用；成員與各 Parameter 的字面資料一致） ───────
+        public Set_SandwichType SANDWICHTYPE = new();
+        public Set_Ingredient INGREDIENT = new();
+
         // ── Parameters ────────────────────────────────────────────────────
         public List<Parameter_SandwichSpec> parameter_SandwichSpec = new()
         {
@@ -32,6 +36,13 @@ namespace SandwichProduction.Set
         // ── Sets（由 Parameters 衍生） ────────────────────────────────────
         public List<string> SandwichTypes => parameter_SandwichSpec.Select(s => s.SandwichType).ToList();
         public List<string> Ingredients   => parameter_IngredientStock.Select(s => s.Ingredient).ToList();
+
+        public SandwichDataload()
+        {
+            // 成員與 parameter_SandwichSpec / parameter_IngredientStock 一致（見上方字面資料）
+            SANDWICHTYPE.LoadInline("Regular", "Special");
+            INGREDIENT.LoadInline("Eggs", "Bacon");
+        }
 
         public void WriteToCSV(OptEngine engine)
         {

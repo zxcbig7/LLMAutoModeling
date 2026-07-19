@@ -50,7 +50,7 @@ namespace HospitalRostering_Generator
                 };
                 tune(config);
 
-                var data = new Dataload();                       // 每 Trial fresh，避免狀態污染
+                var data = OptData.Load(() => new Dataload());    // 每 Trial fresh，避免狀態污染
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(data, engine).Build();        // ← 與 solve 模式共用同一 build-step

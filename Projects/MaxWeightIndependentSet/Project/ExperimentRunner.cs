@@ -48,7 +48,7 @@ namespace MaxWeightIndependentSet.Project
                 tune(config);
 
                 // 每個 Trial 全新 engine，避免跨 trial 狀態污染
-                var data = new Dataload();
+                var data = OptData.Load(() => new Dataload());
                 using var engine = new OptEngine(config);
                 engine.EnableTrajectory();
                 engine.Build();

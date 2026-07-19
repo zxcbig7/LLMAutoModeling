@@ -1,12 +1,11 @@
-using OptimFoundation.Core;
+using OptimFoundation.Modeling;
+using HospitalRostering_Manual.Set;
 
 namespace HospitalRostering_Manual.Parameter
 {
-    /// <summary>每日各工作班別人力需求 Demand[d,g]（手寫版）。</summary>
-    public class Parameter_ShiftDemand : ParameterBase
-    {
-        public DateTime Date  { get; set; }
-        public string   Group { get; set; } = string.Empty;
-        public double   QTY   { get; set; }
-    }
+    /// <summary>每日各工作班別人力需求 Demand[d,g]。body（Date/Group/QTY + ctor）由 AutoSetsGenerator 生成。</summary>
+    [OptParam]
+    [OptDim<Set_Date>("Date")]
+    [OptDim<Set_Group>("Group")]
+    public partial class Parameter_ShiftDemand { }
 }

@@ -49,7 +49,7 @@ namespace HospitalRostering_Manual
                 };
                 tune(config);
 
-                var data = new Dataload();                       // 每 Trial fresh
+                var data = OptData.Load(() => new Dataload());    // 每 Trial fresh
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(data, engine).Build();        // ← 與 solve 模式共用

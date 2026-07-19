@@ -15,7 +15,7 @@ if (args.Contains("experiment"))
     return;
 }
 
-var dataload = new Dataload();
+var dataload = OptData.Load(() => new Dataload());
 
 using (var m = new OptModel("HospitalRostering_Generator")
     .UseConfig(() => new CplexConfig

@@ -1,12 +1,11 @@
-using OptimFoundation.Core;
+using OptimFoundation.Modeling;
+using HospitalRostering_Manual.Set;
 
 namespace HospitalRostering_Manual.Parameter
 {
-    /// <summary>跨組別支援成本 CG_e（手寫版）。</summary>
-    public class Parameter_CrossGroup : ParameterBase
-    {
-        public string Employee { get; set; } = string.Empty;
-        public string Group    { get; set; } = string.Empty;
-        public double QTY      { get; set; }
-    }
+    /// <summary>跨組別支援成本 CG_e。body（Employee/Group/QTY + ctor）由 AutoSetsGenerator 生成。</summary>
+    [OptParam]
+    [OptDim<Set_Employee>("Employee")]
+    [OptDim<Set_Group>("Group")]
+    public partial class Parameter_CrossGroup { }
 }

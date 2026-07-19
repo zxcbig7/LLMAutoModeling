@@ -10,7 +10,7 @@ namespace HospitalRostering_Generator.Set
     /// Sets + Parameters + 罰分權重 + 結果輸出。與 HospitalRostering_Manual 的 Dataload 資料語意完全相同
     /// （差異只在 Parameter class 是 generator 生成還是手寫）。
     /// </summary>
-    public class Dataload
+    public partial class Dataload : DataContext
     {
         // 罰分權重（對應 Model Objective 的 w1..w7）
         public double Penalty_OffOneDay     = 0.1;  // w1：做一休一做
@@ -23,10 +23,15 @@ namespace HospitalRostering_Generator.Set
         public double Penalty_PreGroup      = 0.2;  // parameter_NightToDay 標示用（QTY，非目標係數）
         public double Penalty_BackupGroup   = 0.0;  // Backup 班別不罰
 
-        // Sets
+        // Sets（消費端沿用既有 List<T>，供 Constraint/Objective 直接 .ForEach/LINQ 使用；不改動任何呼叫端）
         public List<string>   Employee = new();
         public List<string>   Group    = new();
         public List<DateTime> Date     = new();
+
+        // Set 積木（供框架資料驗證用；成員與上方 List<T> 一致，ctor 尾端 LoadFrom 灌入，單一資料來源不重複字面值）
+        public Set_Employee EMPLOYEE = new();
+        public Set_Group    GROUP    = new();
+        public Set_Date     DATE     = new();
 
         // Parameters
         public List<Parameter_ShiftDemand> parameter_ShiftDemand = new();
@@ -98,6 +103,11 @@ namespace HospitalRostering_Generator.Set
             parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 1), Employee = "E3", Group = "O" });
             parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 2), Employee = "E2", Group = "D" });
             parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 2), Employee = "E3", Group = "E" });
+
+            // Set 積木灌入（與上方 List<T> 同一份資料，供框架資料驗證用）
+            EMPLOYEE.LoadFrom(Employee);
+            GROUP.LoadFrom(Group);
+            DATE.LoadFrom(Date);
         }
 
         public void WriteToCSV(OptEngine engine)

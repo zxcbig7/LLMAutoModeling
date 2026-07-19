@@ -13,7 +13,7 @@ namespace HospitalRostering_Manual
     /// </summary>
     public sealed class HospitalRosteringProblem : IDisposable
     {
-        private readonly Dataload _data = new();
+        private readonly Dataload _data = OptData.Load(() => new Dataload());
         private OptEngine? _engine;
 
         public bool Execute()
