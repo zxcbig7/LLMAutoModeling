@@ -504,7 +504,7 @@ public static class VariableBuilder
 
 ```csharp
 [OptSet<DateTime>] public partial class Set_Date { }      // → : SetBase<DateTime>
-[OptSet]           public partial class Set_Employee { }  // 無參數 = 預設 string
+[OptSet<string>] public partial class Set_Employee { }    // 元素型別一律顯式寫出
 
 [OptParam]
 [OptDim<Set_Date>("Date")]
@@ -520,7 +520,8 @@ public partial class VariableB_ShiftAssign { }
 ```
 
 - property 名 = `[OptDim<TSet>("Name")]` 傳入的字串（PascalCase）；型別從 `TSet` 的 `[OptSet<T>]` 自動抓；attribute 順序 = key 組成順序
-- 引用非積木 → CS0311（`where T : ISetBrick`）；元素型別非法 → OPTF004；缺 `[OptSet]` → OPTF005
+- NEVER 寫裸 `[OptSet]`（無泛型參數版）—— ALWAYS 顯式 `[OptSet<string>]` —— Why: 兩者 codegen 完全相同，但顯式讓元素型別在宣告處一眼可見。裸版仍受支援（逃生口 / 舊 code），只是不寫新的
+- 引用非積木 → CS0311（`where T : ISetBrick`）；元素型別非法 → OPTF004；缺 `[OptSet<T>]` → OPTF005
 - 合法元素型別：`string / DateTime / int / long / double / decimal`
 - 光桿 `[OptVar]`/`[OptParam]` 不加任何 `[OptDim]` = 0 維純量，key = 類名、無 `@` 索引
 
@@ -590,7 +591,7 @@ public static class OptData
 
 - `OptData.Load<T>(Func<T> factory)` 是**唯一多載**；`OptData.Load<T>(IDataSource)` **不存在**——多來源／自訂 ctor 照樣支援，factory 內部想怎麼 `new Dataload(...)` 都可以，只是要包一層 lambda
 - 裸 `new Dataload()` / `new Dataload(source)` 仍可編譯，**但跳過驗證**——NEVER 在文件或範例把它當成建構終點
-- **`Set_*`/`Parameter_*` 忘記掛 `[OptSet]`/`[OptParam]`**：一旦被 `Dataload : DataContext` 的欄位引用 → **compile error `OPTF006`**（否則會靜默不註冊、永遠不受驗證）
+- **`Set_*`/`Parameter_*` 忘記掛 `[OptSet<T>]`/`[OptParam]`**：一旦被 `Dataload : DataContext` 的欄位引用 → **compile error `OPTF006`**（否則會靜默不註冊、永遠不受驗證）
 
 ### 建構時自動驗證（`DataValidationException`）
 
@@ -1030,7 +1031,7 @@ using OptimFoundation.Modeling;
 
 namespace GlassFactory.Set
 {
-    [OptSet] public partial class Set_GlassType { }   // 無參數 = string 元素
+    [OptSet<string>] public partial class Set_GlassType { }   // 元素型別一律顯式寫出
 }
 ```
 

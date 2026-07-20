@@ -73,7 +73,7 @@ Projects/<ProjectName>/
 paved path = Set 積木 + 光桿 `[OptVar]`/`[OptParam]` + 逐維 `[OptDim<TSet>("Name")]`（generator 自動生成 class body，完整見 `../../OptimFoundation/OptimFoundation/specs/developer-guide.md` §3.5）：
 
 ```csharp
-[OptSet<DateTime>] public partial class Set_Date { } // 元素型別；[OptSet] 預設 string
+[OptSet<DateTime>] public partial class Set_Date { } // 元素型別 MUST 顯式寫出，NEVER 用裸 [OptSet]
 
 [OptParam]
 [OptDim<Set_Date>("Date")]

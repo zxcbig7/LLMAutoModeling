@@ -219,10 +219,10 @@ CsvCtrl.WriteSolution<VariableB_Assign>(engine, dataId: "V1", userId: "USER");
 ```csharp
 using OptimFoundation.Modeling;
 
-[OptSet] public partial class Set_Item { }   // 無參數 = string 元素
+[OptSet<string>] public partial class Set_Item { }   // 元素型別一律顯式寫出
 [OptSet<DateTime>] public partial class Set_Date { }
-[OptSet] public partial class Set_Employee { }
-[OptSet] public partial class Set_Group { }
+[OptSet<string>] public partial class Set_Employee { }
+[OptSet<string>] public partial class Set_Group { }
 
 // 含值參數（生成 Item/Date/QTY + 兩個建構子）；TSet 決定該維型別
 [OptParam]
@@ -237,7 +237,7 @@ public partial class Parameter_Demand { }
 public partial class Parameter_PreAssign { }
 ```
 
-> generator 自動補 `QTY`（除非 `HasValue = false`）、無參數建構子（object initializer / `CsvCtrl.BuildParameter<T>` 用）與 `params object[]` 建構子（動態建構）。`Set_*` 須另掛 `[OptSet]`/`[OptSet<T>]`（見 `CPLEX_API_REFERENCE.md` §7.5）。
+> generator 自動補 `QTY`（除非 `HasValue = false`）、無參數建構子（object initializer / `CsvCtrl.BuildParameter<T>` 用）與 `params object[]` 建構子（動態建構）。`Set_*` 須另掛 `[OptSet<T>]`，元素型別 MUST 顯式寫出、NEVER 用裸 `[OptSet]`（見 `CPLEX_API_REFERENCE.md` §7.5）。
 
 ### 逃生口：多參數泛型 / 字串式（仍受支援，NEVER 標成已淘汰／已移除／錯誤）
 

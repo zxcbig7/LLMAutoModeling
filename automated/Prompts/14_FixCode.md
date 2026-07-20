@@ -16,7 +16,7 @@ Fix the C# compilation or runtime error in the provided code file.
 **Step 2: Identify the root cause.**
 - Is it a naming mismatch between Variable/Parameter class and usage?
 - Is it a wrong API call (wrong method name, wrong signature)?
-- Is it a missing `[OptSet]`/`[OptParam]`/`[OptVar]` attribute, or an illegal `VariableB_`/`VariableX_`/`VariableI_` prefix?
+- Is it a missing `[OptSet<T>]`/`[OptParam]`/`[OptVar]` attribute, or an illegal `VariableB_`/`VariableX_`/`VariableI_` prefix?
 - Is `Dataload` missing `partial` or `: DataContext`?
 - Is it a LINQ result that may be null?
 - Is it a type mismatch?
@@ -39,9 +39,9 @@ Fix the C# compilation or runtime error in the provided code file.
 |---|---|---|
 | `CS0103` — name not found | Wrong variable/class name | Match exact class name from Variables.cs |
 | `CS1061` — method not found | Wrong API call, or calling `.ForEach` on a `Set_*` brick | Use `AddLHS`/`AddRHS`/`CreateGreatEqual` etc.; use `foreach` (not `.ForEach`) to iterate a `Set_*` brick |
-| `CS0311` (`where T : ISetBrick`) | `[OptDim<T>]` generic argument isn't a `[OptSet]`-marked class | Point it at the actual `Set_<Name>` brick |
+| `CS0311` (`where T : ISetBrick`) | `[OptDim<T>]` generic argument isn't a `[OptSet<T>]`-marked class | Point it at the actual `Set_<Name>` brick |
 | `OPTF001` | `VariableB_`/`VariableX_`/`VariableI_` prefix missing or wrong | Rename class to the correct prefix for its intended type |
-| `OPTF006` | A `Set_*`/`Parameter_*` type is referenced as a field inside `Dataload : DataContext` but is missing `[OptSet]`/`[OptParam]` (this diagnostic only fires for types the `Dataload` actually references — it does not apply to `Variable_*` classes, which are never Dataload fields) | Add the missing bare attribute on the `Set_*`/`Parameter_*` class |
+| `OPTF006` | A `Set_*`/`Parameter_*` type is referenced as a field inside `Dataload : DataContext` but is missing `[OptSet<T>]`/`[OptParam]` (this diagnostic only fires for types the `Dataload` actually references — it does not apply to `Variable_*` classes, which are never Dataload fields) | Add the missing attribute: `[OptSet<string>]` (element type always explicit, NEVER bare `[OptSet]`) on a `Set_*`, bare `[OptParam]` + `[OptDim<TSet>(...)]` on a `Parameter_*` |
 | `CS1061` on `override void Build()` in a class `: OptEngine` | `Build()` is no longer virtual — the old `Project : OptEngine` inheritance pattern is obsolete | Rewrite as a composition-root class using `OptModel` (see Stage 12) |
 | `DataValidationException` at `OptData.Load(...)` | Dangling reference / duplicate index key / `[FullGrid]` missing cell / numeric sanity (NaN, Infinity, out-of-range) in the actual data | Fix the data in `Dataload`'s constructor — do NOT catch-and-ignore, do NOT hand-write a workaround validator |
 | `InvalidOperationException` from `Numeric.SafeRatio` | Divide-by-zero / non-finite / magnitude over threshold in a derived ratio (e.g. Big-M) | Check the source parameters feeding the ratio — this is a real data problem, not a bug in `SafeRatio` |

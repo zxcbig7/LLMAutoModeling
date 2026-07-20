@@ -4,8 +4,8 @@
 所有「Solver 層」設定都對應 OptimFoundation 的 `CplexConfig` 欄位（單一來源），
 由 `OptEngine.Configuration()` 接線到 CPLEX。欄位 `null` = 用 CPLEX 預設，tuning 時只設要動的。
 
-> **黃金順序**：先做「模型優化」（結構、變數型態、邊界、對稱性），再做「參數優化」（solver 旋鈕）。
-> 模型改一刀的效益通常遠大於調十個參數。
+> **黃金順序（限建模當下）**：**還在建模階段**（automated 的 Stage 4 Model，或模型尚未定版）時，先做「模型優化」（結構、變數型態、邊界、對稱性），再做「參數優化」（solver 旋鈕）——模型改一刀的效益通常遠大於調十個參數。
+> **模型已定版後（互動式 phase gate 的 Phase 3）順序相反**：solver 參數 → IIS / soft constraint → 模型結構，依 `$FW/MILP Model/CLAUDE.md` 天條。Why: 模型定版後動結構要回改 Model.md 並重走 Coding 轉譯，成本與風險都遠高於可逆的旋鈕；旋鈕連調 3 輪無改善才升級結構層。
 > **不變式**：tuning 不得移項 / 改號 / 翻轉比較方向 / 四捨五入數值 —— 只改求解策略，不改數學意義。
 
 ---
@@ -187,7 +187,7 @@ dotnet run -- experiment
 
 樣板與完整規範見 `claudemdTemplate/Experiment/CLAUDE.md`。
 
-> 黃金順序不變：先在 Stage 4（Model）做模型優化（§1），再用此 runner 掃 solver 旋鈕（§2）。模型一刀的效益通常遠大於調十個參數。
+> 黃金順序（限建模當下）：**automated pipeline** 先在 Stage 4（Model）做模型優化（§1），再用此 runner 掃 solver 旋鈕（§2）。模型已定版的互動式 tuning 反過來——先旋鈕，見檔頭。
 
 ---
 

@@ -2,7 +2,8 @@
 
 ## Set 積木
 
-- 一個 Set 一顆積木：`[OptSet<T>] public partial class Set_<Name> { }`（`T` = `string`/`DateTime`/`int`/...，元素型別；`[OptSet]` 無泛型參數預設 `string`）
+- 一個 Set 一顆積木：`[OptSet<T>] public partial class Set_<Name> { }`（`T` = `string`/`DateTime`/`int`/...，元素型別）
+- NEVER 寫裸 `[OptSet]` —— ALWAYS 顯式寫 `[OptSet<string>]` —— Why: 裸版隱含預設 string，讀 code 時看不出元素型別，換型別時也容易漏改；generator 產物兩者完全相同，顯式沒有任何成本
 - NEVER 用裸 `public List<string> ITEM = new();` 宣告 Set —— 積木化才能被 `DataContext` 註冊進驗證（見下）
 - 成員載入：字面值用 `.LoadInline("A", "B")`；由 Parameters 資料衍生用 `.LoadFrom(parameter_Xxx.Select(p => p.Item).Distinct())`（先建好 Parameter 資料，再導出 Set，不獨立重複定義）
 
