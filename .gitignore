@@ -77,3 +77,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
+
+# source generator 落地檔（EmitCompilerGeneratedFiles）——每次 build 重生，供本機檢視，不進版控
+**/Generated/
