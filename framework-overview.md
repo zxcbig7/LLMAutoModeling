@@ -82,7 +82,7 @@ flowchart TD
 - **interactive**：三階段 phase gate（建模 → 轉譯 → 調校），模型經確認才寫 code
 - **automated**：16 階段全自動（Stage0 分類 → Stage4 Model 數學模型 → Stage5-13 逐檔生碼 → Stage14 Build 修復迴圈）
 
-**OptimFoundation（下層）** — solver-agnostic MILP 框架（C# / .NET 4.8）：
+**OptimFoundation（下層）** — solver-agnostic MILP 框架（C# / .NET 8）：
 - **Core**：EngineBase、ISolverEngine、VariableBuilder、Experiments、Csv/Db/Logging 工具
 - **Solver 後端**：Cplex、Gurobi、Solver 變體（同一套 API、可換後端）
 - **Generators**：AutoSetsGenerator（source generator）

@@ -123,20 +123,42 @@ ProjectName/
 
 ### 類別命名與建構慣例
 
-| 元素 | 前綴 | 繼承 | 建構方式 | 建立 API |
+| 元素 | 前綴 | 預設寫法（paved path） | 後路（generator 不適用時） | 建立 API |
 |---|---|---|---|---|
-| 參數 | `Parameter_` | `ParameterBase` | 只宣告 properties，無建構子；object initializer | — |
-| 連續變數 | `VariableX_` | `VariableBase` | 同上（無資料欄位） | `BuildCVs<T>()` |
-| 整數變數 | `VariableI_` | `VariableBase` | 同上 | `BuildIVs<T>()` |
-| 二元變數 | `VariableB_` | `VariableBase` | 同上 | `BuildBVs<T>()` |
-| 限制式 | `Constraint_` | `ConstraintBase` | `(Dataload, OptEngine)`，`public void Build()` | Pool API |
-| 目標式 | `ObjectiveFunction` | — | `(Dataload, OptEngine)` | `CreateMinimize/Maximize` |
+| 集合 | `Set_` | `[OptSet<T>] partial class`，元素型別顯式寫出 | — | `LoadInline` / `LoadFrom` |
+| 參數 | `Parameter_` | 光桿 `[OptParam]` + 逐維 `[OptDim<Set_X>("Name")]` | 手寫繼承 `ParameterBase` | — |
+| 連續變數 | `VariableX_` | 光桿 `[OptVar]` + 逐維 `[OptDim<Set_X>("Name")]` | 手寫繼承 `VariableBase` | `BuildVars<T>()` |
+| 整數變數 | `VariableI_` | 同上 | 同上 | `BuildVars<T>()` |
+| 二元變數 | `VariableB_` | 同上 | 同上 | `BuildVars<T>()` |
+| 限制式 | `Constraint_` | 繼承 `ConstraintBase`，`(Dataload, OptEngine)` ctor | — | Pool API |
+| 目標式 | `ObjectiveFunction` | `(Dataload, OptEngine)` ctor | — | `CreateMinimize/Maximize` |
+
+**預設走 generator**：class body 留空，編譯期由 `AutoSetsGenerator` 補完 —— 樣板最省，且有 `OPTF001`~`OPTF006` 一整組編譯期防呆（前綴錯、attribute 漏掛、Set 型別非法都會直接 build 失敗）。手寫路徑沒有這層保護，只在 generator 不適用時才用。
+
+**attribute 展開成什麼**（你寫左邊，generator 補出右邊，所以 class body 才能留空）：
+
+```csharp
+// 你寫的（宣告殼）
+[OptVar]
+[OptDim<Set_Employee>("Employee")]
+[OptDim<Set_Date>("Date")]
+public partial class VariableB_Assign { }
+
+// generator 依 [OptDim] 補出的（等價於手寫這些 property）
+public partial class VariableB_Assign : VariableBase
+{
+    public string Employee { get; set; } = string.Empty;   // ← [OptDim<Set_Employee>("Employee")]
+    public DateTime Date { get; set; }                       // ← [OptDim<Set_Date>("Date")]
+}
+```
+
+所以 Constraint 裡 `new VariableB_Assign { Employee = e, Date = d }` 的 `Employee`/`Date`，就是上面 `[OptDim]` 的第二個字串參數——property 名 = `[OptDim]` 宣告名。
 
 關鍵慣例：
 
 - Parameter / Variable **只宣告 properties，不寫建構子**；index 屬性用 PascalCase（對應 AML set 名），Parameter 的數值欄位固定 `public double QTY`，放最後。
 - 建立實例一律用 **object initializer**：`new VariableB_X { Date = d, Group = g }`。
-- 變數型別由 `Build*Vs<T>` 決定，前綴只是命名約定（`B`→`BuildBVs`、`I`→`BuildIVs`、`X`→`BuildCVs`）。
+- **變數型別由類別名前綴決定**，前綴不是命名約定而是語意的一部分：`BuildVars<T>` 依前綴推導型別（`VariableB_`→Binary、`VariableX_`→Continuous、`VariableI_`→Integer），前綴不在這三者內直接編譯失敗（`OPTF001`）。需要自訂上下界時才改用顯式的 `BuildBVs` / `BuildCVs(lb, ub, ...)` / `BuildIVs(lb, ub, ...)`。
 - `Constraint.Build()` 是 `public void Build()`，**不是 `override`**（`ConstraintBase.Build` 非 virtual）。
 
 ```csharp

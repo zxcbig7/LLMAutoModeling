@@ -25,7 +25,7 @@ Stage 07b: DataloadVerify → 驗證 & 修正 Dataload（必要）
 Stage 08: ConstraintCode → Constraint/
 Stage 09: ObjCode → Objective/
 Stage 10: VarCreateCode → VariableCreate
-Stage 11: BuildConstraints → BuildConstraints
+Stage 11: BuildModel → BuildModel
 Stage 12: ProjectCode → Program 求解主體
 Stage 13: ProgramCode → Program.cs 入口
 Stage 14: FixCode → build 失敗時自動修復（循環最多 5 次）
@@ -53,8 +53,9 @@ Projects/<ProjectName>/
 ├── Set/ # Set 積木 + Dataload
 ├── Parameter/ # Parameter 積木
 ├── Variable/ # Variable 積木
-├── Constraint/ # Constraint 類別 + BuildConstraints
+├── Constraint/ # Constraint 類別 + BuildModel
 ├── Objective/ # ObjectiveFunction
+├── Project.cs # Stage 12：OptModel 組裝根（Dataload + CplexConfig → Run()）
 ├── Program.cs # 入口
 ├── status.json # 進度追蹤
 └── <ProjectName>.csproj # 複製 Template_CPLEX，DLL/Analyzer 相對 dlls/

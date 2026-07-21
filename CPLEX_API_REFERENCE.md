@@ -124,12 +124,12 @@ optEngine.BuildBVs<VariableB_Assign>(dataload.Date, dataload.Employee, dataload.
 **檔案**：`Foundation\src\OptimFoundation.Core\DesignBases.cs`
 
 ```csharp
-public abstract class VariableBase   : ModelElementBase { protected string VariableName  => ElemName; }
-public abstract class ParameterBase  : ModelElementBase { protected string ParameterName => ElemName; }
+public abstract class VariableBase : ModelElementBase { protected string VariableName => ElemName; }
+public abstract class ParameterBase : ModelElementBase { protected string ParameterName => ElemName; }
 public abstract class ConstraintBase : ModelElementBase
 {
-    protected int    ConstraintCount { get; set; }
-    protected string ConstraintName  => ElemName;
+    protected int ConstraintCount { get; set; }
+    protected string ConstraintName => ElemName;
 }
 ```
 
@@ -190,43 +190,43 @@ using OptimFoundation.Modeling;   // generator 注入的 attribute namespace
 ```csharp
 public sealed class CplexConfig : ISolverConfig, ITunableConfig
 {
-    public int?    workThreads     = 32;       // 工作執行緒上限
-    public bool    enableLog       = false;    // 啟用 CPLEX log
-    public bool    exportLP        = false;    // 輸出 .lp 模型檔
-    public bool    exportSol       = false;    // 輸出 .sol 解檔
-    public bool    exportMPS       = false;    // 輸出 .mps 模型檔
-    public int?    rowRead         = 30000;    // 限制式上限
-    public double? workMemory      = 2048;     // 工作記憶體 MB
-    public double? epGap           = 1e-4;     // MIP gap 終止條件
-    public int?    nodeSelect      = null;     // MIP.Strategy.NodeSelect
-    public int?    randomSeed      = null;     // Param.RandomSeed
-    public double? epOpt           = 1e-06;    // Optimality tolerance
-    public double? epRHS           = 1e-06;    // Feasibility tolerance
-    public double? timeLimit       = null;     // 求解秒數上限（null=無限）
-    public double? polishAfterTime = null;     // Solution polishing 起始秒數
-    public int?    mipEmphasis     = null;     // 1=feasibility/2=optimality/3=bestBound/4=hidden
-    public int?    varSel          = null;     // 分支變數選擇策略
-    public int?    algorithm       = null;     // RootAlgorithm 1~6
-    public int?    nodeFileInd     = null;     // 0/2/3 節點檔策略
+    public int? workThreads = 32; // 工作執行緒上限
+    public bool enableLog = false; // 啟用 CPLEX log
+    public bool exportLP = false; // 輸出 .lp 模型檔
+    public bool exportSol = false; // 輸出 .sol 解檔
+    public bool exportMPS = false; // 輸出 .mps 模型檔
+    public int? rowRead = 30000; // 限制式上限
+    public double? workMemory = 2048; // 工作記憶體 MB
+    public double? epGap = 1e-4; // MIP gap 終止條件
+    public int? nodeSelect = null; // MIP.Strategy.NodeSelect
+    public int? randomSeed = null; // Param.RandomSeed
+    public double? epOpt = 1e-06; // Optimality tolerance
+    public double? epRHS = 1e-06; // Feasibility tolerance
+    public double? timeLimit = null; // 求解秒數上限（null=無限）
+    public double? polishAfterTime = null; // Solution polishing 起始秒數
+    public int? mipEmphasis = null; // 1=feasibility/2=optimality/3=bestBound/4=hidden
+    public int? varSel = null; // 分支變數選擇策略
+    public int? algorithm = null; // RootAlgorithm 1~6
+    public int? nodeFileInd = null; // 0/2/3 節點檔策略
 
     // ISolverConfig adapter
     public double? TimeLimit { get; set; }
-    public double? MipGap    { get; set; }
-    public int?    Threads   { get; set; }
-    public bool    LogToConsole { get; set; }
-    public string  LogFilePath  { get; set; }
-    public int?    RootAlgorithm { get; set; }
-    public int?    NodeAlgorithm { get; set; }
-    public bool?   PreIndicator  { get; set; }
+    public double? MipGap { get; set; }
+    public int? Threads { get; set; }
+    public bool LogToConsole { get; set; }
+    public string LogFilePath { get; set; }
+    public int? RootAlgorithm { get; set; }
+    public int? NodeAlgorithm { get; set; }
+    public bool? PreIndicator { get; set; }
 
     // ITunableConfig — 跨引擎抽象 tuning 旋鈕，delegate 到上方既有欄位（null=用 solver 預設）
-    public int?    Seed           { get; set; }  // → randomSeed
-    public int?    Emphasis       { get; set; }  // → mipEmphasis
-    public double? FeasibilityTol { get; set; }  // → epRHS
-    public double? OptimalityTol  { get; set; }  // → epOpt
-    public int?    Presolve       { get; set; }  // ↔ PreIndicator（0=off/非0=on）
-    public double? HeuristicEffort{ get; set; }  // CPLEX 無直接對應，僅供快照記錄
-    public double? MemoryLimitMb  { get; set; }  // → workMemory（MB）
+    public int? Seed { get; set; } // → randomSeed
+    public int? Emphasis { get; set; } // → mipEmphasis
+    public double? FeasibilityTol { get; set; } // → epRHS
+    public double? OptimalityTol { get; set; } // → epOpt
+    public int? Presolve { get; set; } // ↔ PreIndicator（0=off/非0=on）
+    public double? HeuristicEffort { get; set; } // CPLEX 無直接對應，僅供快照記錄
+    public double? MemoryLimitMb { get; set; } // → workMemory（MB）
     // RootAlgorithm（→ algorithm）由上方滿足
 }
 ```
@@ -241,13 +241,13 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
 ```csharp
 CplexConfig config = new CplexConfig
 {
-    epGap       = 0.0,    // 求最佳解
-    timeLimit   = 60,
+    epGap = 0.0, // 求最佳解
+    timeLimit = 60,
     workThreads = 4,
-    enableLog   = true,
-    exportSol   = true,
-    exportLP    = true,
-    exportMPS   = false
+    enableLog = true,
+    exportSol = true,
+    exportLP = true,
+    exportMPS = false
 };
 ```
 
@@ -352,7 +352,7 @@ protected void        Maximize(ILinearNumExpr expr);
 **檔案**：`Foundation\src\OptimFoundation.Core\EngineBase.cs`
 所有 `OptEngine` 物件都繼承以下 public 方法。
 
-### 6.1 批次建立變數（BuildXVs）
+### 6.1 批次建立變數（BuildVars / BuildBVs / BuildCVs / BuildIVs）
 
 ```csharp
 public virtual void BuildCVs<T>(params object[] sets);                    // 連續變數 [0, 1e100]
@@ -727,12 +727,12 @@ batch.Commit();   // 忘記呼叫 = 整批 rollback
 ```csharp
 public class FolderDir
 {
-    public static ProjFolder Data     = new ProjFolder("Data");      // 輸入 CSV
-    public static ProjFolder Solution = new ProjFolder("Solution");  // 解 CSV 輸出
-    public static ProjFolder Log      = new ProjFolder("Logs");      // 日誌
-    public static ProjFolder Model    = new ProjFolder("Models");    // LP/MPS
-    public static ProjFolder IIS        = new ProjFolder("IISs");        // 不可行衝突
-    public static ProjFolder Sol        = new ProjFolder("Sols");        // CPLEX .sol
+    public static ProjFolder Data = new ProjFolder("Data"); // 輸入 CSV
+    public static ProjFolder Solution = new ProjFolder("Solution"); // 解 CSV 輸出
+    public static ProjFolder Log = new ProjFolder("Logs"); // 日誌
+    public static ProjFolder Model = new ProjFolder("Models"); // LP/MPS
+    public static ProjFolder IIS = new ProjFolder("IISs"); // 不可行衝突
+    public static ProjFolder Sol = new ProjFolder("Sols"); // CPLEX .sol
     public static ProjFolder Experiment = new ProjFolder("Experiments"); // Experiment CSV/JSON
 
     public class ProjFolder
@@ -930,7 +930,7 @@ foreach (var j in dataload.Days)
 ```csharp
 optEngine.AddLHS(1, new VariableB_NightToDay { Date = d, Employee = e });
 optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = prevD, Employee = e, Group = "N" });
-optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d,     Employee = e, Group = "D" });
+optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "D" });
 optEngine.AddRHS(-1);
 optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
 ConstraintCount++;
@@ -1397,10 +1397,10 @@ engine.CreateMinimize();   // 或 CreateMaximize()
 bool ok = engine.Solve();
 
 // === 取解 ===
-double obj    = engine.GetObjectiveValue();
-double v      = engine.GetVariableValue("VarX@a@b");
-var    dict   = engine.GetSetVarValues<VarX>();    // Dictionary<string,double>
-var    dict2  = engine.GetSolution("VarX");        // IReadOnlyDictionary
+double obj = engine.GetObjectiveValue();
+double v = engine.GetVariableValue("VarX@a@b");
+var dict = engine.GetSetVarValues<VarX>(); // Dictionary<string,double>
+var dict2 = engine.GetSolution("VarX"); // IReadOnlyDictionary
 string[] names = engine.GetSetVarNames<VarX>();
 
 // === 輸出 CSV ===

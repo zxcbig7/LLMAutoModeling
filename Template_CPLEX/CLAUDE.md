@@ -26,8 +26,8 @@ OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線
 
 ```
 MyProject/
-├── Program.cs
-├── MyProblem.cs # 主問題類別（IDisposable）
+├── Program.cs # 唯一入口，OptModel fluent composition root
+├── ExperimentRunner.cs # 參數掃描（dotnet run -- experiment）
 ├── MyProject.csproj
 │
 ├── Model\
@@ -71,6 +71,8 @@ CplexConfig config = new CplexConfig
 };
 ```
 
+完整欄位（含 2026-07 新增的 ~20 個進階調參旋鈕）與 tuning 策略見 [`../tuning/CLAUDE.md`](../tuning/CLAUDE.md)。
+
 ### OptEngine — 模型引擎
 
 ```csharp
@@ -79,6 +81,39 @@ optEngine.Build(); // 初始化 CPLEX 環境
 bool isOK = optEngine.Solve(); // 執行求解，回傳是否找到可行解
 int vars = optEngine.varCount; // 目前變數數量
 ```
+
+### Dataload — 資料層（資料防護，2026-07-18 起）
+
+```csharp
+// Program.cs：唯一建構路徑
+var dataload = OptData.Load(() => new Dataload());
+
+// Set/Dataload.cs
+public partial class Dataload : DataContext { }
+```
+
+- `Dataload` MUST 是 `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可）
+- 建構永遠走 `OptData.Load(() => new Dataload())`，**NEVER** 裸 `new Dataload()`——後者仍可編譯，但完全跳過參照完整性 / 重複 key / 數值 sanity 驗證，壞資料會直接進 solver 產出「看起來最佳」的錯答案
+- 驗證失敗丟 `DataValidationException`（聚合列出所有問題），這是刻意的 fail-fast，NEVER 用 try/catch 吞掉
+- NEVER 在 Dataload 手寫驗證邏輯——機械檢查集中在框架 `DataContext`
+- 細節見 [`Set/CLAUDE.md`](Set/CLAUDE.md)
+
+> ⚠ 本範本的 `Set/Dataload.cs`、`Program.cs`、`ExperimentRunner.cs` 實碼**尚未套用**這一層（仍是 `public class Dataload` + 裸 `new Dataload()`）。以本範本起新專案時 MUST 依上述規範改寫資料層。
+
+### OptModel — 組裝與求解（composition root）
+
+```csharp
+using (var m = new OptModel("ProjectName")
+    .UseConfig(() => config)
+    .AddVariables(e => new VariableCreate(dataload, e).Build())
+    .AddModel(e => new BuildModel(dataload, e).Build())
+    .OnSolved(e => dataload.WriteToCSV(e)))
+{
+    bool ok = m.Execute();
+}
+```
+
+`OptModel` 保證 `AddVariables` 先於 `AddModel`，內建 build/solve 計時與 log；infeasible 時用 `engine.GetConflictConstraints()` 取 IIS。
 
 ---
 
@@ -91,16 +126,22 @@ int vars = optEngine.varCount; // 目前變數數量
 ```csharp
 using OptimFoundation.Modeling;
 
-// Binary：三維。生成 Item/Machine/Date 屬性；型別由前綴 VariableB_ 決定
-[OptVar("Item", "Machine", "Date:DateTime")]
+// Binary：三維。光桿 [OptVar] + 逐維 [OptDim]；型別由前綴 VariableB_ 決定
+[OptVar]
+[OptDim<Set_Item>("Item")]
+[OptDim<Set_Machine>("Machine")]
+[OptDim<Set_Date>("Date")]
 public partial class VariableB_Assign { }
 
 // Continuous：一維；型別由前綴 VariableX_ 決定
-[OptVar("Item")]
+[OptVar]
+[OptDim<Set_Item>("Item")]
 public partial class VariableX_Slack { }
 ```
 
-> `[OptVar]` 只帶 sets，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名）。set 字串：`"Name"`＝string；`"Name:DateTime"` / `:int` / `:double` 指定型別。csproj 需以 `<Analyzer Include="..\dlls\OptimFoundation.Generators.dll" />` 掛入（本範本已掛）。也可用泛型 Set 積木語法 `[OptSet<T>]` + `[OptVar<Set_X>]`（見 OptimFoundation `specs/2026-07-13-optset-basic-objects.md`）。
+> `[OptVar]` 光桿宣告不帶型別，型別由類別名前綴決定（`VariableB_/X_/I_`）；前綴非法直接 compile error `OPTF001`（訊息教正確取名）。`[OptDim<TSet>("Name")]` 的泛型參數 MUST 是已掛 `[OptSet<T>]` 的 `Set_<Name>` 積木；attribute 順序 = property 順序 = `BuildVars`/`Build*Vs` 傳入 sets 的順序，property 名 = 字串參數（PascalCase）。csproj 需以 `<Analyzer Include="..\dlls\OptimFoundation.Generators.dll" />` 掛入（本範本已掛）。
+
+**逃生口（遷移用，新 code NEVER 照抄）**：字串式 `[OptVar("Item", "Date:DateTime")]` 與多參數泛型 `[OptVar<Set_A, Set_B>]` 仍受框架支援、不算錯誤，但同一顆 Set 要取多個角色名（`LotA`/`LotB`）時只有 `[OptDim]` 做得到。本範本 `Variable/` 底下的實碼仍是字串式，屬待遷移狀態，勿當成教學範例。
 
 ### 定義（後路：手寫）
 
@@ -139,8 +180,8 @@ optEngine.BuildCVs<VariableX_Flow>(lb: 0, ub: 1000, dataload.Items);
 // 加入 LHS
 optEngine.AddLHS(coefficient, new VariableB_Assign { Item = i, Machine = m, Date = d });
 
-// RHS 常數
-optEngine.AddRHS(10);
+// RHS 常數（MUST 取自 dataload，NEVER 裸數字——見上方天條）
+optEngine.AddRHS(dataload.SomeBound);
 
 // RHS 含變數（移項用）
 optEngine.AddRHS(1.0, new VariableB_OtherVar { Item = i });
@@ -200,7 +241,7 @@ var sol2 = engine.GetSolution("VariableX_Slack");
 double val = sol2.TryGetValue("Item1", out var v) ? v : 0;
 
 // ④ 依完整變數名稱取值
-double v2 = engine.GetVariableValue("VariableX_Slack|Item1");
+double v2 = engine.GetVariableValue("VariableX_Slack@Item1"); // 分隔符是 @，NEVER 用 |
 
 // ⑤ 取所有變數名稱
 string[] allNames = engine.GetAllVarNames();
@@ -264,8 +305,7 @@ public class Parameter_Demand : ParameterBase
     public DateTime Date { get; set; }
     public double QTY { get; set; }
 
-    public Parameter_Demand() { }
-    public Parameter_Demand(params object[] sets) => InitClassBySets(sets); // 動態建構需要時
+    // NEVER 寫建構子——框架用 reflection 讀屬性順序組 key，物件一律用 object-initializer 建立
 }
 ```
 

@@ -49,7 +49,7 @@ using ProjectName.Constraint;
 
 if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }
 
-var dataload = OptData.Load(() => new ProjectNameDataload());   // 唯一建構路徑——觸發框架自動驗證
+var dataload = OptData.Load(() => new Dataload()); // 唯一建構路徑——觸發框架自動驗證
 
 using (var m = new OptModel("ProjectName")
     .UseConfig(() => new CplexConfig { epGap = 0.0, timeLimit = 60, workThreads = 4, enableLog = true, exportSol = true })
@@ -64,7 +64,7 @@ using (var m = new OptModel("ProjectName")
 - `OptModel` 保證 `AddVariables` 先於 `AddModel`；內建 build/solve 計時與「整體運作時間」log。
 - 專案名由 `new OptModel("ProjectName")` 帶入（log 檔命名），**不需要 `XxxProblem` 類別**。
 - `VariableCreate` / `BuildModel` 同時被 solve 與 experiment 兩模式共用。
-- `ProjectNameDataload` MUST 是 `public partial class ProjectNameDataload : DataContext`（`partial` + 繼承缺一不可）；建構永遠走 `OptData.Load(() => new ProjectNameDataload())`，NEVER 裸 `new ProjectNameDataload()`——後者仍可編譯但完全跳過框架的參照完整性 / 重複 key / 數值 sanity 驗證。NEVER 在 Dataload 或任何專案檔手寫驗證邏輯，機械邏輯集中在框架 `DataContext`（權威範本：OptimFoundation `Templates/Tutorial`；細節見 `Set/CLAUDE.md`）。
+- `Dataload` MUST 是 `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可）；建構永遠走 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()`——後者仍可編譯但完全跳過框架的參照完整性 / 重複 key / 數值 sanity 驗證。NEVER 在 Dataload 或任何專案檔手寫驗證邏輯，機械邏輯集中在框架 `DataContext`（權威範本：OptimFoundation `Templates/Tutorial`；細節見 `Set/CLAUDE.md`）。
 
 ## Tuning 模式
 

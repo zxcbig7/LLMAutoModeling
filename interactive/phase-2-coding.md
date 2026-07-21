@@ -121,7 +121,7 @@ MUST 依序四步，任一不過 → 停下回報，NEVER 宣稱完成：
    - `Infeasible` → 回報並走 [`phase-3-tuning.md`](phase-3-tuning.md) 的 IIS 流程；先自查 big-M 是否太小、有無互斥硬約束
    - `Unbounded` → 某方向漏了界；查該變數 UB 或漏掉的上限約束
 2. **可行性代回**：取解值代回**每一條** constraint，確認 LHS op RHS 成立（含 soft/big-M）—— Why: solver 回 Optimal 只保證它解的模型可行，不保證那模型 = 題目
-3. **單位一致性**：目標值與關鍵變數的單位跟題目一致（利潤=錢、產量=件、工時=時），量級合理
+3. **單位一致性**：目標值與關鍵變數的單位跟題目一致（利潤=錢、產量=件、工時=時），且與第 4 步的 LP relaxation bound 同一數量級——差 >1 個數量級即視為可疑，回查係數
 4. **LP bound sanity**：目標值落在 LP relaxation bound 對的一側（max 問題：整數解 ≤ LP bound；min 問題：整數解 ≥ LP bound）；差太離譜 → 疑 big-M / 係數錯
 
 ✅ Good：四步都過 + 目標值對照 Model.md 手算小例

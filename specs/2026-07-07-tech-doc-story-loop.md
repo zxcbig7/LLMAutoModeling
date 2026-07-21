@@ -1,8 +1,8 @@
 ---
 title: AI 框架技術文件——四 Agent 分工 + /loop 15 分鐘調度生成
-status: approved
+status: done
 created: 2026-07-07
-updated: 2026-07-07
+updated: 2026-07-21
 modules: [docs, automation, agents]
 ---
 
@@ -158,4 +158,10 @@ ppt/tech-doc/
 - 框架規範源：`interactive/README.md`、`phase-1-model-design.md`、`phase-2-coding.md`、`phase-3-tuning.md`、`linearization-patterns.md`、`automated/`
 - 全景源：`ROADMAP.md`（§3 決策轉折、§5 現況）
 - 對照專案：`Projects/HospitalRostering_Generator`、`Projects/HospitalRostering_Manual`
-- 受影響的既有規格：無（純新增文件；與 `2026-06-22-dual-architecture-tutorial.md` 互補不衝突）
+- 受影響的既有規格：無（純新增文件；`2026-06-22-dual-architecture-tutorial.md` 已於 2026-07-15 刪除，本規格不再與其相關）
+
+---
+
+## 完工紀錄（2026-07-21 補記）
+
+Implementation Plan 已 100% 執行完畢——三份主題稿與 7 個章節全部完成、終審檢核已勾完。完工證據見 sibling repo 的 `../ppt/tech-doc/coverage.md`（跨 repo 路徑，不在 AI-Modeling 內）。

@@ -41,9 +41,12 @@ Return a single JSON object:
 ## Impact on Implementation
 
 The classification affects `CplexConfig` settings in the generated project:
-- **LP**: `workThreads=4`, `timeLimit=600`, no MIP settings needed
-- **IP**: `workThreads=8`, `timeLimit=3600`, `epGap=1e-4`, `mipEmphasis=1`
-- **MILP**: `workThreads=8`, `timeLimit=3600`, `epGap=1e-4`, `mipEmphasis=0`
+
+- **LP**: `workThreads=4`, `timeLimit=300`, `mipEmphasis=0`, no MIP-specific settings needed
+- **IP**: `workThreads=8`, `timeLimit=1800`, `epGap=1e-4`, `mipEmphasis=1`
+- **MILP**: `workThreads=8`, `timeLimit=3600`, `epGap=1e-4`, `mipEmphasis=2`
+
+（此表與 `../CLAUDE.md` §Stage 00 表格為同一份設定，MUST 同步——`../CLAUDE.md` 為權威。）
 
 ---
 

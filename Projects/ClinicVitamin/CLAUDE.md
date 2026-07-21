@@ -2,7 +2,7 @@
 
 ## 問題類型
 
-（待確認）
+LP（線性規劃）— 決策變數只有連續型 `VariableX_Production`，無 Binary / Integer 變數。
 
 ## 開發兩階段原則
 

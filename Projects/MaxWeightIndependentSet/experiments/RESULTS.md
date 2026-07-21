@@ -37,7 +37,7 @@
 
 ```powershell
 $env:PATH = "C:\IBM\ILOG\CPLEX_Studio2211\cplex\bin\x64_win64;$env:PATH"
-cd "projects\MaxWeightIndependentSet\csharp"
+cd "Projects\MaxWeightIndependentSet"
 dotnet run -c Debug -- experiment        # 跑 sweep，append 進 Experiments\mwis-tuning.csv+json
 dotnet run -c Debug                      # 單次求解（正確性 gate）
 # 換實例：$env:MWIS_N=300; $env:MWIS_P=0.25; $env:MWIS_SEED=7

@@ -1,7 +1,7 @@
 ---
 title: AI Modeling — 系統規格 / 開發方向 / 目標（單一總覽）
 status: living
-updated: 2026-07-05
+updated: 2026-07-21
 scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 ---
 
@@ -50,6 +50,8 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 | 2026-06-21 | ~~tuning-protocol~~（已刪 2026-07-15） | 加 **Stage 15 調校協定**：碰模型必先讀，**正確性 gate → 效能 tuning**，實驗回饋接 `Trial.Capture` / `SolveMetrics` |
 | 2026-06-22 | ~~dual-architecture~~（已刪 2026-07-15） | **第二次轉彎（部分推翻 06-21）**：不再「唯一 OptModel」，改**雙 pattern 並存**；Manual 保留為教學/後路，AI 預設偏好 Generator |
 | 2026-07-15 | wave2 Phase A（`LLMDevFramework` repo `specs/2026-07-14-ai-modeling-governance-wave2.md`） | D15：四份 draft spec 刪除（翻案「point-in-time 記錄保留」原則，Vic 拍板：舊規範致混亂優先於保史，git 歷史即封存）+ D16：`HospitalRosteringProblem_new/` 整案刪除 |
+| 2026-07-18 | OptimFoundation `src/OptimFoundation.Core/DataContext.cs`＋`specs/2026-07-18-framework-data-guard.md` | **資料防護層落地**（新增能力層，非推翻先前方向）：框架新增 `DataContext`/`OptData.Load`/`OPTF006`/`Numeric.SafeRatio`/`FullGrid`，`Dataload` 建構自此分兩層——`IDataSource.LoadParam/Set.Load` 負責「讀」，`DataContext`/`OptData.Load` 負責「讀完驗不驗」；裸 `new Dataload()` 仍可編譯但跳過驗證，NEVER 這樣寫 |
+| 2026-07-19 | OptimFoundation commit `46de2b6`「Templates 收斂為三個並全部套用資料防護」＋本 repo commit `21492e2`/`de4917d`「Projects 遷移到 DataContext（3/8→8/8）」 | OptimFoundation 樣板收斂為三個（Tutorial 權威示範／FJSP_BASIC_BRICK／Template_CPLEX），淘汰 4 個未受版控的舊樣板（FJSP_BASIC/FeatureTest/Template_Gurobi/Template_ThreadTest）；本 repo 8 個專案同步全部遷移 `Dataload : DataContext`＋`OptData.Load` 唯一建構入口，資料防護層 100% 落地 |
 
 **淨結果**：路線 = interactive / automated 並存；建構法 = Generator（預設）/ Manual（後路）並存。舊的「`Data/`+`VariablesClass/`+手寫 Problem」慣例正式作廢，資料夾標準統一為 `Model/ Parameter/ Set/ Variable/ Objective/ Constraint/`，namespace `ProjectName.*`。
 
@@ -83,6 +85,7 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 | Fluent OptModel + 可跑 tuning（`ExperimentRunner`） | ✅ 已落地 |
 | source generator 免手寫樣板 | ✅ 真有 code、有 build、實際被用 |
 | 雙架構教學（同模型 Manual vs Generator） | 🟡 兩專案 code 已完整、diff 確認等價；**只差本機 build + CPLEX 驗證** |
+| 資料防護層（`DataContext`/`OptData.Load`）全面落地 | ✅ 8/8 專案已遷移（2026-07-19，`de4917d`），建構唯一入口 `OptData.Load(() => new Dataload())` |
 | Stage 15 調校協定 | 🟡 spec 有，`Prompts/15_ModelTuning.md` 產物待補 |
 | Framework 2：Web API + RAG（Semantic Kernel） | ❌ **只有 spec，未實作** |
 
@@ -100,6 +103,8 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 - [ ] `MaxWeightIndependentSet` 標準化為六資料夾 + 雙模式（stages 數學文件歸入 `Model/`）
 - [ ] Framework 2 Web API：依 env spec 的 Stub → 逐層實作
 - [ ] tutorial 未提交工作收尾（tech-report / ppt splice / why-optimfoundation）
+- [ ] 新手接手：教材把 `attribute → 生成 property` 對照寫清楚（不指向 `Generated/`）+ `run.ps1 -Verify` 目標值回歸網 + Checklist 補模型/驗證兩端（規格 `specs/2026-07-21-newcomer-onboarding.md`，draft 待核准）
+- [ ] **`tutorial/` 納入每次稽核與 `/harness-eval` 範圍** —— 它是唯一人類向材料卻長期被排除在稽核外，導致規範漂移方向系統性偏舊（2026-07-21 發現「前綴只是命名約定」等錯誤主張）
 - [x] ~~`HospitalRosteringProblem_new/` 刪除條件（原 delete-list §F）~~ 2026-07-15 wave2 Phase A 整案刪除（Vic 拍板 D16 直接覆蓋原定完成條件，見 §3 決策史）
 
 ## 7. Spec 索引

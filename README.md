@@ -134,7 +134,7 @@ Projects/MyProject/
 // Program.cs
 if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }
 
-var dataload = OptData.Load(() => new Dataload());   // 唯一建構路徑——觸發框架驗證（Dataload : DataContext）
+var dataload = OptData.Load(() => new Dataload()); // 唯一建構路徑——觸發框架驗證（Dataload : DataContext）
 using (var m = new OptModel("MyProject")
     .UseConfig(() => new CplexConfig { epGap = 0.03, timeLimit = 300, workThreads = 8 })
     .AddVariables(e => new VariableCreate(dataload, e).Build())

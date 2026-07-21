@@ -31,7 +31,7 @@ namespace <ProjectName>
             using var model = new OptModel("<ProjectName>")
                 .UseConfig(() => _config)
                 .AddVariables(e => new VariableCreate(_dataload, e).Build())
-                .AddModel(e => new BuildConstraints(_dataload, e).Build())
+                .AddModel(e => new BuildModel(_dataload, e).Build())
                 .OnSolved(e =>
                 {
                     CsvCtrl.WriteSolution<VariableX_XXX>(e, "<ProjectName>", "User");
@@ -51,7 +51,7 @@ namespace <ProjectName>
 - `Project` is a plain composition-root class — it does **NOT** inherit from `OptimFoundation.Cplex.OptEngine`. The engine's `Build()`/`Solve()` are framework-owned template methods (they run a pre-solve scale guard internally); a project can no longer subclass `OptEngine` and override `Build()`.
 - Build the model with the Fluent `OptModel` API: `new OptModel("<ProjectName>").UseConfig(...).AddVariables(...).AddModel(...).OnSolved(...)`, then call `.Execute()`.
 - `AddVariables` receives an `Action<OptEngine>` that calls `new VariableCreate(dataload, engine).Build()`.
-- `AddModel` receives an `Action<OptEngine>` that calls `new BuildConstraints(dataload, engine).Build()` (that class already builds the objective **and** every constraint — see Stage 11).
+- `AddModel` receives an `Action<OptEngine>` that calls `new BuildModel(dataload, engine).Build()` (that class already builds the objective **and** every constraint — see Stage 11).
 - `OnSolved` receives an `Action<OptEngine>` that runs only when the solve succeeds — write solutions here with `CsvCtrl.WriteSolution<TVariableClass>(engine, dataId, userId)` for each variable type, and log `engine.GetObjectiveValue()`.
 - Check `model.optEngine.Status` (`Optimal` / `Feasible` / `Infeasible` / `Unbounded` / `TimeLimit`) after `Execute()`, whether or not it returned `true`.
 - `using var model = ...` — `OptModel` is `IDisposable`; a `using` declaration disposes it (and the underlying engine) automatically, no manual `Dispose()` call needed.

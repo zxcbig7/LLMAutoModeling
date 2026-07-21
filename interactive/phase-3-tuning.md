@@ -2,7 +2,7 @@
 
 > 天條見 [`README.md`](README.md)。**使用者提出才做，不主動建議。**
 > 任何涉及模型調整（結構 / 數值 / solver 參數任一）MUST 先讀本檔再動手。
-> Solver 旋鈕全表在 [`../automated/specs/2026-06-21-model-tuning-protocol.md`](../automated/specs/2026-06-21-model-tuning-protocol.md)（進階補充，本檔已列常用旋鈕）。
+> Solver 旋鈕全表在 [`../tuning/CLAUDE.md`](../tuning/CLAUDE.md) §6.2（完整對照表，本檔已列常用旋鈕）。
 
 ## 硬規則
 

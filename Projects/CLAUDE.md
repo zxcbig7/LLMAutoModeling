@@ -19,7 +19,7 @@ ProjectName/
 └── Constraint/ ← ConstraintBase 子類別 + BuildModel
 ```
 
-> paved path 是逐維具名宣告 `[OptDim<TSet>("Name")]`（見 `CPLEX_API_REFERENCE.md` §7.5 / `Template_CPLEX/CLAUDE.md`）；上圖 `[OptParam<Set_X>]`/`[OptVar<Set_X>]` 泛型式為仍受支援的逃生口，非首選。
+> paved path 是光桿 `[OptParam]`/`[OptVar]` + 逐維具名宣告 `[OptDim<TSet>("Name")]`（見 `CPLEX_API_REFERENCE.md` §7.5 / `claudemdTemplate/`）。上圖標示的兩種泛型式，以及字串式 `[OptVar("Date:DateTime", "Employee")]`（僅 `HospitalRostering_Generator` 沿用），皆為仍受支援的逃生口，非首選——既有 code 不需遷移，新 code NEVER 照抄。
 
 ## resume（automated 斷點續跑，D6）
 
@@ -29,7 +29,8 @@ ProjectName/
 ## 通用規則（適用所有專案）
 
 - **天條唯一權威在 [`../AGENTS.md`](../AGENTS.md)**（數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用）
-- **唯一 composition root**：`Program.cs` 用框架內建 Fluent `OptModel`（`UseConfig → AddVariables → AddModel → OnSolved → Execute`）
+- **預設 composition root**：`Program.cs` 用框架內建 Fluent `OptModel`（`UseConfig → AddVariables → AddModel → OnSolved → Execute`）。手寫 `XxxProblem : IDisposable` 的 `Execute()` 是框架認可的後路，僅 `HospitalRostering_Manual` 保留作對照範例，新專案一律用 `OptModel`
+- **資料層（硬性）**：`Dataload` MUST 是 `public partial class Dataload : DataContext`，建構走 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()`——後者跳過框架的參照完整性 / 重複 key / 數值 sanity 驗證
 - **雙模式**：`dotnet run` 求解；`dotnet run -- experiment` 跑 tuning 掃描（`ExperimentRunner`）
 - **build/solve 共用** `VariableCreate` / `BuildModel`（兩模式同一份建模邏輯）
 - **禁止 Hardcode**：所有數值透過 `Parameter.QTY` 取得
@@ -37,3 +38,7 @@ ProjectName/
 - **資料夾規則以 `claudemdTemplate/` 為單一來源**：各子資料夾規則見 `claudemdTemplate/{Set,Variable,Parameter,Objective,Constraint,Experiment,Root,Model}/CLAUDE.md`
 - canonical code 範本：`Template_CPLEX/`；tuning 策略與旋鈕對照：`../tuning/CLAUDE.md`；端到端流程：`../tutorial/`
 - 建模基本物件（Set 積木 / SetBase / 三檔位讀取）→ OptimFoundation `specs/2026-07-13-optset-basic-objects.md`
+
+## 未完成專案
+
+- `WoodworkingShop/`：只有 `Model/WoodworkingShop_Model.md`（Phase 1 數學模型已完成），**尚無 `CLAUDE.md`、無任何 `.cs`**——Phase 2 程式實作未開始。稽核時不算遺漏，接手時從 stub 開始建。

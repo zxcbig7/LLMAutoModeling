@@ -298,15 +298,16 @@ x[i] ≥ 0        生產玻璃 i 的片數（連續變數）,  ∀ i ∈ I</div>
     <tr><td><code>Model/</code></td><td>數學模型 <code>.md</code></td><td>—</td><td><code>claudemdTemplate/Model</code></td></tr>
   </table>
   <table class="tight">
-    <tr><th>元素</th><th>前綴</th><th>繼承</th><th>建立 API</th></tr>
-    <tr><td>參數</td><td><code>Parameter_</code></td><td><code>ParameterBase</code></td><td>—（數值欄位固定 <code>public double QTY</code> 放最後）</td></tr>
-    <tr><td>連續變數</td><td><code>VariableX_</code></td><td><code>VariableBase</code></td><td><code>BuildCVs&lt;T&gt;()</code></td></tr>
-    <tr><td>整數變數</td><td><code>VariableI_</code></td><td><code>VariableBase</code></td><td><code>BuildIVs&lt;T&gt;()</code></td></tr>
-    <tr><td>二元變數</td><td><code>VariableB_</code></td><td><code>VariableBase</code></td><td><code>BuildBVs&lt;T&gt;()</code></td></tr>
+    <tr><th>元素</th><th>前綴</th><th>預設寫法（paved path）</th><th>建立 API</th></tr>
+    <tr><td>集合</td><td><code>Set_</code></td><td><code>[OptSet&lt;T&gt;]</code>，元素型別顯式寫出</td><td><code>LoadInline</code> / <code>LoadFrom</code></td></tr>
+    <tr><td>參數</td><td><code>Parameter_</code></td><td>光桿 <code>[OptParam]</code> + 逐維 <code>[OptDim&lt;Set_X&gt;("Name")]</code></td><td>—（數值欄位固定 <code>public double QTY</code> 放最後）</td></tr>
+    <tr><td>連續變數</td><td><code>VariableX_</code></td><td>光桿 <code>[OptVar]</code> + 逐維 <code>[OptDim&lt;Set_X&gt;("Name")]</code></td><td><code>BuildVars&lt;T&gt;()</code></td></tr>
+    <tr><td>整數變數</td><td><code>VariableI_</code></td><td>同上</td><td><code>BuildVars&lt;T&gt;()</code></td></tr>
+    <tr><td>二元變數</td><td><code>VariableB_</code></td><td>同上</td><td><code>BuildVars&lt;T&gt;()</code></td></tr>
     <tr><td>限制式</td><td><code>Constraint_</code></td><td><code>ConstraintBase</code></td><td>Pool API（<code>public void Build()</code>，<strong>非 override</strong>）</td></tr>
     <tr><td>目標式</td><td><code>ObjectiveFunction</code></td><td>—</td><td><code>CreateMinimize/Maximize</code></td></tr>
   </table>
-  <p>關鍵慣例：Parameter / Variable <strong>只宣告 properties、不寫建構子</strong>，index 屬性用 PascalCase（對應 AML set 名）；一律用 <strong>object initializer</strong> 建立（<code class="ic">new VariableB_X { Date = d, Group = g }</code>）；變數型別由 <code class="ic">Build*Vs&lt;T&gt;</code> 決定，前綴只是命名約定。</p>
+  <p>關鍵慣例：Parameter / Variable <strong>只宣告 properties、不寫建構子</strong>，index 屬性用 PascalCase（對應 AML set 名）；一律用 <strong>object initializer</strong> 建立（<code class="ic">new VariableB_X { Date = d, Group = g }</code>）；變數型別<strong>由類別名前綴決定</strong>（前綴是語意的一部分，不是命名約定）——<code class="ic">BuildVars&lt;T&gt;</code> 依前綴推導型別，前綴不在 <code class="ic">B</code>/<code class="ic">X</code>/<code class="ic">I</code> 之內會直接編譯失敗（<code class="ic">OPTF001</code>）；需要自訂上下界時才改用顯式的 <code class="ic">BuildBVs</code>/<code class="ic">BuildCVs</code>/<code class="ic">BuildIVs</code>。</p>
 
   <h3 id="c-arch">2.2 兩種建模架構：source generator（預設）vs 手寫（後路）</h3>
   <p><strong>預設</strong>：用 <code class="ic">[OptVar]</code>/<code class="ic">[OptParam]</code> attribute 宣告，class body（properties、QTY）由 <code class="ic">AutoSetsGenerator</code> 在編譯期生成——最短、最不易錯：</p>

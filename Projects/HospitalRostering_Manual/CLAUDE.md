@@ -7,7 +7,8 @@ MIP（混合整數規劃）— 醫院護理人員月排班，加權懲罰最小�
 ## 架構：手寫 composition root（後路）
 
 - composition root：手寫 `HospitalRosteringProblem : IDisposable` 的 `Execute()`，自行 new/Build/Solve/Dispose `OptEngine` —— **這才是本專案「後路」定位的實質內容**
-- Variable / Parameter：**已改為 attribute 驅動**（`[OptVar]`/`[OptParam]` + `[OptDim<Set_X>]`），與 Generator 版結構相同
+- Parameter：**已改為 attribute 驅動**（`[OptParam]` + `[OptDim<Set_X>]`），與 Generator 版結構相同（`OPTF006` 強制，見下方定位變更）
+- Variable：**仍維持手寫繼承 `VariableBase`**（框架認可的後路寫法），未使用 attribute —— 這是本專案與 Generator 版最主要的結構差異
 - `Dataload` 為 `partial class ... : DataContext`，建構走 `OptData.Load(() => new Dataload())`，載入後框架自動驗資料
 - 與 `Projects/HospitalRostering_Generator`（預設架構）用**同一份數學模型**、跑**同一組 tuning**，專供兩架構對照（見 `tutorial/` §5.8）
 - ⚠ 這是**示範用的後路**；新題目請優先用 Generator 版的寫法

@@ -21,7 +21,7 @@ public List<string> Items = new() { "A", "B" };
 
 ## Dataload 結構
 
-- 檔名 `ProjectNameDataload.cs`，Namespace：`ProjectName.Set`
+- 檔名 `Dataload.cs`，Namespace：`ProjectName.Set`（類名不帶專案前綴，靠 namespace 區隔；既有專案若已用 `XxxDataload` 前綴不需改）
 - MUST 宣告 `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可）—— 少了任一個，generator 的註冊碼不會產生，這顆 Dataload 永遠不會被驗證
 - MUST 透過 `OptData.Load(() => new Dataload())` 建構（見 Root 的 Program.cs 骨架）；NEVER 在文件或範例中把 `new Dataload()` 當成建構終點——那樣仍可編譯，但完全跳過驗證
 - NEVER 手寫驗證邏輯（如 `ValidateSetsCoverParameters()`、手動掃 dangling reference / 重複 key）——`DataContext` 建構完成時自動聚合檢查（參照完整性 / 重複 index key / 數值 sanity），一次列出所有問題丟 `DataValidationException`；專案端只留顯式宣告

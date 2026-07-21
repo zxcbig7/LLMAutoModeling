@@ -61,9 +61,9 @@ Use these types in the `[Type: ...]` annotation:
 | Proportional | "in proportion to", "ratio between variables" |
 | Conjunction | "only if ALL conditions hold" |
 | Disjunction | "at least one of" |
-| ExclusiveXOR | "exactly one must be selected" |
+| Exclusive XOR | "exactly one must be selected" |
 | Implication | "if A then B" |
-| ConditionalActivation | "only if", Big-M logic |
+| Conditional Activation | "only if", Big-M logic |
 
 ## Linearity Rules (STRICTLY ENFORCED)
 
