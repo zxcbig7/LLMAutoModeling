@@ -22,8 +22,8 @@ namespace MaxWeightIndependentSet.Model
         {
             foreach (var (i, j) in _edges)
             {
-                _engine.AddLHS(1, new VariableY_Select { NODE = i });
-                _engine.AddLHS(1, new VariableY_Select { NODE = j });
+                _engine.AddLHS(1, new VariableB_Select { Node = i });
+                _engine.AddLHS(1, new VariableB_Select { Node = j });
                 _engine.AddRHS(1);
                 _engine.CreateLessEqual($"{ConstraintName}@{i}@{j}");
                 ConstraintCount++;

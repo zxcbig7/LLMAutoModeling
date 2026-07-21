@@ -10,7 +10,7 @@ namespace Template.Set
     /// Sets 定義 + 載入。
     /// 負責：罰分權重、Set 集合建立、Parameter 實體載入、CSV I/O。
     /// </summary>
-    public class Dataload
+    public partial class Dataload : DataContext
     {
         // ── 罰分權重（目標式係數） ─────────────────────────────────────────
         public double Penalty_1 = 1.0;
@@ -20,29 +20,31 @@ namespace Template.Set
         public double Penalty_5 = 0.1;
 
         // ── 區間限制式界限（Constraint_Range）/ 軟性限制式（Constraint_Soft） ──
-        public double RangeLB      = 0;
-        public double RangeUB;            // 於建構子設為 SetC.Count（恆可行示範值）
-        public double SoftTarget   = 1.0;
+        public double RangeLB = 0;
+        public double RangeUB;   // 於建構子設為 SetC.Count（恆可行示範值）
+        public double SoftTarget = 1.0;
         public double Penalty_Soft = 0.5;
 
-        // ── Sets ──────────────────────────────────────────────────────────
-        public List<string>   SetA = new();   // 第一維索引
-        public List<string>   SetB = new();   // 第二維索引
-        public List<DateTime> SetC = new();   // 時間軸
+        // ── Sets（積木） ─────────────────────────────────────────────────
+        public Set_A SetA = new();   // 第一維索引
+        public Set_B SetB = new();   // 第二維索引
+        public Set_C SetC = new();   // 時間軸
 
         // ── Parameters（實體由 Parameter/ 資料夾的類別承載） ──────────────
-        public List<Parameter_AB>  parameter_AB  = new();
+        public List<Parameter_AB> parameter_AB = new();
         public List<Parameter_ABC> parameter_ABC = new();
 
         public Dataload()
         {
             // ① Sets 建立
-            SetA.AddRange(["A1", "A2", "A3", "A4", "A5"]);
-            SetB.AddRange(["B1", "B2", "B3"]);
+            SetA.LoadInline("A1", "A2", "A3", "A4", "A5");
+            SetB.LoadInline("B1", "B2", "B3");
 
             int year = 2026, month = 1;
+            var dates = new List<DateTime>();
             for (int d = 1; d <= DateTime.DaysInMonth(year, month); d++)
-                SetC.Add(new DateTime(year, month, d));
+                dates.Add(new DateTime(year, month, d));
+            SetC.LoadFrom(dates);
 
             // ② Parameters 建立
             var rng = new Random(42);
@@ -50,18 +52,17 @@ namespace Template.Set
                 foreach (var b in SetB)
                     parameter_AB.Add(new Parameter_AB { A = a, B = b, QTY = rng.Next(1, 5) });
 
-            // 寫法 A：object initializer
+            // object initializer（generator 生成的 body 已含位置式 ctor，逃生口不再示範）
             parameter_ABC.Add(new Parameter_ABC { A = "A1", B = "B1", C = new DateTime(2026, 1, 1), QTY = 1 });
-            // 寫法 B：位置式建構（generator 自動產生的 params object[] 建構子；依屬性順序 A,B,C,QTY）
-            parameter_ABC.Add(new Parameter_ABC("A2", "B2", new DateTime(2026, 1, 5), 1));
+            parameter_ABC.Add(new Parameter_ABC { A = "A2", B = "B2", C = new DateTime(2026, 1, 5), QTY = 1 });
 
             RangeUB = SetC.Count;   // 區間上界 = 期數（恆可行示範值）
 
             // ③ CSV 讀取（取消註解以啟用）
-            // SetA = CSVCtrl.ReadStrSet("Set_A.csv");
-            // SetB = CSVCtrl.ReadStrSet("Set_B.csv");
-            // SetC = CSVCtrl.ReadDateSet("Set_C.csv");
-            // parameter_AB  = CSVCtrl.BuildParameter<Parameter_AB>("Param_AB");
+            // SetA.LoadCsv("Set_A");
+            // SetB.LoadCsv("Set_B");
+            // SetC.LoadCsv("Set_C");
+            // parameter_AB = CSVCtrl.BuildParameter<Parameter_AB>("Param_AB");
             // parameter_ABC = CSVCtrl.BuildParameter<Parameter_ABC>("Param_ABC");
         }
 

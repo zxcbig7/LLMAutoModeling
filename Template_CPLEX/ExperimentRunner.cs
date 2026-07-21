@@ -56,7 +56,7 @@ namespace Template
                 tune(config);
 
                 // 每個 Trial 用全新 Dataload + engine，避免狀態跨 Trial 污染
-                var dataload = new Dataload();
+                var dataload = OptData.Load(() => new Dataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
                 new VariableCreate(dataload, engine).Build();

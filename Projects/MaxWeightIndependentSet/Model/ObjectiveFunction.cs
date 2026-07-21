@@ -25,8 +25,8 @@ namespace MaxWeightIndependentSet.Model
             foreach (var n in _nodes)
             {
                 // 先 LINQ 查到權重存進變數，再傳入 AddLHS（禁止把 LINQ 直接塞進 AddLHS）
-                double w = _weights.FirstOrDefault(x => x.NODE == n)?.QTY ?? 0.0;
-                _engine.AddLHS(w, new VariableY_Select { NODE = n });
+                double w = _weights.FirstOrDefault(x => x.Node == n)?.QTY ?? 0.0;
+                _engine.AddLHS(w, new VariableB_Select { Node = n });
             }
 
             _engine.CreateMaximize();

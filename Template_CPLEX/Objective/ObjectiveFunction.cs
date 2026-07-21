@@ -29,27 +29,24 @@ namespace Template.Objective
         {
             try
             {
-                dataload.SetC.ForEach(c =>
-                    dataload.SetA.ForEach(a =>
-                        dataload.SetB.ForEach(b =>
-                            optEngine.AddLHS(dataload.Penalty_1,
-                                new VariableB_ABC { A = a, B = b, C = c }))));
+                foreach (var c in dataload.SetC)
+                    foreach (var a in dataload.SetA)
+                        foreach (var b in dataload.SetB)
+                            optEngine.AddLHS(dataload.Penalty_1, new VariableB_ABC { A = a, B = b, C = c });
 
-                dataload.SetA.ForEach(a =>
-                    dataload.SetC.ForEach(c =>
-                        optEngine.AddLHS(dataload.Penalty_2,
-                            new VariableB_AC { A = a, C = c })));
+                foreach (var a in dataload.SetA)
+                    foreach (var c in dataload.SetC)
+                        optEngine.AddLHS(dataload.Penalty_2, new VariableB_AC { A = a, C = c });
 
-                dataload.SetA.ForEach(a =>
-                    optEngine.AddLHS(dataload.Penalty_3, new VariableB_A { A = a }));
+                foreach (var a in dataload.SetA)
+                    optEngine.AddLHS(dataload.Penalty_3, new VariableB_A { A = a });
 
-                dataload.SetA.ForEach(a =>
-                    optEngine.AddLHS(dataload.Penalty_4, new VariableX_A { A = a }));
+                foreach (var a in dataload.SetA)
+                    optEngine.AddLHS(dataload.Penalty_4, new VariableX_A { A = a });
 
-                dataload.SetA.ForEach(a =>
-                    dataload.SetB.ForEach(b =>
-                        optEngine.AddLHS(dataload.Penalty_5,
-                            new VariableX_AB { A = a, B = b })));
+                foreach (var a in dataload.SetA)
+                    foreach (var b in dataload.SetB)
+                        optEngine.AddLHS(dataload.Penalty_5, new VariableX_AB { A = a, B = b });
 
                 optEngine.CreateMinimize();
                 // 最大化改用：optEngine.CreateMaximize();

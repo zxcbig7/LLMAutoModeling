@@ -28,17 +28,17 @@ namespace Template.Constraint
             {
                 const double lowerBound = 5;
 
-                dataload.SetA.ForEach(a =>
+                foreach (var a in dataload.SetA)
                 {
                     optEngine.AddLHS(1, new VariableX_A { A = a });
 
-                    dataload.SetC.ForEach(c =>
-                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c }));
+                    foreach (var c in dataload.SetC)
+                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
 
                     optEngine.AddRHS(lowerBound);
                     optEngine.CreateGreatEqual($"{ConstraintName}@{a}");
                     ConstraintCount++;
-                });
+                }
 
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }

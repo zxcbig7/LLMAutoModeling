@@ -39,36 +39,36 @@ namespace Template.Constraint
             try
             {
                 // ① VariableB_AC[a][c] ≤ VariableB_A[a]
-                dataload.SetA.ForEach(a =>
+                foreach (var a in dataload.SetA)
                 {
-                    dataload.SetC.ForEach(c =>
+                    foreach (var c in dataload.SetC)
                     {
                         optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
-                        optEngine.AddRHS(1, new VariableB_A  { A = a });          // 正係數 RHS
+                        optEngine.AddRHS(1, new VariableB_A { A = a });   // 正係數 RHS
 
                         optEngine.CreateLessEqual($"{ConstraintName}_1@{a}@{c:yyyy_MM_dd}");
                         ConstraintCount++;
-                    });
-                });
+                    }
+                }
 
                 // ② 前後期關聯：含正/負係數
-                dataload.SetA.ForEach(a =>
+                foreach (var a in dataload.SetA)
                 {
-                    dataload.SetC.ForEach(c =>
+                    foreach (var c in dataload.SetC)
                     {
                         var prevC = dataload.SetC.FirstOrDefault(sd => sd == c.AddDays(-1));
-                        if (prevC == default) return;  // 第一期無前期 → 跳過
+                        if (prevC == default) continue;   // 第一期無前期 → 跳過
 
                         optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
 
-                        optEngine.AddRHS( 1, new VariableB_AC { A = a, C = prevC }); // 正係數
-                        optEngine.AddRHS( 1, new VariableB_A  { A = a });             // 正係數
-                        optEngine.AddRHS(-1);                                          // 負常數
+                        optEngine.AddRHS(1, new VariableB_AC { A = a, C = prevC });   // 正係數
+                        optEngine.AddRHS(1, new VariableB_A { A = a });               // 正係數
+                        optEngine.AddRHS(-1);                                         // 負常數
 
                         optEngine.CreateGreatEqual($"{ConstraintName}_2@{a}@{c:yyyy_MM_dd}");
                         ConstraintCount++;
-                    });
-                });
+                    }
+                }
 
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }

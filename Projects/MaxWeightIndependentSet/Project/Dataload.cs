@@ -39,7 +39,7 @@ namespace MaxWeightIndependentSet.Project
             NODE.LoadFrom(nodeNames);
 
             foreach (var n in NODE)
-                parameter_Weight.Add(new Parameter_Weight { NODE = n, QTY = rng.Next(1, 101) });
+                parameter_Weight.Add(new Parameter_Weight { Node = n, QTY = rng.Next(1, 101) });
 
             for (int i = 0; i < NodeCount; i++)
                 for (int j = i + 1; j < NodeCount; j++)

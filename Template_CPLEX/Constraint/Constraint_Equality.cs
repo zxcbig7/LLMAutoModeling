@@ -26,12 +26,12 @@ namespace Template.Constraint
         {
             try
             {
-                dataload.SetB.ForEach(b =>
+                foreach (var b in dataload.SetB)
                 {
-                    dataload.SetC.ForEach(c =>
+                    foreach (var c in dataload.SetC)
                     {
-                        dataload.SetA.ForEach(a =>
-                            optEngine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c }));
+                        foreach (var a in dataload.SetA)
+                            optEngine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c });
 
                         double demand = dataload.parameter_AB
                             .FirstOrDefault(p => p.B == b)?.QTY ?? 0;
@@ -39,8 +39,8 @@ namespace Template.Constraint
 
                         optEngine.CreateEqual($"{ConstraintName}@{b}@{c:yyyy_MM_dd}");
                         ConstraintCount++;
-                    });
-                });
+                    }
+                }
 
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }

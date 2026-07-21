@@ -12,7 +12,7 @@ namespace SandwichProduction.Constraint
 
         public BuildModel(SandwichDataload dataload, OptEngine optEngine)
         {
-            this.dataload  = dataload;
+            this.dataload = dataload;
             this.optEngine = optEngine;
         }
 
@@ -22,10 +22,7 @@ namespace SandwichProduction.Constraint
             new ObjectiveFunction(dataload, optEngine).Build();
 
             // ── 限制式 ────────────────────────────────────────────────────
-            var c1 = new Constraint_IngredientCapacity(dataload, optEngine);
-            c1.Build();
-
-            Logging.Info($"[BuildModel] 限制式總數：{c1.ConstraintCount}");
+            new Constraint_IngredientCapacity(dataload, optEngine).Build(); // [C1] ≤
         }
     }
 }

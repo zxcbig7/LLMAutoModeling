@@ -31,24 +31,24 @@ namespace Template.Constraint
                 int    windowSize = 7;
                 double windowMax  = 5;
 
-                dataload.SetC.ForEach(c =>
+                foreach (var c in dataload.SetC)
                 {
                     var window = dataload.SetC
                         .Where(sd => c.AddDays(-(windowSize - 1)) <= sd && sd <= c)
                         .ToList();
 
-                    if (window.Count < windowSize) return;  // 視窗不足 → 跳過
+                    if (window.Count < windowSize) continue;   // 視窗不足 → 跳過
 
-                    dataload.SetA.ForEach(a =>
+                    foreach (var a in dataload.SetA)
                     {
-                        window.ForEach(wc =>
-                            optEngine.AddLHS(1, new VariableB_AC { A = a, C = wc }));
+                        foreach (var wc in window)
+                            optEngine.AddLHS(1, new VariableB_AC { A = a, C = wc });
 
                         optEngine.AddRHS(windowMax);
                         optEngine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
                         ConstraintCount++;
-                    });
-                });
+                    }
+                }
 
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }

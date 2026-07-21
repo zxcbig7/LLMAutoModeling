@@ -36,7 +36,7 @@ namespace MaxWeightIndependentSet.Project
                     exportSol   = true,
                 })
                 .AddVariables(e => new VariableCreate(dataload, e).Build())
-                .AddModel(e => new BuildConstraints(dataload, e).Build());
+                .AddModel(e => new BuildModel(dataload, e).Build());
 
             bool ok = m.Execute();
             engine = m.optEngine;   // 供 Report() 讀解（仍在 m 的 using 範圍內，engine 尚存活）
@@ -54,7 +54,7 @@ namespace MaxWeightIndependentSet.Project
                 return;
 
             double obj = engine.GetObjectiveValue();
-            var sol = engine.GetSetVarValues<VariableY_Select>();
+            var sol = engine.GetSetVarValues<VariableB_Select>();
             int picked = sol.Count(kvp => kvp.Value > 0.5);
 
             Logging.Info($"Objective (total weight) = {obj:F2}");

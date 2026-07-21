@@ -5,12 +5,12 @@ using MaxWeightIndependentSet.Model;
 
 namespace MaxWeightIndependentSet.Project
 {
-    public class VariableCreate
+    public class BuildModel
     {
         private readonly OptEngine _engine;
         private readonly Dataload _data;
 
-        public VariableCreate(Dataload data, OptEngine engine)
+        public BuildModel(Dataload data, OptEngine engine)
         {
             _data = data;
             _engine = engine;
@@ -18,9 +18,11 @@ namespace MaxWeightIndependentSet.Project
 
         public void Build()
         {
-            // x_i ∈ {0,1} ∀ i∈V
-            _engine.BuildBVs<VariableB_Select>(_data.NODE);
-            Logging.Info($"Variables created: {_engine.varCount}");
+            Logging.Info("【建構目標式】");
+            new ObjectiveFunction(_data.NODE, _data.parameter_Weight, _engine).Build();
+
+            Logging.Info("【建構限制式】");
+            new Constraint_EdgeConflict(_data.EDGE, _engine).Build();
         }
     }
 }

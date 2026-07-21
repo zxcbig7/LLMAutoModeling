@@ -35,10 +35,10 @@ namespace Template.Constraint
                 double target  = dataload.SoftTarget;
                 double penalty = dataload.Penalty_Soft;
 
-                dataload.SetA.ForEach(a =>
+                foreach (var a in dataload.SetA)
                 {
-                    dataload.SetB.ForEach(b =>
-                        optEngine.AddLHS(1, new VariableX_AB { A = a, B = b }));
+                    foreach (var b in dataload.SetB)
+                        optEngine.AddLHS(1, new VariableX_AB { A = a, B = b });
 
                     // 軟性 ≥：加 Deficit 變數，短缺多少罰多少
                     optEngine.CreateGeSoft(target, penalty);
@@ -47,7 +47,7 @@ namespace Template.Constraint
                     // 其他軟性方向：
                     // optEngine.CreateLeSoft(target, penalty);              // 軟性 ≤（加 Surplus）
                     // optEngine.CreateEqSoft(target, penalty, "Name@idx");  // 軟性 =（加 Delta_Pos/Neg）
-                });
+                }
 
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }

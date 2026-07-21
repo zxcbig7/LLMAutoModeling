@@ -30,14 +30,14 @@ namespace Template.Constraint
                 double lb = dataload.RangeLB;
                 double ub = dataload.RangeUB;
 
-                dataload.SetA.ForEach(a =>
+                foreach (var a in dataload.SetA)
                 {
-                    dataload.SetC.ForEach(c =>
-                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c }));
+                    foreach (var c in dataload.SetC)
+                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
 
                     optEngine.CreateRange(lb, ub, $"{ConstraintName}@{a}");
                     ConstraintCount++;
-                });
+                }
 
                 Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }

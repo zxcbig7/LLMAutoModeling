@@ -12,7 +12,7 @@ namespace ClinicVitamin.Constraint
 
         public BuildModel(ClinicDataload dataload, OptEngine optEngine)
         {
-            this.dataload  = dataload;
+            this.dataload = dataload;
             this.optEngine = optEngine;
         }
 
@@ -20,11 +20,9 @@ namespace ClinicVitamin.Constraint
         {
             new ObjectiveFunction(dataload, optEngine).Build();
 
-            var c1 = new Constraint_VitaminCapacity(dataload, optEngine); c1.Build();
-            var c2 = new Constraint_PillsGTShots(dataload, optEngine);    c2.Build();
-            var c3 = new Constraint_MaxShots(dataload, optEngine);         c3.Build();
-
-            Logging.Info($"[BuildModel] 限制式總數：{c1.ConstraintCount + c2.ConstraintCount + c3.ConstraintCount}");
+            new Constraint_VitaminCapacity(dataload, optEngine).Build(); // [C1] ≤
+            new Constraint_PillsGTShots(dataload, optEngine).Build(); // [C2] ≥
+            new Constraint_MaxShots(dataload, optEngine).Build(); // [C3] ≤
         }
     }
 }

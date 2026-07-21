@@ -53,7 +53,7 @@ namespace MaxWeightIndependentSet.Project
                 engine.EnableTrajectory();
                 engine.Build();
                 new VariableCreate(data, engine).Build();
-                new BuildConstraints(data, engine).Build();
+                new BuildModel(data, engine).Build();
 
                 var trial = Trial.Capture(engine, label, () => engine.Solve());
                 exp.AddTrial(trial);
