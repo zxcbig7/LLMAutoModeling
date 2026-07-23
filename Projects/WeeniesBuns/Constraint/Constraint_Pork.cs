@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
-using WeeniesBuns.Set;
+using WeeniesBuns.Parameter;
 using WeeniesBuns.Variable;
 
 namespace WeeniesBuns.Constraint
@@ -10,23 +11,25 @@ namespace WeeniesBuns.Constraint
     /// </summary>
     public class Constraint_Pork : ConstraintBase
     {
-        private OptEngine           optEngine;
-        private WeeniesBunsDataload dataload;
+        private readonly List<Parameter_ProductSpec> _spec;
+        private readonly double _porkCap;
+        private readonly OptEngine _engine;
         public new int ConstraintCount = 0;
 
-        public Constraint_Pork(WeeniesBunsDataload dataload, OptEngine engine)
+        public Constraint_Pork(List<Parameter_ProductSpec> spec, double porkCap, OptEngine engine)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            _spec = spec;
+            _porkCap = porkCap;
+            _engine = engine;
         }
 
         public void Build()
         {
-            dataload.parameter_ProductSpec.ForEach(spec =>
-                optEngine.AddLHS(spec.PorkPerUnit, new VariableX_Production { ProductType = spec.ProductType }));
+            foreach (var spec in _spec)
+                _engine.AddLHS(spec.PorkPerUnit, new VariableX_Production { ProductType = spec.ProductType });
 
-            optEngine.AddRHS(dataload.PorkCapacity);
-            optEngine.CreateLessEqual($"{ConstraintName}");
+            _engine.AddRHS(_porkCap);
+            _engine.CreateLessEqual($"{ConstraintName}");
             ConstraintCount++;
 
             Logging.Info($"[{ConstraintName}] {ConstraintCount}");

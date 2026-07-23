@@ -2,8 +2,7 @@ using System;
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
 using WeeniesBuns.Set;
-using WeeniesBuns.Variable;
-using WeeniesBuns.Constraint;
+using WeeniesBuns.Model;
 
 namespace WeeniesBuns
 {
@@ -53,8 +52,7 @@ namespace WeeniesBuns
                 var dataload = OptData.Load(() => new WeeniesBunsDataload());
                 using var engine = new OptEngine(config);
                 engine.Build();
-                new VariableCreate(dataload, engine).Build();
-                new BuildModel(dataload, engine).Build();
+                new WeeniesBunsModel(dataload).Build(engine);
 
                 Logging.Info($"[Experiment] ({i}/{variants.Length}) 求解中：{label} …");
 

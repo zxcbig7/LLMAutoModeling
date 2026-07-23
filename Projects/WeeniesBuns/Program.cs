@@ -3,8 +3,7 @@ using OptimFoundation.Cplex;
 using OptimFoundation.Core;
 using WeeniesBuns;
 using WeeniesBuns.Set;
-using WeeniesBuns.Variable;
-using WeeniesBuns.Constraint;
+using WeeniesBuns.Model;
 
 // 唯一進入點：solve / experiment 兩模式
 //   dotnet run                → 一般求解（Fluent OptModel）
@@ -16,20 +15,21 @@ if (args.Contains("experiment"))
 }
 
 var dataload = OptData.Load(() => new WeeniesBunsDataload());
+var def = new WeeniesBunsModel(dataload);
 
 using (var m = new OptModel("WeeniesBuns")
     .UseConfig(() => new CplexConfig
     {
-        epGap       = 0.0,
-        timeLimit   = 60,
+        epGap = 0.0,
+        timeLimit = 60,
         workThreads = 4,
-        enableLog   = true,
-        exportSol   = true,
-        exportLP    = true,
-        exportMPS   = false,
+        enableLog = true,
+        exportSol = true,
+        exportLP = true,
+        exportMPS = false,
     })
-    .AddVariables(e => new VariableCreate(dataload, e).Build())
-    .AddModel(e => new BuildModel(dataload, e).Build())
+    .AddVariables(def.CreateVariables)
+    .AddModel(def.CreateModel)
     .OnSolved(e => dataload.WriteToCSV(e)))
 {
     bool ok = m.Execute();

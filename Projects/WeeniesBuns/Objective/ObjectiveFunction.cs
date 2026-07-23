@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
-using WeeniesBuns.Set;
+using WeeniesBuns.Parameter;
 using WeeniesBuns.Variable;
 
 namespace WeeniesBuns.Objective
@@ -11,21 +12,21 @@ namespace WeeniesBuns.Objective
     /// </summary>
     public class ObjectiveFunction
     {
-        private OptEngine           optEngine;
-        private WeeniesBunsDataload dataload;
+        private readonly List<Parameter_ProductSpec> _spec;
+        private readonly OptEngine _engine;
 
-        public ObjectiveFunction(WeeniesBunsDataload dataload, OptEngine engine)
+        public ObjectiveFunction(List<Parameter_ProductSpec> spec, OptEngine engine)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            _spec = spec;
+            _engine = engine;
         }
 
         public void Build()
         {
-            dataload.parameter_ProductSpec.ForEach(spec =>
-                optEngine.AddLHS(spec.Profit, new VariableX_Production { ProductType = spec.ProductType }));
+            foreach (var spec in _spec)
+                _engine.AddLHS(spec.Profit, new VariableX_Production { ProductType = spec.ProductType });
 
-            optEngine.CreateMaximize();
+            _engine.CreateMaximize();
             Logging.Info("目標函數：max Σ Profit[i]·x[i]");
         }
     }
