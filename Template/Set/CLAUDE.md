@@ -11,22 +11,38 @@
 
 ## Set 積木
 
-- 一個 Set 一顆積木：`[OptSet<T>] public partial class Set_<Name> { }`，元素型別 MUST 顯式寫出
+- MUST 一顆 Set 積木一個 `.cs` 檔，檔名 = 類別名（`Set_Item` → `Set/Set_Item.cs`）—— NEVER 把多顆塞進 `Sets.cs` —— Why: 一檔一顆才能靠檔名直接定位，與 `Parameter_*` / `Variable*_*` 慣例一致；集中檔改一顆就動到全部人的 diff
+- MUST attribute 獨立一行，NEVER 與 class 宣告寫同一行 —— Why: 加第二個 attribute 時不必重排，宣告與修飾一眼分得開
+- 元素型別 MUST 顯式寫出（`[OptSet<string>]`，NEVER 裸 `[OptSet]`）
 - NEVER 用裸 `List<string>` 宣告 Set —— 積木化才能被 `DataContext` 註冊進驗證
-- 成員載入：字面值用 `.LoadInline("A", "B")`；由 Parameters 衍生用 `.LoadFrom(...)`，不重複定義資料
+- 成員載入預設 `.Load(source)`（內部即 `source.LoadSet("Set_Xxx")`，字串依 T 自動轉型）；手打字面值用 `.LoadInline("A", "B")`；NEVER 一律從 Parameters 反推 —— 只有「這顆 set 真的沒有來源資料」才用 `.LoadFrom(...)` 衍生 —— Why: 反推只拿得到參數表出現過的成員，題目允許但資料沒用到的維度會靜默消失，變數與約束跟著少建
 
 ```csharp
-[OptSet<string>] public partial class Set_Item { }
+// Set/Set_Item.cs
+using OptimFoundation.Modeling;
 
+namespace ProjectName.Set
+{
+    [OptSet<string>]
+    public partial class Set_Item { }
+}
+```
+
+```csharp
 // Dataload 內：
 public Set_Item ITEM = new();
-// 建構子內，Parameter 資料先建好再導出 Set：
-ITEM.LoadFrom(parameter_Demand.Select(p => p.Item).Distinct());
+// 建構子內，每行一句顯式讀，Set 與 Parameter 各自從 source 進來：
+ITEM.Load(source);
+parameter_Demand = source.LoadParam<Parameter_Demand>("Parameter_Demand");
 ```
 
 ```csharp
 // ✗ 禁止：裸 List，不會被框架註冊驗證
 public List<string> Items = new() { "A", "B" };
+
+// ✗ 禁止：多顆積木擠一個 Sets.cs + attribute 與 class 同一行
+[OptSet<string>] public partial class Set_Item { }
+[OptSet<DateTime>] public partial class Set_Date { }
 ```
 
 ## WriteToCSV 規範
@@ -43,4 +59,5 @@ engine.GetVariableValue("VariableX_Xxx@label") // 單一變數值，分隔符是
 engine.GetObjectiveValue() // 目標函數值
 ```
 
-> ⚠ 本範本 `Set/Dataload.cs` 的實碼**尚未套用資料防護層**（仍是 `public class Dataload`、裸 `new Dataload()`、Set 用硬編字面陣列），落後本文件所述的 paved path。照抄本範本時 MUST 依上述規範改寫，NEVER 原樣複製資料層。
+> 本範本 `Set/Dataload.cs` 已套用資料防護層（`public partial class Dataload : DataContext` + `Set_*` 積木），`Program.cs` 一律走 `OptData.Load(() => new Dataload())`。
+> 唯一與 paved path 的差別：範本用 `LoadInline(...)` 硬編示範資料，實際專案 MUST 改成顯式 ctor 讀 `IDataSource`（CSV / Oracle / 記憶體只換 source）。

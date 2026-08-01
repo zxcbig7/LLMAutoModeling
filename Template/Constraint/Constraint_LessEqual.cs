@@ -9,39 +9,41 @@ namespace Template.Constraint
     /// 上界限制式（CreateLessEqual）
     ///
     /// ∀ a ∈ SetA, c ∈ SetC：
-    ///   Σ_b  VariableB_ABC[a][b][c]  ≤  1
+    ///   Σ_b  VariableB_ABC[a][b][c]  ≤  AssignMax
     /// </summary>
     public class Constraint_LessEqual : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_B setB;
+        private readonly Set_C setC;
+        private readonly double assignMax;
 
-        public Constraint_LessEqual(Dataload dataload, OptEngine engine)
+        public Constraint_LessEqual(OptEngine engine, Set_A setA, Set_B setB, Set_C setC, double assignMax)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setB = setB;
+            this.setC = setC;
+            this.assignMax = assignMax;
         }
 
         public void Build()
         {
-            try
+            foreach (var a in setA)
             {
-                foreach (var a in dataload.SetA)
+                foreach (var c in setC)
                 {
-                    foreach (var c in dataload.SetC)
-                    {
-                        foreach (var b in dataload.SetB)
-                            optEngine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c });
+                    foreach (var b in setB)
+                        engine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c });
 
-                        optEngine.AddRHS(1);
-                        optEngine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
-                        ConstraintCount++;
-                    }
+                    engine.AddRHS(assignMax);
+                    engine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
+                    ConstraintCount++;
                 }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
-            catch (Exception) { throw; }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

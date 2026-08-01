@@ -38,12 +38,19 @@ engine.CreateGreatEqual(...)   // LHS ≥ RHS
 ConstraintCount++;
 ```
 
-## BuildModel 規範
+## 組裝規範（寫在 Program.cs，不另開 BuildModel.cs）
 
-依邏輯群組依序呼叫各 Constraint：
+`Program.cs` 的 `BuildModel(Dataload data, OptEngine engine)` local function 依邏輯群組依序呼叫，**目標式排第一**：
 
 ```csharp
-new ObjectiveFunction(dataload, engine).Build();
-new Constraint_A(dataload, engine).Build();
-new Constraint_B(dataload, engine).Build();
+static void BuildModel(Dataload data, OptEngine engine)
+{
+    new ObjectiveFunction(data, engine).Build();   // MUST 先建
+    new Constraint_A(data, engine).Build();
+    new Constraint_B(data, engine).Build();
+}
 ```
+
+- NEVER 另開 `BuildModel.cs` 包裝類別 —— ALWAYS 用 local function —— Why: 只有轉呼叫、沒有邏輯的一層；收進 Program.cs 才看得到完整組裝關係，且 solve / experiment 兩模式天然共用
+- NEVER 在 `BuildModel()` 裡直接寫 `AddLHS` / `AddRHS` —— 它只負責呼叫順序，式子寫在各 `Constraint_Xxx.cs`
+- 目標式 MUST 排在所有 constraint 之前 —— Why: soft constraint 的 penalty 掛進既有目標式，順序反了會掛空

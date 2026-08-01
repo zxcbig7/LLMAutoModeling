@@ -12,46 +12,45 @@ namespace Template.Constraint
     ///
     /// 示範（∀ a ∈ SetA）：Σ_b VariableX_AB[a][b] ≥ SoftTarget（軟性；不足就罰 penalty·短缺量）
     ///
-    /// 前提：① 目標式必須已建立（BuildModel 先建 Objective 再建本限制式）。
-    ///       ② penalty 一律從 Parameter / Dataload 取得，不得 hardcode。
+    /// 前提：目標式必須已建立（Program.cs 的 BuildModel 先建 Objective 再建本限制式）。
+    /// target / penalty 由建構子傳入，本類別不得寫死任何數字。
     /// </summary>
     public class Constraint_Soft : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_B setB;
+        private readonly double target;
+        private readonly double penalty;
 
-        public Constraint_Soft(Dataload dataload, OptEngine engine)
+        public Constraint_Soft(OptEngine engine, Set_A setA, Set_B setB, double target, double penalty)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setB = setB;
+            this.target = target;
+            this.penalty = penalty;
         }
 
         public void Build()
         {
-            try
+            if (!engine.SupportsSoftConstraints) return;
+
+            foreach (var a in setA)
             {
-                if (!optEngine.SupportsSoftConstraints) return;
+                foreach (var b in setB)
+                    engine.AddLHS(1, new VariableX_AB { A = a, B = b });
 
-                double target  = dataload.SoftTarget;
-                double penalty = dataload.Penalty_Soft;
+                // 軟性 ≥：加 Deficit 變數，短缺多少罰多少
+                engine.CreateGeSoft(target, penalty);
+                ConstraintCount++;
 
-                foreach (var a in dataload.SetA)
-                {
-                    foreach (var b in dataload.SetB)
-                        optEngine.AddLHS(1, new VariableX_AB { A = a, B = b });
-
-                    // 軟性 ≥：加 Deficit 變數，短缺多少罰多少
-                    optEngine.CreateGeSoft(target, penalty);
-                    ConstraintCount++;
-
-                    // 其他軟性方向：
-                    // optEngine.CreateLeSoft(target, penalty);              // 軟性 ≤（加 Surplus）
-                    // optEngine.CreateEqSoft(target, penalty, "Name@idx");  // 軟性 =（加 Delta_Pos/Neg）
-                }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+                // 其他軟性方向：
+                // engine.CreateLeSoft(target, penalty);             // 軟性 ≤（加 Surplus）
+                // engine.CreateEqSoft(target, penalty, "Name@idx"); // 軟性 =（加 Delta_Pos/Neg）
             }
-            catch (Exception) { throw; }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

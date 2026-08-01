@@ -1,0 +1,48 @@
+2026-08-01 23:15:39.3821 | INFO  | [OptimFoundation.Core] ===== 資料載入摘要 =====
+2026-08-01 23:15:39.3876 | INFO  | [OptimFoundation.Core] Sets（2）：
+2026-08-01 23:15:39.3879 | INFO  | [OptimFoundation.Core]   SandwichType: 2 個成員
+2026-08-01 23:15:39.3880 | INFO  | [OptimFoundation.Core]   Ingredient: 2 個成員
+2026-08-01 23:15:39.3880 | INFO  | [OptimFoundation.Core] Parameters（3）：
+2026-08-01 23:15:39.3881 | INFO  | [OptimFoundation.Core]   Parameter_SandwichSpec: index=[SandwichType], rows=2
+2026-08-01 23:15:39.3887 | INFO  | [OptimFoundation.Core]     第一列 index=[Regular]（型別化萃取器讀值，零反射）
+2026-08-01 23:15:39.3901 | INFO  | [OptimFoundation.Core]   Parameter_IngredientReq: index=[Ingredient,SandwichType], rows=4
+2026-08-01 23:15:39.3902 | INFO  | [OptimFoundation.Core]     第一列 index=[Eggs,Regular]（型別化萃取器讀值，零反射）
+2026-08-01 23:15:39.3902 | INFO  | [OptimFoundation.Core]   Parameter_IngredientStock: index=[Ingredient], rows=2
+2026-08-01 23:15:39.3902 | INFO  | [OptimFoundation.Core]     第一列 index=[Eggs]（型別化萃取器讀值，零反射）
+2026-08-01 23:15:39.4106 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Threads=4
+2026-08-01 23:15:39.4115 | INFO  | [OptimFoundation.Cplex] [Environment Setting] RowReadLim=30000
+2026-08-01 23:15:39.4133 | INFO  | [OptimFoundation.Cplex] [Environment Setting] WorkMem=2048 MB (NodeFileInd=0)
+2026-08-01 23:15:39.4135 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpGap=0
+2026-08-01 23:15:39.4135 | INFO  | [OptimFoundation.Cplex] [Environment Setting] CPLEX Log → Console (real-time)
+2026-08-01 23:15:39.4136 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled LP File (.lp) Output
+2026-08-01 23:15:39.4137 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled Solution File (.sol) Output
+2026-08-01 23:15:39.4144 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpOpt=1E-06
+2026-08-01 23:15:39.4145 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpRHS=1E-06
+2026-08-01 23:15:39.4145 | INFO  | [OptimFoundation.Cplex] [Environment Setting] TiLim=60 秒
+2026-08-01 23:15:39.4188 | INFO  | [OptimFoundation.Core] 【建構變數完成】 (Elapsed 0h 0m 0s 4ms)
+2026-08-01 23:15:39.4426 | INFO  | [SandwichProduction.Constraint] [C1_IngredientCapacity] 2
+2026-08-01 23:15:39.4428 | INFO  | [OptimFoundation.Core] 【建構模型完成】 (Elapsed 0h 0m 0s 23ms)
+Version identifier: 22.1.1.0 | 2022-11-27 | 9160aff4d
+CPXPARAM_Threads                                 4
+CPXPARAM_MIP_Strategy_File                       0
+CPXPARAM_TimeLimit                               60
+CPXPARAM_MIP_Tolerances_MIPGap                   0
+Tried aggregator 1 time.
+No LP presolve or aggregator reductions.
+Presolve time = 0.00 sec. (0.00 ticks)
+
+Iteration log . . .
+Iteration:     1   Dual infeasibility =             0.000000
+Iteration:     2   Dual objective     =            60.000000
+2026-08-01 23:15:39.4655 | INFO  | [OptimFoundation.Cplex] [OptEngine] Status=Optimal  ObjVal=60  BestBound=-1E+75  MIPGap=1E+75
+2026-08-01 23:15:39.4674 | INFO  | [SandwichProduction.Set] ═══════════════════════════════════
+2026-08-01 23:15:39.4678 | INFO  | [SandwichProduction.Set]        最佳三明治生產計畫
+2026-08-01 23:15:39.4679 | INFO  | [SandwichProduction.Set] ═══════════════════════════════════
+2026-08-01 23:15:39.4738 | INFO  | [SandwichProduction.Set]   Regular   :   20.0 個   利潤 = $60.00
+2026-08-01 23:15:39.4739 | INFO  | [SandwichProduction.Set]   Special   :    0.0 個   利潤 = $0.00
+2026-08-01 23:15:39.4740 | INFO  | [SandwichProduction.Set] ───────────────────────────────────
+2026-08-01 23:15:39.4740 | INFO  | [SandwichProduction.Set]   最大總利潤 = $60.00
+2026-08-01 23:15:39.4741 | INFO  | [SandwichProduction.Set] ═══════════════════════════════════
+2026-08-01 23:15:39.6206 | INFO  | [OptimFoundation.Core.IO] [CsvCtrl] Solution exported: C:\Users\zxcbi\Desktop\Projects\OptimizationFramework\AI-Modeling\Projects\SandwichProduction\bin\Debug\net8.0\Solution\VariableX_Sandwich.csv
+2026-08-01 23:15:39.6209 | INFO  | [SandwichProduction.Set] Results saved: Solution/VariableX_Sandwich.csv
+2026-08-01 23:15:39.6210 | INFO  | [OptimFoundation.Core] 【整體運作時間】 (Elapsed 0h 0m 0s 225ms)

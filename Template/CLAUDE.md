@@ -26,31 +26,33 @@ OptimFoundation 是封裝 IBM ILOG CPLEX 的 C# 框架，用於建構**整數線
 
 ```
 MyProject/
-├── Program.cs # 唯一入口，OptModel fluent composition root
-├── ExperimentRunner.cs # 參數掃描（dotnet run -- experiment）
+├── Program.cs # 唯一入口：solve / experiment 雙模式 + 全部層級組裝
 ├── MyProject.csproj
 │
 ├── Model\
 │   └── Glossary.md # 名詞定義、數學模型文件
 │
 ├── Set\
-│   └── Dataload.cs # Sets、Parameters、罰分權重
+│   ├── Set_Xxx.cs # [OptSet<T>] 維度積木，一顆一個檔
+│   └── Dataload.cs # Sets、Parameters、罰分權重、WriteToCSV
 │
 ├── Parameter\
-│   └── Parameter_Xxx.cs # 繼承 ParameterBase
+│   └── Parameter_Xxx.cs # [OptParam] + [OptDim<Set_X>]
 │
 ├── Variable\
-│   ├── VariableB_Xxx.cs # Binary（繼承 VariableBase）
-│   ├── VariableX_Xxx.cs # Continuous（繼承 VariableBase）
-│   └── VariableCreate.cs # BuildBVs / BuildCVs 呼叫
+│   ├── VariableB_Xxx.cs # Binary
+│   ├── VariableX_Xxx.cs # Continuous
+│   └── VariableI_Xxx.cs # Integer
 │
 ├── Objective\
 │   └── ObjectiveFunction.cs
 │
 └── Constraint\
-    ├── BuildModel.cs
     └── Constraint_Xxx.cs # 繼承 ConstraintBase
 ```
+
+> **NEVER 另開 `VariableCreate.cs` / `BuildModel.cs` / `ExperimentRunner.cs`** —— ALWAYS 寫成 `Program.cs` 的 local function（`CreateVariables` / `BuildModel` / `RunExperiment`）
+> —— Why: 那三層只有轉呼叫、沒有邏輯，拆成獨立檔之後「這專案怎麼組起來的」要開四個檔才看得完；收進 `Program.cs` 一眼看完，而且 solve 與 experiment 天然共用同一份建模碼。
 
 ---
 
@@ -98,21 +100,20 @@ public partial class Dataload : DataContext { }
 - NEVER 在 Dataload 手寫驗證邏輯——機械檢查集中在框架 `DataContext`
 - 細節見 [`Set/CLAUDE.md`](Set/CLAUDE.md)
 
-> ⚠ 本範本的 `Set/Dataload.cs`、`Program.cs`、`ExperimentRunner.cs` 實碼**尚未套用**這一層（仍是 `public class Dataload` + 裸 `new Dataload()`）。以本範本起新專案時 MUST 依上述規範改寫資料層。
-
 ### OptModel — 組裝與求解（composition root）
 
 ```csharp
-using (var m = new OptModel("ProjectName")
-    .UseConfig(() => config)
-    .AddVariables(e => new VariableCreate(dataload, e).Build())
-    .AddModel(e => new BuildModel(dataload, e).Build())
-    .OnSolved(e => dataload.WriteToCSV(e)))
+using (var model = new OptModel("ProjectName")
+    .UseConfig(() => NewConfig(timeLimit: 300, verbose: true))
+    .AddVariables(engine => CreateVariables(dataload, engine))
+    .AddModel(engine => BuildModel(dataload, engine))
+    .OnSolved(engine => dataload.WriteToCSV(engine)))
 {
-    bool ok = m.Execute();
+    bool ok = model.Execute();
 }
 ```
 
+`CreateVariables` / `BuildModel` / `NewConfig` 都是 `Program.cs` 的 local function（solve 與 experiment 共用）。
 `OptModel` 保證 `AddVariables` 先於 `AddModel`，內建 build/solve 計時與 log；infeasible 時用 `engine.GetConflictConstraints()` 取 IIS。
 
 ---
@@ -159,11 +160,11 @@ public class VariableB_Assign : VariableBase
 ### 建立
 
 ```csharp
-// VariableCreate.Build() 內
-optEngine.BuildBVs<VariableB_Assign>(dataload.Items, dataload.Machines, dataload.Dates);
-optEngine.BuildCVs<VariableX_Slack>(dataload.Items);
+// Program.cs 的 CreateVariables(Dataload data, OptEngine engine) 內
+engine.BuildBVs<VariableB_Assign>(data.Items, data.Machines, data.Dates);
+engine.BuildCVs<VariableX_Slack>(data.Items);
 // 選用：有界 Continuous
-optEngine.BuildCVs<VariableX_Flow>(lb: 0, ub: 1000, dataload.Items);
+engine.BuildCVs<VariableX_Flow>(0, 1000, data.Items);
 ```
 
 ---
@@ -216,7 +217,7 @@ ConstraintCount++;
 ## 目標函數
 
 ```csharp
-// ObjectiveFunction.Build() 內
+// ObjectiveFunction.Build() 內；MUST 在所有 Constraint 之前建（soft constraint 的 penalty 要掛進來）
 dataload.Items.ForEach(i =>
     optEngine.AddLHS(penaltyWeight, new VariableX_Slack { Item = i }));
 
@@ -332,9 +333,9 @@ Logging.Info("訊息含計時:", stopwatch);
 ## 新增限制式 Checklist
 
 1. `Variable/` 建立 `VariableB_Xxx.cs` 或 `VariableX_Xxx.cs`
-2. `Variable/VariableCreate.Build()` 加 `BuildBVs<>()` / `BuildCVs<>()`
+2. `Program.cs` 的 `CreateVariables()` 加 `BuildBVs<>()` / `BuildCVs<>()`
 3. `Constraint/` 建立 `Constraint_Xxx.cs`（繼承 `ConstraintBase`）
-4. `Constraint/BuildModel.Build()` 加 `new Constraint_Xxx(dataload, engine).Build()`
+4. `Program.cs` 的 `BuildModel()` 加 `new Constraint_Xxx(data, engine).Build()`
 5. 若有罰分，`Objective/ObjectiveFunction.Build()` 加 `AddLHS(penalty, var)`
 6. `Set/Dataload` 加 penalty 權重與 parameter
 

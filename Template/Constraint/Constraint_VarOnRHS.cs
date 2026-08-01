@@ -25,54 +25,52 @@ namespace Template.Constraint
     /// </summary>
     public class Constraint_VarOnRHS : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_C setC;
 
-        public Constraint_VarOnRHS(Dataload dataload, OptEngine engine)
+        public Constraint_VarOnRHS(OptEngine engine, Set_A setA, Set_C setC)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setC = setC;
         }
 
         public void Build()
         {
-            try
+            // ① VariableB_AC[a][c] ≤ VariableB_A[a]
+            foreach (var a in setA)
             {
-                // ① VariableB_AC[a][c] ≤ VariableB_A[a]
-                foreach (var a in dataload.SetA)
+                foreach (var c in setC)
                 {
-                    foreach (var c in dataload.SetC)
-                    {
-                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
-                        optEngine.AddRHS(1, new VariableB_A { A = a });   // 正係數 RHS
+                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
+                    engine.AddRHS(1, new VariableB_A { A = a }); // 正係數 RHS
 
-                        optEngine.CreateLessEqual($"{ConstraintName}_1@{a}@{c:yyyy_MM_dd}");
-                        ConstraintCount++;
-                    }
+                    engine.CreateLessEqual($"{ConstraintName}_1@{a}@{c:yyyy_MM_dd}");
+                    ConstraintCount++;
                 }
-
-                // ② 前後期關聯：含正/負係數
-                foreach (var a in dataload.SetA)
-                {
-                    foreach (var c in dataload.SetC)
-                    {
-                        var prevC = dataload.SetC.FirstOrDefault(sd => sd == c.AddDays(-1));
-                        if (prevC == default) continue;   // 第一期無前期 → 跳過
-
-                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
-
-                        optEngine.AddRHS(1, new VariableB_AC { A = a, C = prevC });   // 正係數
-                        optEngine.AddRHS(1, new VariableB_A { A = a });               // 正係數
-                        optEngine.AddRHS(-1);                                         // 負常數
-
-                        optEngine.CreateGreatEqual($"{ConstraintName}_2@{a}@{c:yyyy_MM_dd}");
-                        ConstraintCount++;
-                    }
-                }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
-            catch (Exception) { throw; }
+
+            // ② 前後期關聯：含正/負係數
+            foreach (var a in setA)
+            {
+                foreach (var c in setC)
+                {
+                    var prevC = setC.FirstOrDefault(sd => sd == c.AddDays(-1));
+                    if (prevC == default) continue; // 第一期無前期 → 跳過
+
+                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
+
+                    engine.AddRHS(1, new VariableB_AC { A = a, C = prevC }); // 正係數
+                    engine.AddRHS(1, new VariableB_A { A = a }); // 正係數
+                    engine.AddRHS(-1); // 負常數
+
+                    engine.CreateGreatEqual($"{ConstraintName}_2@{a}@{c:yyyy_MM_dd}");
+                    ConstraintCount++;
+                }
+            }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

@@ -1,5 +1,6 @@
 using OptimFoundation.Cplex;
 using OptimFoundation.Core;
+using Template.Parameter;
 using Template.Set;
 using Template.Variable;
 
@@ -10,41 +11,44 @@ namespace Template.Constraint
     ///
     /// ∀ b ∈ SetB, c ∈ SetC：
     ///   Σ_a  VariableB_ABC[a][b][c]  =  Demand[b]
+    ///
+    /// 建構子只收本條式子用得到的積木與參數，NEVER 收整包 Dataload。
     /// </summary>
     public class Constraint_Equality : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_B setB;
+        private readonly Set_C setC;
+        private readonly List<Parameter_AB> demand;
 
-        public Constraint_Equality(Dataload dataload, OptEngine engine)
+        public Constraint_Equality(OptEngine engine, Set_A setA, Set_B setB, Set_C setC, List<Parameter_AB> demand)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setB = setB;
+            this.setC = setC;
+            this.demand = demand;
         }
 
         public void Build()
         {
-            try
+            foreach (var b in setB)
             {
-                foreach (var b in dataload.SetB)
+                foreach (var c in setC)
                 {
-                    foreach (var c in dataload.SetC)
-                    {
-                        foreach (var a in dataload.SetA)
-                            optEngine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c });
+                    foreach (var a in setA)
+                        engine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c });
 
-                        double demand = dataload.parameter_AB
-                            .FirstOrDefault(p => p.B == b)?.QTY ?? 0;
-                        optEngine.AddRHS(demand);
+                    double qty = demand.FirstOrDefault(p => p.B == b)?.QTY ?? 0;
+                    engine.AddRHS(qty);
 
-                        optEngine.CreateEqual($"{ConstraintName}@{b}@{c:yyyy_MM_dd}");
-                        ConstraintCount++;
-                    }
+                    engine.CreateEqual($"{ConstraintName}@{b}@{c:yyyy_MM_dd}");
+                    ConstraintCount++;
                 }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
-            catch (Exception) { throw; }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

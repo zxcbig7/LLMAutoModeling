@@ -14,34 +14,33 @@ namespace Template.Constraint
     /// </summary>
     public class Constraint_Range : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_C setC;
+        private readonly double lb;
+        private readonly double ub;
 
-        public Constraint_Range(Dataload dataload, OptEngine engine)
+        public Constraint_Range(OptEngine engine, Set_A setA, Set_C setC, double lb, double ub)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setC = setC;
+            this.lb = lb;
+            this.ub = ub;
         }
 
         public void Build()
         {
-            try
+            foreach (var a in setA)
             {
-                double lb = dataload.RangeLB;
-                double ub = dataload.RangeUB;
+                foreach (var c in setC)
+                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
 
-                foreach (var a in dataload.SetA)
-                {
-                    foreach (var c in dataload.SetC)
-                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
-
-                    optEngine.CreateRange(lb, ub, $"{ConstraintName}@{a}");
-                    ConstraintCount++;
-                }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+                engine.CreateRange(lb, ub, $"{ConstraintName}@{a}");
+                ConstraintCount++;
             }
-            catch (Exception) { throw; }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

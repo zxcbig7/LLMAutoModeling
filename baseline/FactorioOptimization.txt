@@ -1,0 +1,80 @@
+2026-08-01 23:14:56.4325 | INFO  | [OptimFoundation.Core] ===== 資料載入摘要 =====
+2026-08-01 23:14:56.4397 | INFO  | [OptimFoundation.Core] Sets（2）：
+2026-08-01 23:14:56.4401 | INFO  | [OptimFoundation.Core]   Machine: 6 個成員（別名: MachineName）
+2026-08-01 23:14:56.4402 | INFO  | [OptimFoundation.Core]   Commodity: 8 個成員（別名: ResourceName）
+2026-08-01 23:14:56.4402 | INFO  | [OptimFoundation.Core] Parameters（3）：
+2026-08-01 23:14:56.4403 | INFO  | [OptimFoundation.Core]   Parameter_Machine: index=[MachineName], rows=6
+2026-08-01 23:14:56.4407 | INFO  | [OptimFoundation.Core]     第一列 index=[Refinery]（型別化萃取器讀值，零反射）
+2026-08-01 23:14:56.4465 | INFO  | [OptimFoundation.Core]   Parameter_RecipeInput: index=[MachineName,ResourceName], rows=8
+2026-08-01 23:14:56.4466 | INFO  | [OptimFoundation.Core]     第一列 index=[Refinery,CrudeOil]（型別化萃取器讀值，零反射）
+2026-08-01 23:14:56.4466 | INFO  | [OptimFoundation.Core]   Parameter_RecipeOutput: index=[MachineName,ResourceName], rows=8
+2026-08-01 23:14:56.4466 | INFO  | [OptimFoundation.Core]     第一列 index=[Refinery,HeavyOil]（型別化萃取器讀值，零反射）
+2026-08-01 23:14:56.4552 | INFO  | [OptimFoundation.Cplex] [Housekeeping] 已清除 19 個超過 30 天的舊輸出檔
+2026-08-01 23:14:56.4730 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Threads=4
+2026-08-01 23:14:56.4733 | INFO  | [OptimFoundation.Cplex] [Environment Setting] RowReadLim=30000
+2026-08-01 23:14:56.4751 | INFO  | [OptimFoundation.Cplex] [Environment Setting] WorkMem=2048 MB (NodeFileInd=0)
+2026-08-01 23:14:56.4753 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpGap=0
+2026-08-01 23:14:56.4754 | INFO  | [OptimFoundation.Cplex] [Environment Setting] CPLEX Log → Console (real-time)
+2026-08-01 23:14:56.4756 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled LP File (.lp) Output
+2026-08-01 23:14:56.4756 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled Solution File (.sol) Output
+2026-08-01 23:14:56.4767 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpOpt=1E-06
+2026-08-01 23:14:56.4768 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpRHS=1E-06
+2026-08-01 23:14:56.4768 | INFO  | [OptimFoundation.Cplex] [Environment Setting] TiLim=60 秒
+2026-08-01 23:14:56.4821 | INFO  | [FactorioOptimization.Variable] Variables created: 12
+2026-08-01 23:14:56.4823 | INFO  | [OptimFoundation.Core] 【建構變數完成】 (Elapsed 0h 0m 0s 5ms)
+2026-08-01 23:14:56.4826 | INFO  | [FactorioOptimization.Constraint] 【建構目標式】
+2026-08-01 23:14:56.4949 | INFO  | [FactorioOptimization.Objective] 目標函數：max R（RocketFuel）
+2026-08-01 23:14:56.4950 | INFO  | [FactorioOptimization.Constraint] 【建構限制式】
+2026-08-01 23:14:56.5032 | INFO  | [FactorioOptimization.Constraint] [Constraint_InputCap] 2
+2026-08-01 23:14:56.5069 | INFO  | [FactorioOptimization.Constraint] [Constraint_ResourceFlowDef] 6
+2026-08-01 23:14:56.5074 | INFO  | [FactorioOptimization.Constraint] [Constraint_ResourceCap] 3
+2026-08-01 23:14:56.5077 | INFO  | [FactorioOptimization.Constraint] [Constraint_OilRatio] 2
+2026-08-01 23:14:56.5079 | INFO  | [FactorioOptimization.Constraint] [Constraint_Downstream] 1
+2026-08-01 23:14:56.5080 | INFO  | [OptimFoundation.Core] 【建構模型完成】 (Elapsed 0h 0m 0s 25ms)
+Version identifier: 22.1.1.0 | 2022-11-27 | 9160aff4d
+CPXPARAM_Threads                                 4
+CPXPARAM_MIP_Strategy_File                       0
+CPXPARAM_TimeLimit                               60
+CPXPARAM_MIP_Tolerances_MIPGap                   0
+Tried aggregator 2 times.
+MIP Presolve eliminated 13 rows and 11 columns.
+MIP Presolve modified 1 coefficients.
+Aggregator did 1 substitutions.
+All rows and columns eliminated.
+Presolve time = 0.00 sec. (0.02 ticks)
+
+Root node processing (before b&c):
+  Real time             =    0.00 sec. (0.02 ticks)
+Parallel b&c, 4 threads:
+  Real time             =    0.00 sec. (0.00 ticks)
+  Sync time (average)   =    0.00 sec.
+  Wait time (average)   =    0.00 sec.
+                          ------------
+Total (root+branch&cut) =    0.00 sec. (0.02 ticks)
+2026-08-01 23:14:56.5364 | INFO  | [OptimFoundation.Cplex] [OptEngine] Status=Optimal  ObjVal=4.999999999999985  BestBound=4.999999999999985  MIPGap=0
+2026-08-01 23:14:56.5374 | INFO  | [FactorioOptimization.Set] ═══════════════════════════════════════════
+2026-08-01 23:14:56.5375 | INFO  | [FactorioOptimization.Set]        Factorio 生產最佳化結果
+2026-08-01 23:14:56.5375 | INFO  | [FactorioOptimization.Set] ═══════════════════════════════════════════
+2026-08-01 23:14:56.5375 | INFO  | [FactorioOptimization.Set] ── 機台台數 ──────────────────────────────
+2026-08-01 23:14:56.5398 | INFO  | [FactorioOptimization.Set]   Refinery                 :       47
+2026-08-01 23:14:56.5399 | INFO  | [FactorioOptimization.Set]   ChemPlant_Lube           :       20
+2026-08-01 23:14:56.5399 | INFO  | [FactorioOptimization.Set]   ChemPlant_LightSolid     :       31
+2026-08-01 23:14:56.5400 | INFO  | [FactorioOptimization.Set]   ChemPlant_GasSolid       :       22
+2026-08-01 23:14:56.5400 | INFO  | [FactorioOptimization.Set]   ChemPlant_HeavySolid     :        0
+2026-08-01 23:14:56.5400 | INFO  | [FactorioOptimization.Set]   Assembler_Rocket         :       75
+2026-08-01 23:14:56.5400 | INFO  | [FactorioOptimization.Set] ── 資源流量 ──────────────────────────────
+2026-08-01 23:14:56.5401 | INFO  | [FactorioOptimization.Set]   HeavyOil                 : 200.0000
+2026-08-01 23:14:56.5401 | INFO  | [FactorioOptimization.Set]   LightOil                 : 360.0000
+2026-08-01 23:14:56.5401 | INFO  | [FactorioOptimization.Set]   Gas                      : 440.0000
+2026-08-01 23:14:56.5401 | INFO  | [FactorioOptimization.Set]   SolidFuel                :  53.0000
+2026-08-01 23:14:56.5401 | INFO  | [FactorioOptimization.Set]   Lubricant                : 200.0000
+2026-08-01 23:14:56.5402 | INFO  | [FactorioOptimization.Set]   RocketFuel               :   5.0000
+2026-08-01 23:14:56.5402 | INFO  | [FactorioOptimization.Set] ── 原料消耗比例（實際 vs 目標 5:9:11）──
+2026-08-01 23:14:56.5402 | INFO  | [FactorioOptimization.Set]   實際 = 5.0000 : 9.0000 : 11.0000
+2026-08-01 23:14:56.5402 | INFO  | [FactorioOptimization.Set]   目標 = 5.0000 : 9.0000 : 11.0000
+2026-08-01 23:14:56.5402 | INFO  | [FactorioOptimization.Set] ───────────────────────────────────────────
+2026-08-01 23:14:56.5403 | INFO  | [FactorioOptimization.Set]   火箭燃料產量 = 5.0000
+2026-08-01 23:14:56.5403 | INFO  | [FactorioOptimization.Set] ═══════════════════════════════════════════
+2026-08-01 23:14:56.6980 | INFO  | [OptimFoundation.Core.IO] [CsvCtrl] Solution exported: C:\Users\zxcbi\Desktop\Projects\OptimizationFramework\AI-Modeling\Projects\FactorioOptimization\bin\Debug\net8.0\Solution\VariableI_Machine.csv
+2026-08-01 23:14:56.6998 | INFO  | [OptimFoundation.Core.IO] [CsvCtrl] Solution exported: C:\Users\zxcbi\Desktop\Projects\OptimizationFramework\AI-Modeling\Projects\FactorioOptimization\bin\Debug\net8.0\Solution\VariableX_Resource.csv
+2026-08-01 23:14:56.7001 | INFO  | [OptimFoundation.Core] 【整體運作時間】 (Elapsed 0h 0m 0s 243ms)

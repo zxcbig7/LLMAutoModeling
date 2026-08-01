@@ -1,0 +1,48 @@
+2026-08-01 23:14:58.8901 | INFO  | [OptimFoundation.Core] ===== 資料載入摘要 =====
+2026-08-01 23:14:58.8974 | INFO  | [OptimFoundation.Core] Sets（1）：
+2026-08-01 23:14:58.8977 | INFO  | [OptimFoundation.Core]   GlassType: 2 個成員
+2026-08-01 23:14:58.8978 | INFO  | [OptimFoundation.Core] Parameters（1）：
+2026-08-01 23:14:58.8979 | INFO  | [OptimFoundation.Core]   Parameter_GlassSpec: index=[GlassType], rows=2
+2026-08-01 23:14:58.8985 | INFO  | [OptimFoundation.Core]     第一列 index=[Regular]（型別化萃取器讀值，零反射）
+2026-08-01 23:14:58.9073 | INFO  | [OptimFoundation.Cplex] [Housekeeping] 已清除 13 個超過 30 天的舊輸出檔
+2026-08-01 23:14:58.9255 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Threads=4
+2026-08-01 23:14:58.9260 | INFO  | [OptimFoundation.Cplex] [Environment Setting] RowReadLim=30000
+2026-08-01 23:14:58.9281 | INFO  | [OptimFoundation.Cplex] [Environment Setting] WorkMem=2048 MB (NodeFileInd=0)
+2026-08-01 23:14:58.9284 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpGap=0
+2026-08-01 23:14:58.9284 | INFO  | [OptimFoundation.Cplex] [Environment Setting] CPLEX Log → Console (real-time)
+2026-08-01 23:14:58.9286 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled LP File (.lp) Output
+2026-08-01 23:14:58.9287 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled Solution File (.sol) Output
+2026-08-01 23:14:58.9298 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpOpt=1E-06
+2026-08-01 23:14:58.9299 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpRHS=1E-06
+2026-08-01 23:14:58.9299 | INFO  | [OptimFoundation.Cplex] [Environment Setting] TiLim=60 秒
+2026-08-01 23:14:58.9381 | INFO  | [GlassFactory.Variable] Variables created: 2
+2026-08-01 23:14:58.9386 | INFO  | [OptimFoundation.Core] 【建構變數完成】 (Elapsed 0h 0m 0s 8ms)
+2026-08-01 23:14:58.9390 | INFO  | [GlassFactory.Constraint] 【建構目標式】
+2026-08-01 23:14:58.9545 | INFO  | [GlassFactory.Objective] 目標函數：max Σ Profit[i]·x[i]
+2026-08-01 23:14:58.9546 | INFO  | [GlassFactory.Constraint] 【建構限制式】
+2026-08-01 23:14:58.9598 | INFO  | [GlassFactory.Constraint] [Constraint_Heating] 1
+2026-08-01 23:14:58.9602 | INFO  | [GlassFactory.Constraint] [Constraint_Cooling] 1
+2026-08-01 23:14:58.9603 | INFO  | [OptimFoundation.Core] 【建構模型完成】 (Elapsed 0h 0m 0s 21ms)
+Version identifier: 22.1.1.0 | 2022-11-27 | 9160aff4d
+CPXPARAM_Threads                                 4
+CPXPARAM_MIP_Strategy_File                       0
+CPXPARAM_TimeLimit                               60
+CPXPARAM_MIP_Tolerances_MIPGap                   0
+Tried aggregator 1 time.
+No LP presolve or aggregator reductions.
+Presolve time = 0.00 sec. (0.00 ticks)
+
+Iteration log . . .
+Iteration:     1   Dual infeasibility =             0.000000
+2026-08-01 23:14:58.9827 | INFO  | [OptimFoundation.Cplex] [OptEngine] Status=Optimal  ObjVal=480  BestBound=-1E+75  MIPGap=1E+75
+2026-08-01 23:14:58.9840 | INFO  | [GlassFactory.Set] ═══════════════════════════════════
+2026-08-01 23:14:58.9842 | INFO  | [GlassFactory.Set]        最佳生產計畫
+2026-08-01 23:14:58.9842 | INFO  | [GlassFactory.Set] ═══════════════════════════════════
+2026-08-01 23:14:58.9876 | INFO  | [GlassFactory.Set]   Regular   :   60.0 片   利潤 = $480.00
+2026-08-01 23:14:58.9877 | INFO  | [GlassFactory.Set]   Tempered  :    0.0 片   利潤 = $0.00
+2026-08-01 23:14:58.9877 | INFO  | [GlassFactory.Set] ───────────────────────────────────
+2026-08-01 23:14:58.9878 | INFO  | [GlassFactory.Set]   最大總利潤 = $480.00
+2026-08-01 23:14:58.9878 | INFO  | [GlassFactory.Set] ═══════════════════════════════════
+2026-08-01 23:14:59.1237 | INFO  | [OptimFoundation.Core.IO] [CsvCtrl] Solution exported: C:\Users\zxcbi\Desktop\Projects\OptimizationFramework\AI-Modeling\Projects\GlassFactory\bin\Debug\net8.0\Solution\VariableX_Production.csv
+2026-08-01 23:14:59.1240 | INFO  | [GlassFactory.Set] Results saved: Solution/VariableX_Production.csv
+2026-08-01 23:14:59.1241 | INFO  | [OptimFoundation.Core] 【整體運作時間】 (Elapsed 0h 0m 0s 215ms)

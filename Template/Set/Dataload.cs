@@ -18,10 +18,21 @@ namespace Template.Set
         public double Penalty_3 = 0.2;
         public double Penalty_4 = 0.1;
         public double Penalty_5 = 0.1;
+        // Penalty_6 對應 VariableI_A：少了這一項該變數不會進模型，CPLEX 不認得它，GetIVSolution 會丟 UnknownObjectException
+        public double Penalty_6 = 0.05;
 
-        // ── 區間限制式界限（Constraint_Range）/ 軟性限制式（Constraint_Soft） ──
+        // ── 各限制式的界限值（限制式類別自己不得寫死數字，一律由此傳入）──────
+        // Constraint_LessEqual
+        public double AssignMax = 1;
+        // Constraint_GreatEqual
+        public double GreatEqualLB = 5;
+        // Constraint_Window
+        public int WindowSize = 7;
+        public double WindowMax = 5;
+        // Constraint_Range；RangeUB 於建構子設為 SetC.Count（恆可行示範值）
         public double RangeLB = 0;
-        public double RangeUB;   // 於建構子設為 SetC.Count（恆可行示範值）
+        public double RangeUB;
+        // Constraint_Soft
         public double SoftTarget = 1.0;
         public double Penalty_Soft = 0.5;
 

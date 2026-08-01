@@ -13,36 +13,34 @@ namespace Template.Constraint
     /// </summary>
     public class Constraint_GreatEqual : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_C setC;
+        private readonly double lowerBound;
 
-        public Constraint_GreatEqual(Dataload dataload, OptEngine engine)
+        public Constraint_GreatEqual(OptEngine engine, Set_A setA, Set_C setC, double lowerBound)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setC = setC;
+            this.lowerBound = lowerBound;
         }
 
         public void Build()
         {
-            try
+            foreach (var a in setA)
             {
-                const double lowerBound = 5;
+                engine.AddLHS(1, new VariableX_A { A = a });
 
-                foreach (var a in dataload.SetA)
-                {
-                    optEngine.AddLHS(1, new VariableX_A { A = a });
+                foreach (var c in setC)
+                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
 
-                    foreach (var c in dataload.SetC)
-                        optEngine.AddLHS(1, new VariableB_AC { A = a, C = c });
-
-                    optEngine.AddRHS(lowerBound);
-                    optEngine.CreateGreatEqual($"{ConstraintName}@{a}");
-                    ConstraintCount++;
-                }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
+                engine.AddRHS(lowerBound);
+                engine.CreateGreatEqual($"{ConstraintName}@{a}");
+                ConstraintCount++;
             }
-            catch (Exception) { throw; }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

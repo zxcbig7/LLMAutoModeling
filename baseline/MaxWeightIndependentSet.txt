@@ -1,0 +1,105 @@
+2026-08-01 23:15:20.4759 | INFO  | [OptimFoundation.Core] ===== 資料載入摘要 =====
+2026-08-01 23:15:20.4814 | INFO  | [OptimFoundation.Core] Sets（1）：
+2026-08-01 23:15:20.4816 | INFO  | [OptimFoundation.Core]   Node: 250 個成員
+2026-08-01 23:15:20.4816 | INFO  | [OptimFoundation.Core] Parameters（1）：
+2026-08-01 23:15:20.4817 | INFO  | [OptimFoundation.Core]   Parameter_Weight: index=[Node], rows=250
+2026-08-01 23:15:20.4822 | INFO  | [OptimFoundation.Core]     第一列 index=[N1]（型別化萃取器讀值，零反射）
+2026-08-01 23:15:20.7122 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Threads=8
+2026-08-01 23:15:20.7132 | INFO  | [OptimFoundation.Cplex] [Environment Setting] RowReadLim=30000
+2026-08-01 23:15:20.7150 | INFO  | [OptimFoundation.Cplex] [Environment Setting] WorkMem=2048 MB (NodeFileInd=0)
+2026-08-01 23:15:20.7152 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpGap=0.0001
+2026-08-01 23:15:20.7153 | INFO  | [OptimFoundation.Cplex] [Environment Setting] CPLEX Log → Console (real-time)
+2026-08-01 23:15:20.7153 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled LP File (.lp) Output
+2026-08-01 23:15:20.7154 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled Solution File (.sol) Output
+2026-08-01 23:15:20.7162 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpOpt=1E-06
+2026-08-01 23:15:20.7163 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpRHS=1E-06
+2026-08-01 23:15:20.7163 | INFO  | [OptimFoundation.Cplex] [Environment Setting] TiLim=1800 秒
+2026-08-01 23:15:20.7164 | INFO  | [OptimFoundation.Cplex] [Environment Setting] MIPEmphasis=1 (強調可行解優於最佳解)
+2026-08-01 23:15:20.7211 | INFO  | [MaxWeightIndependentSet.Project] Variables created: 250
+2026-08-01 23:15:20.7214 | INFO  | [OptimFoundation.Core] 【建構變數完成】 (Elapsed 0h 0m 0s 4ms)
+2026-08-01 23:15:20.7216 | INFO  | [MaxWeightIndependentSet.Project] 【建構目標式】
+2026-08-01 23:15:20.7377 | INFO  | [MaxWeightIndependentSet.Model] Objective built (maximize total weight)
+2026-08-01 23:15:20.7378 | INFO  | [MaxWeightIndependentSet.Project] 【建構限制式】
+2026-08-01 23:15:20.7967 | INFO  | [MaxWeightIndependentSet.Model] [Constraint_EdgeConflict] 9275
+2026-08-01 23:15:20.7970 | INFO  | [OptimFoundation.Core] 【建構模型完成】 (Elapsed 0h 0m 0s 75ms)
+Version identifier: 22.1.1.0 | 2022-11-27 | 9160aff4d
+CPXPARAM_Threads                                 8
+CPXPARAM_MIP_Strategy_File                       0
+CPXPARAM_Emphasis_MIP                            1
+CPXPARAM_TimeLimit                               1800
+Found incumbent of value 0.000000 after 0.00 sec. (0.06 ticks)
+Tried aggregator 1 time.
+MIP Presolve eliminated 5724 rows and 0 columns.
+MIP Presolve modified 3551 coefficients.
+Reduced MIP has 3551 rows, 250 columns, and 17324 nonzeros.
+Reduced MIP has 250 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.05 sec. (49.04 ticks)
+Probing time = 0.02 sec. (0.43 ticks)
+Tried aggregator 1 time.
+Detecting symmetries...
+Reduced MIP has 3551 rows, 250 columns, and 17324 nonzeros.
+Reduced MIP has 250 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.01 sec. (23.05 ticks)
+Probing time = 0.00 sec. (0.43 ticks)
+Clique table members: 3551.
+MIP emphasis: integer feasibility.
+MIP search method: dynamic search.
+Parallel mode: deterministic, using up to 8 threads.
+Root relaxation solution time = 0.17 sec. (125.00 ticks)
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer    Best Bound    ItCnt     Gap
+
+*     0+    0                            0.0000    11848.0000              --- 
+*     0+    0                          989.0000    11848.0000              --- 
+*     0+    0                         1015.0000    11848.0000              --- 
+*     0+    0                         1068.0000    11848.0000              --- 
+      0     0     2341.6605   202     1068.0000     2341.6605       20  119.26%
+*     0+    0                         1332.0000     2341.6605            75.80%
+      0     0     2228.4769   221     1332.0000      Cuts: 89     1131   67.30%
+      0     0     2215.8179   218     1332.0000      Cuts: 14     1409   66.35%
+      0     0     2202.5862   226     1332.0000      Cuts: 17     1657   65.36%
+Detecting symmetries...
+      0     2     2202.5862   226     1332.0000     2202.5862     1657   65.36%
+Elapsed time = 2.08 sec. (1915.17 ticks, tree = 0.02 MB, solutions = 5)
+      9     9     1713.7641   106     1332.0000     2189.9433     4211   64.41%
+     82    31     1895.8227   150     1332.0000     2131.0739    12372   59.99%
+    145    67     1477.4229    93     1332.0000     2131.0739    29398   59.99%
+    219   113     1468.5876    74     1332.0000     2131.0739    47281   59.99%
+    344   166        cutoff           1332.0000     2131.0739    57971   59.99%
+    446   211     1473.9222    92     1332.0000     2131.0739    69958   59.99%
+    600   255     1625.9554   115     1332.0000     2114.4340    81814   58.74%
+    750   311     1448.4678    79     1332.0000     2114.4340    89229   58.74%
+    902   394     1383.0456    84     1332.0000     2114.4340   101235   58.74%
+   1680   372        cutoff           1332.0000     2114.4340   151750   58.74%
+Elapsed time = 5.27 sec. (5028.14 ticks, tree = 3.29 MB, solutions = 5)
+   2561    54     1451.5598    77     1332.0000     2114.4340   196013   58.74%
+   3153   182     1353.4929   100     1332.0000     2114.4340   246888   58.74%
+   3704   106     1449.8337   130     1332.0000     2067.3059   285153   55.20%
+   4056   422     1395.3319   126     1332.0000     2067.3059   339068   55.20%
+   4561   603        cutoff           1332.0000     2067.3059   374088   55.20%
+   4938   700     1341.4876   117     1332.0000     2067.3059   421648   55.20%
+   5679   150        cutoff           1332.0000     2067.3059   474740   55.20%
+   6230    40     1381.4608    98     1332.0000     2067.3059   517934   55.20%
+   6854   112        cutoff           1332.0000     2067.3059   560960   55.20%
+   7534    21        cutoff           1332.0000     2067.3059   604473   55.20%
+Elapsed time = 15.19 sec. (14580.10 ticks, tree = 0.31 MB, solutions = 5)
+   7925    26     1483.5466   133     1332.0000     1708.4713   650435   28.26%
+
+Clique cuts applied:  90
+
+Root node processing (before b&c):
+  Real time             =    2.06 sec. (1911.72 ticks)
+Parallel b&c, 8 threads:
+  Real time             =   14.17 sec. (14029.93 ticks)
+  Sync time (average)   =    3.66 sec.
+  Wait time (average)   =    0.00 sec.
+                          ------------
+Total (root+branch&cut) =   16.23 sec. (15941.65 ticks)
+2026-08-01 23:15:37.0909 | INFO  | [OptimFoundation.Cplex] [OptEngine] Status=Optimal  ObjVal=1332  BestBound=1332  MIPGap=0
+2026-08-01 23:15:37.0916 | INFO  | [OptimFoundation.Core] 【整體運作時間】 (Elapsed 0h 0m 16s 395ms)
+Nodes=250  Edges=9275  Status=Optimal
+2026-08-01 23:15:37.0958 | INFO  | [MaxWeightIndependentSet.Project] Objective (total weight) = 1332.00
+2026-08-01 23:15:37.0960 | INFO  | [MaxWeightIndependentSet.Project] Selected nodes = 16 / 250
+Objective (total weight) = 1332.00
+Selected nodes = 16 / 250

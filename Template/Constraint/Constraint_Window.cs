@@ -11,48 +11,47 @@ namespace Template.Constraint
     /// ∀ a ∈ SetA, c ∈ SetC（視窗期數足夠時）：
     ///   Σ_{c' ∈ [c-W+1..c]}  VariableB_AC[a][c']  ≤  WindowMax
     ///
-    /// 重點：窗口不足時（期初）return 跳過，不建立該限制式。
+    /// 重點：窗口不足時（期初）跳過，不建立該限制式。
     /// </summary>
     public class Constraint_Window : ConstraintBase
     {
-        private OptEngine optEngine;
-        private Dataload  dataload;
+        private readonly OptEngine engine;
+        private readonly Set_A setA;
+        private readonly Set_C setC;
+        private readonly int windowSize;
+        private readonly double windowMax;
 
-        public Constraint_Window(Dataload dataload, OptEngine engine)
+        public Constraint_Window(OptEngine engine, Set_A setA, Set_C setC, int windowSize, double windowMax)
         {
-            this.optEngine = engine;
-            this.dataload  = dataload;
+            this.engine = engine;
+            this.setA = setA;
+            this.setC = setC;
+            this.windowSize = windowSize;
+            this.windowMax = windowMax;
         }
 
         public void Build()
         {
-            try
+            foreach (var c in setC)
             {
-                int    windowSize = 7;
-                double windowMax  = 5;
+                var window = setC
+                    .Where(sd => c.AddDays(-(windowSize - 1)) <= sd && sd <= c)
+                    .ToList();
 
-                foreach (var c in dataload.SetC)
+                if (window.Count < windowSize) continue; // 視窗不足 → 跳過
+
+                foreach (var a in setA)
                 {
-                    var window = dataload.SetC
-                        .Where(sd => c.AddDays(-(windowSize - 1)) <= sd && sd <= c)
-                        .ToList();
+                    foreach (var wc in window)
+                        engine.AddLHS(1, new VariableB_AC { A = a, C = wc });
 
-                    if (window.Count < windowSize) continue;   // 視窗不足 → 跳過
-
-                    foreach (var a in dataload.SetA)
-                    {
-                        foreach (var wc in window)
-                            optEngine.AddLHS(1, new VariableB_AC { A = a, C = wc });
-
-                        optEngine.AddRHS(windowMax);
-                        optEngine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
-                        ConstraintCount++;
-                    }
+                    engine.AddRHS(windowMax);
+                    engine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
+                    ConstraintCount++;
                 }
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
-            catch (Exception) { throw; }
+
+            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

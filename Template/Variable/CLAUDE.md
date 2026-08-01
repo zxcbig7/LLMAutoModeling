@@ -42,13 +42,18 @@ public class VariableB_Assign : VariableBase
 }
 ```
 
-## VariableCreate 規範
+## 變數建立規範（寫在 Program.cs，不另開 VariableCreate.cs）
 
-- 在 `Build()` 裡呼叫所有 `BuildVars` / `Build*Vs`
-- 結尾 `Logging.Info($"Variables created: {engine.varCount}")`
+- 所有 `BuildVars` / `Build*Vs` 呼叫集中在 `Program.cs` 的 `CreateVariables(Dataload data, OptEngine engine)` local function
+- 結尾 `Logging.Info($"變數建立完成：{engine.varCount}")`
+- NEVER 另開 `VariableCreate.cs` 包裝類別 —— ALWAYS 用 local function —— Why: 只有轉呼叫、沒有邏輯的一層；收進 Program.cs 才看得到完整組裝關係，且 solve / experiment 兩模式天然共用
 
 ```csharp
-engine.BuildVars<VariableB_Assign>(dataload.EMPLOYEE, dataload.SHIFT);
+static void CreateVariables(Dataload data, OptEngine engine)
+{
+    engine.BuildVars<VariableB_Assign>(data.EMPLOYEE, data.SHIFT);
+    Logging.Info($"變數建立完成：{engine.varCount}");
+}
 ```
 
 > 本範本 `Variable/` 底下的實碼已全部改用光桿 `[OptVar]` + `[OptDim<Set_X>]` 寫法（2026-07-20 遷移完成）。字串式 attribute 仍是框架逃生口，但 NEVER 在新 code 照抄。
