@@ -4,6 +4,7 @@ status: draft
 created: 2026-07-22
 updated: 2026-07-22
 modules: [projects, claudemdTemplate, governance]
+superseded_by: 2026-08-01-optimfoundation-dual-config.md, 2026-08-01-optimfoundation-runner-symmetry.md, 2026-08-01-optim-docs-and-projects-migration.md
 ---
 
 # 以 Tutorial 為模範架構

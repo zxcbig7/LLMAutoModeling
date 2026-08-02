@@ -4,6 +4,7 @@ status: done
 created: 2026-07-07
 updated: 2026-07-21
 modules: [docs, automation, agents]
+superseded_by: 2026-08-01-optimfoundation-dual-config.md, 2026-08-01-optimfoundation-runner-symmetry.md, 2026-08-01-optim-docs-and-projects-migration.md
 ---
 
 # Tech-Doc Story Loop — 四 Agent 分工生成兩主軸技術文件

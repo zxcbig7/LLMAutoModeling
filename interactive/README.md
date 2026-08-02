@@ -12,7 +12,7 @@ MILP / LP / IP 數學模型開發，服務 OptimFoundation CPLEX C# 框架。
 
 - MUST 依序走三階段：Modeling → Coding →（使用者提出才做）Tuning
 - NEVER 在使用者明確確認數學模型前產生任何 `.cs` 檔 —— ALWAYS 先產 `Projects/<Project>/Model/<Project>_Model.md` 等使用者說「模型確認」/「開始實作」—— Why: 模型錯了 code 全部重寫
-- NEVER 對不清楚的術語或題目描述自行猜測 —— ALWAYS 追問後才繼續，確認後補進 `Model/Glossary.md`
+- NEVER 對不清楚的術語或題目描述自行猜測 —— ALWAYS 追問後才繼續，確認後補進 `Model/<Project>_Model.md` 的 Terminology Mapping Table；NEVER 另建 `Glossary.md`
 - MUST Coding 階段是 Model.md 的**純機械轉譯**，不允許自行詮釋；發現 Model.md 有歧義 → 立即停止回 Model Design
 
 ## 命名（天條）

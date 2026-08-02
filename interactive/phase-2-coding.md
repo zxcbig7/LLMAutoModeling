@@ -1,142 +1,150 @@
 # Phase 2 · Foundation Coding — 轉譯實作規範
 
-> 天條（LHS/RHS 鐵則、禁 Hardcode、命名對應）見 [`README.md`](README.md)；本檔放結構與 API 細節。
-> API 簽名的權威來源：[`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md)（repo 內主要）；`developer-guide.md` 在 sibling 資料夾 `../../OptimFoundation/`（進階補充，非硬相依）。
+> 天條見 [`README.md`](README.md)；API 簽名以 [`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md) 為準。
 
 ## 系統脈絡
 
-三階段的第二階段：把已確認的 `Model/<Project>_Model.md` **逐條機械轉譯**成 OptimFoundation CPLEX C# 專案。
+把已確認的 `Model/<Project>_Model.md` 逐條機械轉譯成 OptimFoundation CPLEX C# 專案。發現模型歧義就回 Phase 1，NEVER 自行補假設。
+
+新專案只從 `../Template/` 長出來。`OptimFoundation/OptimFoundation/Templates/` 是 framework integration／compatibility examples，不是 scaffold；其中的 `ProjectReference`、舊資料夾名、手寫入口或參數順序都不能覆蓋本文件。generator 是 paved path；手寫 `VariableBase` / `ParameterBase` 是受支援後路，參考 `../Projects/HospitalRostering_Manual/`。
 
 ## 硬規則
 
-- MUST 專案建在 [`../Projects/`](../Projects/)`<Project>/`，DLL 一律參考 [`../dlls/`](../dlls/)（csproj HintPath `..\..\dlls\Xxx.dll`）—— Why: DLL 唯一來源天條，路徑亂掉 build 就靠運氣
-- MUST `Parameter\` 資料夾必須存在；Sets 用 `Set_<Name>` 積木（`[OptSet<T>]`）宣告，由 Parameters 衍生時先建好 Parameter 資料、再 `SET.LoadFrom(parameter_Xxx.Select(...).Distinct())`（NEVER 裸 `List<string>` 欄位）—— Why: 資料只進一次，Set 與 Parameter 永不失同步；積木化才能被框架註冊驗證
-- MUST `Dataload` 宣告為 `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可），建構點一律 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()` —— Why: `OptData.Load` 才會觸發框架的參照完整性 / 重複 key / 數值 sanity 驗證，裸建構仍可編譯但靜默跳過全部檢查
-- MUST NEVER 在 `Dataload` 或任何專案檔手寫驗證邏輯（如 `ValidateSetsCoverParameters()`）—— 機械邏輯集中在框架 `DataContext`，一次聚合列出所有問題；專案端只留顯式宣告
-- MUST 建模方式預設 source generator（`[OptVar]` / `[OptParam]` 光桿 attribute + 逐維 `[OptDim<Set_X>("Name")]`）+ Fluent `OptModel`；需逐行掌控引擎生命週期才退回手寫 `: VariableBase` / `XxxProblem.Execute()` —— 範例見 `../Projects/HospitalRostering_Generator` 與 `../Projects/HospitalRostering_Manual`（註：兩範例專案建於本波資料防護規格之前，尚未套用 `DataContext`/`OptData.Load`，示範的是 generator/手寫二選一而非最新建構路徑）
-- MUST 參數讀取先 LINQ 存局部變數再傳入 `AddLHS` / `AddRHS`，NEVER 把 LINQ 內嵌在呼叫裡 —— Why: 可 debug、可驗值，內嵌讀不出中間值
-- MUST `BuildModel.cs` 只呼叫各 `Constraint_Xxx.Build()` 與 `ObjectiveFunction`，NEVER 在裡面直接寫 `AddLHS` / `AddRHS`
-- MUST Variable class 只放 properties、不寫 constructor（框架用 reflection 組 key）
-- MUST build 失敗走 fix loop：擷取 compiler error → 修正 → 重 build，**至多 5 次**；仍失敗 → 停下回報，NEVER 硬掰
+- 專案建在 `../Projects/<Project>/`；DLL HintPath 一律 `..\..\dlls\`。
+- `Dataload` MUST 是 `public partial class Dataload : DataContext`，且只透過 `OptData.Load(() => new Dataload())` 建構。
+- `OptData.Load` 後把資料視為唯讀。`Freeze()` 只保護框架受控 mutation API；直接修改 public field 或 mutable `List` 不保證立即攔截，所以專案 code MUST 不做這些寫入。
+- Set 使用 `[OptSet<T>]` 積木；Parameter / Variable 預設用 `[OptParam]` / `[OptVar]` + `[OptDim<TSet>]` source generator。
+- Objective / Constraint 建構子只收實際使用的 Set、Parameter、scalar 與 `OptEngine`，NEVER 接整包 `Dataload`。
+- `Program.cs` 是唯一組裝點。每種變數、目標式、每條限制式直接各占一個 fluent call；不建立純轉呼叫 class 或 local function。
+- 參數查詢先存局部變數再傳入 `AddLHS` / `AddRHS`，NEVER 內嵌 LINQ。
+- Objective MUST 先於所有 Constraint；框架的 phase 順序固定為 variables → objective → constraints。
+- build fix loop 最多 5 次；仍失敗就停下回報。
 
-## 專案結構（六資料夾，逐條對應 Model.md）
+## 專案結構
 
 ```text
 Projects/<Project>/
-├── <Project>.csproj # DLL HintPath ..\..\dlls\
-├── Program.cs # 唯一進入點（solve / experiment 雙模式）
-├── ExperimentRunner.cs # Phase 3 參數掃描用
-├── Model/ # <Project>_Model.md + Glossary.md（Phase 1 產物）
-├── Set/ # Set_* 積木（[OptSet<T>]）+ Dataload.cs（: DataContext，Sets 由 Parameters 衍生 + WriteToCSV）
-├── Parameter/ # Parameter_Xxx.cs（[OptParam] 生成，QTY 欄位）
-├── Variable/ # VariableB_/X_/I_Xxx.cs + VariableCreate.cs
-├── Objective/ # ObjectiveFunction.cs
-└── Constraint/ # Constraint_Xxx.cs + BuildModel.cs
+├── <Project>.csproj
+├── Program.cs                  # 唯一入口與組裝點
+├── Model/<Project>_Model.md
+├── Set/                        # Set_* + Dataload
+├── Parameter/                  # Parameter_*
+├── Variable/                   # VariableB_/X_/I_*
+├── Objective/ObjectiveFunction.cs
+└── Constraint/Constraint_*.cs
 ```
 
-Namespace = `<Project>.<資料夾名>`（根目錄 = `<Project>`）。
-
-## Program.cs 骨架（預設：Fluent OptModel 雙模式）
+## Program.cs paved path
 
 ```csharp
-if (args.Contains("experiment")) { ExperimentRunner.Run(); return; }
+var data = OptData.Load(() => new Dataload());
+var penalty = data.parameter_Penalty.Single().QTY;
 
-var dataload = OptData.Load(() => new Dataload());   // 唯一建構路徑——觸發框架自動驗證
-using (var m = new OptModel("<Project>")
-    .UseConfig(() => new CplexConfig { epGap = 1e-4, timeLimit = 300, workThreads = 8, enableLog = true, exportSol = true })
-    .AddVariables(e => new VariableCreate(dataload, e).Build())
-    .AddModel(e => new BuildModel(dataload, e).Build())
-    .OnSolved(e => dataload.WriteToCSV(e)))
+var projectConfig = new ProjectConfig
 {
-    bool ok = m.Execute();
+    ProjectName = "<Project>",
+    EnableSolverLog = true,
+    ExportSol = true,
+    ExportLP = true,
+    DataId = "<Project>",
+    UserId = "SYSTEM",
+};
+var solverConfig = new CplexConfig
+{
+    epGap = 1e-4,
+    timeLimit = 300,
+    workThreads = 8,
+};
+
+var model = new OptModel("Canonical") // 模型定義；執行屬 runner
+    .AddVariables(e => e.BuildVars<VariableB_Assign>(data.EMPLOYEE, data.DATE))
+    .AddVariables(e => e.BuildVars<VariableX_Shortage>(data.DATE))
+    .AddObjective(e => new ObjectiveFunction(e, data.DATE, penalty).Build())
+    .AddConstraints(e => new Constraint_MaxWorkDays(e, data.EMPLOYEE, data.DATE, data.parameter_MaxWorkDays).Build())
+    .AddConstraints(e => new Constraint_Coverage(e, data.DATE, data.parameter_Demand).Build());
+
+if (args.Contains("experiment"))
+{
+    var baseline = solverConfig.Clone();
+    var variant = baseline.Clone();
+    variant.Emphasis = 2;
+
+    new OptExperiment("<project>-tuning", "baseline vs emphasis")
+        .AddModel(model)
+        .AddConfig("baseline", baseline)
+        .AddConfig("emphasis=optimal", variant)
+        .Run();
+    return;
 }
+
+using var project = new OptProject(model)
+    .UseConfig(() => projectConfig)
+    .UseConfig(() => solverConfig)
+    .OnSolved(e => data.WriteToCSV(e));
+
+bool ok = project.Execute();
 ```
 
-`VariableCreate` / `BuildModel` 被 solve 與 experiment 兩模式共用，模型不重複。
+`OptModel` 是模型定義，名稱用於 experiment trial label；`ProjectConfig.ProjectName` 才是 log / output 的專案身分。`OnSolved` 屬 `OptProject`，不屬模型，也不存在於 `OptExperiment`。
+
+`ProjectConfig.DataId` / `UserId` 是 solution metadata 預設值；目前呼叫 `CsvCtrl.WriteSolution` 時仍明確傳入。Objective / Constraint constructor 的 canonical 參數順序是 `OptEngine` 第一個，其後才是 Set、Parameter、scalar。
 
 ## 轉譯順序
 
-1. Parameter（Model.md Parameters 表逐列）→ 2. Dataload（數值保真）→ 3. Variable + VariableCreate → 4. Constraint 逐條（一條/一組邏輯相關 = 一個 `Constraint_Xxx.cs`）→ 5. ObjectiveFunction → 6. BuildModel → 7. Program.cs → 8. `dotnet build` → fix loop ≤5 → `dotnet run` → **解驗證協定**（見下）
+1. Set / Parameter。
+2. Dataload：顯式載入，數值保真。
+3. Variable 宣告。
+4. Constraint 逐條轉譯，一條或一組邏輯相關一檔。
+5. ObjectiveFunction。
+6. Program.cs：materials → OptModel → runner。
+7. `dotnet build` → fix loop ≤ 5。
+8. `dotnet run` → 解驗證協定。
 
-## Pool API（限制式）
+## Pool API
 
 ```csharp
-foreach (var e in dataload.EMPLOYEE)     // Set_Employee 積木，foreach 迭代（非 .ForEach，Set 積木不是 List<T>）
+foreach (var employee in employees)
 {
-    foreach (var d in dataload.DATE)
-        engine.AddLHS(1.0, new VariableB_Assign { Employee = e, Date = d });   // PascalCase 屬性名 = [OptDim] 宣告名
-    var maxDays = dataload.parameter_MaxWorkDays.FirstOrDefault(p => p.Employee == e)?.QTY ?? 0.0;
+    foreach (var date in dates)
+        engine.AddLHS(1.0, new VariableB_Assign { Employee = employee, Date = date });
+
+    var maxDays = maxWorkDays.FirstOrDefault(p => p.Employee == employee)?.QTY ?? 0.0;
     engine.AddRHS(maxDays);
-    engine.CreateLessEqual($"MaxWorkDays@{e}");
-    ConstraintCount++;
+    engine.CreateLessEqual($"{ConstraintName}@{employee}");
 }
 ```
 
-- 約束名格式：`ConstraintName@index1@index2`
-- RHS 含變數（移項需求）→ `AddRHS(coef, variable)`，但 Model 原式怎麼寫就怎麼放，NEVER 自行移項
+- Model 左邊的項進 `AddLHS`，右邊的項進 `AddRHS`。
+- `>=` 用 `CreateGreatEqual`，`<=` 用 `CreateLessEqual`，`=` 用 `CreateEqual`。
+- RHS 含變數可用 `AddRHS(coef, variable)`；NEVER 自行移項。
+- `EngineBase` 自動統計限制式，不維護第二份 `ConstraintCount`。
+- soft variant 使用具名 `CreateLeSoft(rhs, penalty, name)` / `CreateGeSoft(rhs, penalty, name)`；成功後框架自動記錄 name、sense、rhs、penalty。只允許使用者明確要求的 Phase 3 variant。
 
-## 取解 API（存在的才用）
+## 取解 API
 
 ```csharp
 double obj = engine.GetObjectiveValue();
-var sol = engine.GetSetVarValues<VariableX_Production>(); // {"VariableX_Production@Regular": 60.0}
-double v = engine.GetVariableValue("VariableB_Assign@E1@2026-01-01"); // DateTime 格式 @yyyy-MM-dd
-FolderDir.Solution.CreateFolder(); // ★ WriteSolution 前必呼叫
+var sol = engine.GetSetVarValues<VariableX_Production>();
+double value = engine.GetVariableValue("VariableB_Assign@E1@2026-01-01");
+FolderDir.Solution.CreateFolder();
 CsvCtrl.WriteSolution<VariableX_Production>(engine, "<Project>", "USER");
 ```
 
-## 禁止使用（Foundation 不存在這些方法 / 已淘汰的建構路徑）
+不存在：`GetVarSol`、`GetSetVarSol<T>`、`SaveToCSV<T>`。簽名不確定就查 API reference。
 
-```csharp
-// ✗ engine.GetVarSol(...) → 不存在
-// ✗ engine.GetSetVarSol<T>() → 不存在
-// ✗ CsvCtrl.SaveToCSV<T>(...) → 不存在（正確：WriteSolution）
-// ✗ new Dataload() 當成建構終點 → 仍可編譯但跳過框架驗證，正確：OptData.Load(() => new Dataload())
-// ✗ Dataload 內手寫 ValidateXxx() / 手動掃 dangling reference → 框架 DataContext 已聚合處理，NEVER 專案端重寫
-```
+## 解驗證協定
 
-簽名有疑慮 → 查 [`../CPLEX_API_REFERENCE.md`](../CPLEX_API_REFERENCE.md)，NEVER 憑記憶發明 API。
+1. Status：Optimal 才往下；Infeasible 走 IIS；Unbounded 查漏界。
+2. 將解代回每條 constraint，確認 LHS op RHS。
+3. 檢查目標值、關鍵變數的單位與量級。
+4. LP bound sanity：max 的整數解 ≤ LP bound；min 反之。
 
-## good/bad：參數讀取
-
-✅ Good
-```csharp
-var profit = dataload.parameter_Profit.FirstOrDefault(p => p.GlassType == g)?.QTY ?? 0.0;
-engine.AddLHS(profit, new VariableX_Production { GlassType = g });
-```
-
-❌ Bad
-```csharp
-engine.AddLHS(dataload.parameter_Profit.First(p => p.GlassType == g).QTY, new VariableX_Production { GlassType = g }); // LINQ 內嵌
-engine.AddLHS(300.0, new VariableX_Production { GlassType = g }); // 裸數字
-engine.AddLHS(profit, new VariableX_Production { GLASS_TYPE = g }); // ALL-CAPS 屬性名——現行 [OptDim] 命名一律 PascalCase
-```
-
-## 解驗證協定（`dotnet run` 後必跑，全過才算「會動」）
-
-MUST 依序四步，任一不過 → 停下回報，NEVER 宣稱完成：
-
-1. **Status 三分診斷**
-   - `Optimal` → 進第 2 步
-   - `Infeasible` → 回報並走 [`phase-3-tuning.md`](phase-3-tuning.md) 的 IIS 流程；先自查 big-M 是否太小、有無互斥硬約束
-   - `Unbounded` → 某方向漏了界；查該變數 UB 或漏掉的上限約束
-2. **可行性代回**：取解值代回**每一條** constraint，確認 LHS op RHS 成立（含 soft/big-M）—— Why: solver 回 Optimal 只保證它解的模型可行，不保證那模型 = 題目
-3. **單位一致性**：目標值與關鍵變數的單位跟題目一致（利潤=錢、產量=件、工時=時），且與第 4 步的 LP relaxation bound 同一數量級——差 >1 個數量級即視為可疑，回查係數
-4. **LP bound sanity**：目標值落在 LP relaxation bound 對的一側（max 問題：整數解 ≤ LP bound；min 問題：整數解 ≥ LP bound）；差太離譜 → 疑 big-M / 係數錯
-
-✅ Good：四步都過 + 目標值對照 Model.md 手算小例
-❌ Bad：看到 `Status == Optimal` 就回報「解出來了」（沒代回、沒對單位）
-
-## 常見任務
-
-- 新專案起手 → 依 [`../claudemdTemplate/`](../claudemdTemplate/) 各資料夾模板 + 參考 `../Projects/HospitalRostering_Generator`
-- csproj DLL 區塊 → 抄範例專案的 `<ItemGroup>`（五個 Reference：ILOG.Concert / ILOG.CPLEX / NLog / OptimFoundation.Core / OptimFoundation.Cplex）
-- build 錯 CS0246（找不到型別）→ 先檢查 HintPath 相對層數（Projects 下是 `..\..\dlls\`）
+四步全過且對得上 Model.md 小例才算完成。看到 `Optimal` 就宣稱正確不合格。
 
 ## Fatal
-- NEVER 自行詮釋 Model.md（歧義 → 回 Phase 1）
-- NEVER 裸數字進 Constraint / Objective
-- NEVER 用別的 DLL 路徑
-- NEVER fix loop 超過 5 次還繼續硬修
-- NEVER 改 OptimFoundation 框架本體
-</content>
+
+- NEVER 自行詮釋 Model.md。
+- NEVER 裸數字進 Objective / Constraint。
+- NEVER 改 OptimFoundation 框架或換 DLL 來源。
+- NEVER 用 helper 隱藏模型組裝。
+- NEVER fix loop 超過 5 次。

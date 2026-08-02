@@ -4,8 +4,9 @@
 > **權威來源**：`dlls/` 內編譯版 OptimFoundation 的公開簽名；原始碼在 sibling 資料夾 `../OptimFoundation/`（本 repo 外，非硬相依）。
 > **天條**：所有 API 呼叫必須能在編譯版 OptimFoundation 找到對應定義；本文件未列出的方法視為「不存在」。
 > **NEVER**：禁止修改 OptimFoundation 框架本體（唯讀）。
-> **鏡像同步**：源頭 = `../OptimFoundation/specs/developer-guide.md`；本檔為鏡像。最近同步 **2026-07-19**（修正 §7.5 OptDim/泛型定位、新增 §7.6 `DataContext`/`OptData` 資料防護層、§8 補 `ISolutionSink` batch/transaction、§5.2 修正 `Build()`/`Solve()` 為 template method）。
-> 註：`developer-guide.md` 截至本次同步**尚未**跟進框架 2026-07-18「資料防護」規格（`DataContext`/`OptData`/`SafeRatio`/`FullGrid`/`OPTF006`），故本次新增內容改以框架原始碼（`OptimFoundation.Core`）+ `../OptimFoundation/specs/2026-07-18-framework-data-guard.md` 為準；待來源文件補齊後兩邊再對齊。改框架 public API 時 MUST 兩邊一起更新。
+> **鏡像同步**：源頭 = `../OptimFoundation/specs/developer-guide.md`；本檔為鏡像。最近同步 **2026-08-02**（雙層 config、`OptModel` 模型定義、`OptProject` / `OptExperiment` runners、`Clone()` 與受控凍結）。改框架 public API 時 MUST 兩邊一起更新。
+
+> **scaffold 邊界**：本文件描述的是公開 API；新專案結構只以本 repo `Template/` 為 canonical。sibling `OptimFoundation/OptimFoundation/Templates/` 是 integration／compatibility examples，不是生成範本。手寫 `VariableBase` / `ParameterBase` 仍受支援，標準對照是 `Projects/HospitalRostering_Manual`。
 
 ---
 
@@ -14,7 +15,7 @@
 1. [模組架構與相依關係](#1-模組架構與相依關係)
 2. [型別 `ModelElementBase` — 變數名稱規則](#2-型別-modelelementbase--變數名稱規則)
 3. [型別 `VariableBase` / `ParameterBase` / `ConstraintBase`](#3-型別-variablebase--parameterbase--constraintbase)
-4. [`CplexConfig` — 求解器設定](#4-cplexconfig--求解器設定)
+4. [`ProjectConfig` / `CplexConfig` — 專案與求解器設定](#4-projectconfig--cplexconfig--專案與求解器設定)
 5. [`OptEngine` — 求解引擎完整 API](#5-optengine--求解引擎完整-api)
 6. [`EngineBase` 繼承 API — 變數 / Pool / 限制式](#6-enginebase-繼承-api--變數--pool--限制式)
 7. [`VariableBuilder` — 變數名稱生成規則](#7-variablebuilder--變數名稱生成規則)
@@ -35,21 +36,25 @@
 ```text
 OptimFoundation.Core (沒有 CPLEX 相依)
 ├── DesignBases.cs        ModelElementBase / VariableBase / ParameterBase / ConstraintBase
+├── Config/ProjectConfig.cs  專案身分、輸出與保留策略
+├── DataContext.cs        資料註冊、驗證與框架受控凍結
 ├── EngineBase.cs         EngineBase<TModel,TVar,TExpr,TConstr> : ISolverEngine
 ├── Enums.cs              VarType / ConstraintSense / ObjectiveSense
-├── ISolverEngine.cs      ISolverEngine 介面、SolveStatus enum
-├── ISolverConfig.cs      ISolverConfig 介面
+├── ISolverEngine.cs      ISolverEngine / ISolverConfig 介面、SolveStatus enum
 ├── VariableBuilder.cs    靜態：產生變數名稱組合
-├── Csv/CsvCtrl.cs        CSV 讀寫
+├── IO/CsvCtrl.cs         CSV 讀寫
 ├── Infrastructure/
 │   ├── ClassInfo.cs      反射取得型別欄位資訊
-│   ├── FolderDir.cs      Data/Solution/Log/Model/IIS/Sol 六個資料夾
+│   ├── FolderDir.cs      Data/Solution/Logs/Models/IISs/Sols/Experiments
 │   └── ReflectionHelper.cs
 └── Logging/Logging.cs    Console + 檔案雙寫
 
 OptimFoundation.Cplex (相依 Core + IBM ILOG.Concert + ILOG.CPLEX)
 ├── CplexConfig.cs        : ISolverConfig
-└── OptEngine.cs          : EngineBase<Cplex, INumVar, ILinearNumExpr, IRange>
+├── OptEngine.cs          : EngineBase<Cplex, INumVar, ILinearNumExpr, IRange>
+├── OptModel.cs           模型定義（variables / objective / constraints）
+├── OptProject.cs         單模型、單設定的專案 runner
+└── OptExperiment.cs      多模型 × 多設定的實驗 runner
 ```
 
 **Namespace**：
@@ -59,8 +64,8 @@ OptimFoundation.Cplex (相依 Core + IBM ILOG.Concert + ILOG.CPLEX)
 **必要 using**：
 
 ```csharp
-using OptimFoundation.Cplex;     // OptEngine, CplexConfig
-using OptimFoundation.Core;      // VariableBase, ParameterBase, Logging, FolderDir, CsvCtrl
+using OptimFoundation.Cplex;     // OptEngine, OptModel, OptProject, OptExperiment, CplexConfig
+using OptimFoundation.Core;      // ProjectConfig, VariableBase, ParameterBase, Logging, FolderDir, CsvCtrl
 ```
 
 ---
@@ -128,6 +133,7 @@ public abstract class VariableBase : ModelElementBase { protected string Variabl
 public abstract class ParameterBase : ModelElementBase { protected string ParameterName => ElemName; }
 public abstract class ConstraintBase : ModelElementBase
 {
+    [Obsolete("Constraint counts are tracked automatically by EngineBase.")]
     protected int ConstraintCount { get; set; }
     protected string ConstraintName => ElemName;
 }
@@ -139,7 +145,7 @@ public abstract class ConstraintBase : ModelElementBase
 |---|---|---|
 | `VariableBase` | 決策變數的索引描述 | `VariableX_Xxx`（連續）、`VariableI_Xxx`（整數）、`VariableB_Xxx`（Binary） |
 | `ParameterBase` | 模型參數的索引描述（通常含 `QTY` 欄位） | `Parameter_Xxx` |
-| `ConstraintBase` | 限制式類別的 base，提供 `ConstraintName` / `ConstraintCount` | `Constraint_Xxx` |
+| `ConstraintBase` | 限制式類別的 base；使用 `ConstraintName`。`ConstraintCount` 僅為 binary compatibility 保留，已 obsolete，NEVER 新寫 | `Constraint_Xxx` |
 
 ### 子類別寫法（無建構子，全用 property initializer）
 
@@ -183,18 +189,40 @@ using OptimFoundation.Modeling;   // generator 注入的 attribute namespace
 
 ---
 
-## 4. `CplexConfig` — 求解器設定
+## 4. `ProjectConfig` / `CplexConfig` — 專案與求解器設定
 
-**檔案**：`Foundation\src\OptimFoundation.Cplex\CplexConfig.cs`
+設定刻意拆成兩層：`ProjectConfig` 描述「這個專案如何輸出」，`CplexConfig` 只描述「CPLEX 如何求解」。實驗快照只擷取 solver config，因此不會混入輸出開關。
+
+### `ProjectConfig`（`OptimFoundation.Core`）
+
+```csharp
+public sealed class ProjectConfig
+{
+    public string ProjectName { get; set; } // 預設 null；OptProject 未指定時用模型名
+    public int? RetentionDays { get; set; } // 預設 null；OptProject 視為 30
+    public bool EnableSolverLog { get; set; } = true;
+    public bool ExportLP { get; set; } = false;
+    public bool ExportMPS { get; set; } = false;
+    public bool ExportSol { get; set; } = false;
+    public string DataId { get; set; }
+    public string UserId { get; set; }
+
+    public ProjectConfig Clone(); // MemberwiseClone，回傳強型別
+}
+```
+
+`EnableSolverLog = false` 只關閉 Console 上的 CPLEX progress；完整 solver 診斷仍寫入 framework log。`ProjectName` 由 `OptProject` 自動解析為 log / LP / MPS / SOL / IIS 檔名前綴，不是模型名。直接使用低階 `OptEngine` 時不會自動採用它，必須另呼叫 `engine.SetModelName(projectConfig.ProjectName)`；`OptExperiment` 則使用自己的實驗 / 模型 / config cell 名稱。
+
+`DataId` / `UserId` 目前只是專案 metadata；`CsvCtrl.WriteSolution` 不會自動讀取，呼叫端仍須把兩值明確傳入。
+
+### `CplexConfig`（`OptimFoundation.Cplex`）
 
 ```csharp
 public sealed class CplexConfig : ISolverConfig, ITunableConfig
 {
+    public CplexConfig Clone(); // MemberwiseClone，適合疊出 tuning variants
+
     public int? workThreads = 32; // 工作執行緒上限
-    public bool enableLog = false; // 啟用 CPLEX log
-    public bool exportLP = false; // 輸出 .lp 模型檔
-    public bool exportSol = false; // 輸出 .sol 解檔
-    public bool exportMPS = false; // 輸出 .mps 模型檔
     public int? rowRead = 30000; // 限制式上限
     public double? workMemory = 2048; // 工作記憶體 MB
     public double? epGap = 1e-4; // MIP gap 終止條件
@@ -213,8 +241,6 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
     public double? TimeLimit { get; set; }
     public double? MipGap { get; set; }
     public int? Threads { get; set; }
-    public bool LogToConsole { get; set; }
-    public string LogFilePath { get; set; }
     public int? RootAlgorithm { get; set; }
     public int? NodeAlgorithm { get; set; }
     public bool? PreIndicator { get; set; }
@@ -225,7 +251,7 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
     public double? FeasibilityTol { get; set; } // → epRHS
     public double? OptimalityTol { get; set; } // → epOpt
     public int? Presolve { get; set; } // ↔ PreIndicator（0=off/非0=on）
-    public double? HeuristicEffort { get; set; } // CPLEX 無直接對應，僅供快照記錄
+    public double? HeuristicEffort { get; set; } // → Param.MIP.Strategy.HeuristicEffort
     public double? MemoryLimitMb { get; set; } // → workMemory（MB）
     // RootAlgorithm（→ algorithm）由上方滿足
 }
@@ -239,19 +265,25 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
 **標準寫法**：
 
 ```csharp
-CplexConfig config = new CplexConfig
+var projectConfig = new ProjectConfig
+{
+    ProjectName = "GlassFactory",
+    EnableSolverLog = true, // 預設就是 true；明寫可凸顯專案執行策略
+    ExportSol = true,
+    ExportLP = true,
+};
+
+var solverConfig = new CplexConfig
 {
     epGap = 0.0, // 求最佳解
     timeLimit = 60,
     workThreads = 4,
-    enableLog = true,
-    exportSol = true,
-    exportLP = true,
-    exportMPS = false
 };
 ```
 
-> ★ 欄位是 **camelCase** + 公開 **field**（不是 property），直接 `=` 賦值即可。
+> ★ `CplexConfig` 的 solver 欄位是 **camelCase public field**；`ProjectConfig` 使用 **PascalCase property**。
+>
+> **已移除成員（breaking change）**：`enableLog`、`exportLP`、`exportMPS`、`exportSol`、`LogToConsole`、`LogFilePath` 不再屬於 `CplexConfig`。前四者的替代位置如上；後兩者已自 `ISolverConfig` 移除。舊文件曾把第一項預設誤寫為 `false`，正確歷史行為及新 `ProjectConfig.EnableSolverLog` 預設皆為 `true`。
 
 ---
 
@@ -267,7 +299,8 @@ public class OptEngine : EngineBase<ILOG.CPLEX.Cplex, INumVar, ILinearNumExpr, I
 
 ```csharp
 public OptEngine(CplexConfig config);
-public OptEngine();   // 用預設 CplexConfig
+public OptEngine(CplexConfig config, ProjectConfig projectConfig);
+public OptEngine();   // 兩層設定皆用預設
 ```
 
 ### 5.2 生命週期
@@ -278,17 +311,17 @@ public bool Solve();                   // EngineBase 具體方法（非 virtual�
 public void Dispose();                 // 釋放 native resources
 ```
 
-> ★ **2026-07 起 `Build()`/`Solve()` 是 `EngineBase` 的 template method、已改為非 virtual**——`OptEngine` 內部只實作 `protected override void BuildCore()` / `protected override bool SolveCore()`。消費端呼叫方式不變（`engine.Build()`/`engine.Solve()`）；但**若要繼承 `OptEngine` 自訂行為，NEVER `override Build()`/`override Solve()`（已非 virtual，直接編譯錯誤）——改覆寫 `BuildCore()`/`SolveCore()`**（`developer-guide.md` 第 13 節「進階：繼承 OptEngine」尚未更新此節，以本檔與框架原始碼為準）。
+> ★ **2026-07 起 `Build()`/`Solve()` 是 `EngineBase` 的 template method、已改為非 virtual**——`OptEngine` 內部只實作 `protected override void BuildCore()` / `protected override bool SolveCore()`。消費端呼叫方式不變（`engine.Build()`/`engine.Solve()`）；但**若要繼承 `OptEngine` 自訂行為，NEVER `override Build()`/`override Solve()`（已非 virtual，直接編譯錯誤）——改覆寫 `BuildCore()`/`SolveCore()`**。
 
 `Solve()` 行為：
 
 1. **`PreSolveGuard()`**（新增）：`TotalVarCount` 超過 `Config.ScaleWarnThreshold`（`ISolverConfig` 的 default interface member，預設 **10,000,000**，可由具體 config 覆寫）→ `Logging.Warn` 一則（含實際變數數與門檻），**只警告、不阻擋、不中止求解**
-2. 若 `exportLP=true` → 寫 `Models/{ProjectName}_LP_{timestamp}.lp`
-3. 若 `exportMPS=true` → 寫 `Models/{ProjectName}_MPS_{timestamp}.mps`
+2. 若 `ProjectConfig.ExportLP=true` → 寫 `Models/{ModelName}_LP_{timestamp}.lp`
+3. 若 `ProjectConfig.ExportMPS=true` → 寫 `Models/{ModelName}_MPS_{timestamp}.mps`
 4. 呼叫 `Model.Solve()`
 5. 設定 `Status`（Optimal / Feasible / Infeasible / Unbounded / Error）
-6. 若解可行且 `exportSol=true` → 寫 `Sols/{ProjectName}_Solution_{timestamp}.sol`
-7. 若 Infeasible → 自動執行 `RefineConflict` 寫 IIS `IISs/{ProjectName}_IIS_{timestamp}.ilp`
+6. 若解可行且 `ProjectConfig.ExportSol=true` → 寫 `Sols/{ModelName}_Solution_{timestamp}.sol`
+7. 若 Infeasible → 自動執行 `RefineConflict` 寫 IIS `IISs/{ModelName}_IIS_{timestamp}.ilp`
 8. 印出 `ObjVal / BestBound / MIPGap`
 9. 回填 `LastMetrics`（`SolveMetrics`）：wall time / status / 目標值 / bound / gap / node·iter 數 / var·constraint 數（+ 收斂軌跡，若有啟用）
 
@@ -328,8 +361,10 @@ public void     VarSetsReset();                   // 清空所有變數
 ### 5.5 模型命名
 
 ```csharp
-public void SetModelName(string name);   // 影響 LP/MPS/Sol 檔名前綴
+public void SetModelName(string name); // 影響 LP/MPS/Sol/IIS 檔名前綴
 ```
+
+`OptProject` 會把解析後的有效 `ProjectConfig.ProjectName` 傳給此方法；直接建構 `OptEngine` 不會自動傳入，未呼叫時輸出前綴為 `Model`。`OptExperiment` 會自行設定 `"{experiment}-{model}-{config}"`。
 
 ### 5.6 OptEngine 額外便捷方法（protected — 子類別專用）
 
@@ -435,12 +470,14 @@ public void CreateMaximize();   // (max)
 ```csharp
 public virtual bool SupportsSoftConstraints { get; }   // 預設 true
 public virtual bool CreateLeSoft(double rhs, double penalty);
+public virtual bool CreateLeSoft(double rhs, double penalty, string name);
 public virtual bool CreateGeSoft(double rhs, double penalty);
+public virtual bool CreateGeSoft(double rhs, double penalty, string name);
 public virtual bool CreateEqSoft(double rhs, double penalty, string name);
 ```
 
 > ★ **機制**：在變數池加一個彈性變數 + 建限制式 + 在目標式加對應 penalty（min→正號、max→負號）。
-> 用法與 hard 版相同：先 `AddLHS(...)` 累加 LHS，再呼叫 `CreateXxSoft(rhs, penalty)`。
+> 用法與 hard 版相同：先 `AddLHS(...)` 累加 LHS，再呼叫具名 `CreateXxSoft(rhs, penalty, name)`。Le/Ge 兩參數版本為向下相容入口，會產生 `Soft_{Sense}_{n}` 自動名稱；新 code 一律傳入穩定名稱。
 
 | 方法 | 彈性變數 | 建立的限制式 | 目標式加項 |
 |---|---|---|---|
@@ -449,6 +486,7 @@ public virtual bool CreateEqSoft(double rhs, double penalty, string name);
 | `CreateEqSoft` | `Delta_Neg_{name}`、`Delta_Pos_{name}` ≥ 0 | `LHS + dn − dp == rhs` | `+penalty·(dn+dp)` |
 
 - 彈性變數會註冊進 `Variables`（解值可查），名稱依上表；Le/Ge 未指定 name 時自動命名 `Soft_{Sense}_{n}`。
+- 成功建立後框架自動輸出 `[軟性限制式建立完成] name=... sense=... rhs=... penalty=... result=success`；專案端不要重複手寫設定 log。
 - 彈性變數量 = 求解後的「違反量」，可用 `GetVariableValue("Deficit_...")` 取得。
 - Phase 3 tuning 把某條 hard constraint 改 soft 時，**必須同步更新 `Model.md`**（見 CLAUDE.md Phase 3）。
 
@@ -590,8 +628,10 @@ public static class OptData
 ```
 
 - `OptData.Load<T>(Func<T> factory)` 是**唯一多載**；`OptData.Load<T>(IDataSource)` **不存在**——多來源／自訂 ctor 照樣支援，factory 內部想怎麼 `new Dataload(...)` 都可以，只是要包一層 lambda
-- 裸 `new Dataload()` / `new Dataload(source)` 仍可編譯，**但跳過驗證**——NEVER 在文件或範例把它當成建構終點
+- 裸 `new Dataload()` / `new Dataload(source)` 仍可編譯，**但跳過驗證與凍結**——NEVER 在文件或範例把它當成建構終點
 - **`Set_*`/`Parameter_*` 忘記掛 `[OptSet<T>]`/`[OptParam]`**：一旦被 `Dataload : DataContext` 的欄位引用 → **compile error `OPTF006`**（否則會靜默不註冊、永遠不受驗證）
+
+`OptData.Load` 回傳前會凍結 `DataContext` 的 framework-controlled mutation API；凍結後走這些受控入口會丟 `InvalidOperationException`。目前機制**無法攔截**既有 `Dataload` 的 public field 賦值或 public `List<T>.Add()`，因此這是框架註冊狀態的保護，不是一般 CLR 物件的全面 immutable 保證。模型 delegate 仍應將載入資料視為唯讀。
 
 ### 建構時自動驗證（`DataValidationException`）
 
@@ -789,7 +829,7 @@ public static class Logging
 
 **位置**：`Logs/Log_{startupTimestamp}.txt`（若呼叫 `SetLogFileName("Foo")` 則為 `Foo_{timestamp}.txt`）。
 
-**典型使用**：在 `MyProblem` 建構子呼叫 `Logging.SetLogFileName(GetType().Name);`
+**ownership**：標準流程由 `OptProject.Execute()` 依有效 `ProjectConfig.ProjectName` 自動設定 log 檔名，不在問題類別 ctor 手動呼叫。只有自行管理低階 `OptEngine` 的特殊流程才需要明確設定。
 
 ---
 
@@ -819,8 +859,14 @@ public interface ISolverEngine : IDisposable
 // 跨引擎抽象 tuning 旋鈕（CplexConfig 已實作，見第 4 節）
 public interface ITunableConfig
 {
-    int? Seed; int? Emphasis; double? FeasibilityTol; double? OptimalityTol;
-    int? RootAlgorithm; int? Presolve; double? HeuristicEffort; double? MemoryLimitMb;
+    int? Seed { get; set; }
+    int? Emphasis { get; set; }
+    double? FeasibilityTol { get; set; }
+    double? OptimalityTol { get; set; }
+    int? RootAlgorithm { get; set; }
+    int? Presolve { get; set; }
+    double? HeuristicEffort { get; set; }
+    double? MemoryLimitMb { get; set; }
 }
 
 // 收斂軌跡來源（CPLEX 支援；EngineBase 預設不支援）
@@ -855,16 +901,13 @@ CPLEX.Status.Unbounded           → SolveStatus.Unbounded
 Projects/MyProject/
 ├── MyProject.csproj
 ├── Program.cs
-├── MyProblem.cs              ← 主類別（含數學模型注解）
 ├── Set/Dataload.cs           ← Sets + Parameters + Penalty + WriteToCSV
 ├── Parameter/Parameter_Xxx.cs
 ├── Variable/
 │   ├── VariableB_Xxx.cs
-│   ├── VariableX_Xxx.cs
-│   └── VariableCreate.cs
+│   └── VariableX_Xxx.cs
 ├── Objective/ObjectiveFunction.cs
 └── Constraint/
-    ├── BuildModel.cs
     └── Constraint_Xxx.cs
 ```
 
@@ -883,18 +926,56 @@ Projects/MyProject/
 ### 12.3 執行序列
 
 ```csharp
-// Program.cs
-using (var problem = new MyProblem())
-    problem.Execute();
+// ① 材料：資料、專案設定、solver 設定各建一次
+var data = OptData.Load(() => new Dataload());
+var projectConfig = new ProjectConfig { ProjectName = "MyProject" };
+var solverConfig = new CplexConfig { epGap = 0.01, timeLimit = 60 };
 
-// MyProblem.Execute()
-optEngine = new OptEngine(config);
-optEngine.Build();                                       // 1. 初始化 CPLEX
-new VariableCreate(dataload, optEngine).Build();         // 2. 建變數（BuildBVs/BuildCVs）
-new BuildModel(dataload, optEngine).Build();             // 3. 建模型（目標 + 限制）
-bool ok = optEngine.Solve();                             // 4. 求解
-if (ok) dataload.WriteToCSV(optEngine);                  // 5. 輸出 CSV
+// ② 模型：只註冊三個建模階段；不建立、不持有 engine
+var model = new OptModel("Main")
+    .AddVariables(e => e.BuildBVs<VariableB_Xxx>(data.ITEM))
+    .AddObjective(e => new ObjectiveFunction(e, data.parameter_Profit).Build())
+    .AddConstraints(e => new Constraint_Capacity(e, data.parameter_Usage, data.Capacity).Build());
+
+// ③ 執行環境：單次專案求解使用 OptProject
+using var project = new OptProject(model)
+    .UseConfig(() => projectConfig)
+    .UseConfig(() => solverConfig)
+    .OnSolved(e => data.WriteToCSV(e));
+
+bool ok = project.Execute();
 ```
+
+`OptModel` 是可重用的**模型定義**，不是 runner。框架永遠依 variables → objective → constraints 執行，即使三類方法的註冊順序不同；同一階段可註冊多次並維持該階段內的順序。單次執行交給 `OptProject`，多模型 / 多設定比較交給 `OptExperiment`（§16）。`OnSolved` 只存在於 `OptProject`。
+
+### 12.4 `OptModel` / `OptProject` 簽章
+
+```csharp
+public sealed class OptModel
+{
+    public string Name { get; }
+    public OptModel(string name = "Model");
+    public OptModel AddVariables(Action<OptEngine> build);
+    public OptModel AddObjective(Action<OptEngine> build);
+    public OptModel AddConstraints(Action<OptEngine> build);
+}
+
+public sealed class OptProject : IDisposable
+{
+    public OptProject(OptModel model, string projectName = null, int retentionDays = 30);
+    public OptProject UseConfig(Func<ProjectConfig> configFactory);
+    public OptProject UseConfig(Func<CplexConfig> configFactory);
+    public OptProject OnSolved(Action<OptEngine> handler);
+    public bool Execute();
+    public OptEngine optEngine { get; }
+    public bool IsSuccess { get; }
+    public TimeSpan totalTimeSpan { get; }
+    public System.Diagnostics.Stopwatch buildModelTimer { get; }
+    public System.Diagnostics.Stopwatch totalTimer { get; }
+}
+```
+
+兩個 `UseConfig` 可交換順序；同型別重複設定時最後一個 factory 生效。`OptProject` 必須 dispose；`OptExperiment` 會自行 dispose 每個 cell 的 engine。
 
 ---
 
@@ -909,7 +990,6 @@ foreach (var i in dataload.Items)
     optEngine.AddLHS(1, new VariableX_Production { Item = i });
 optEngine.AddRHS(dataload.Capacity);
 optEngine.CreateLessEqual($"{ConstraintName}");
-ConstraintCount++;
 ```
 
 **範式 B：等式需求**（`Σ_i x[i,j] = Demand[j]`）
@@ -921,7 +1001,6 @@ foreach (var j in dataload.Days)
         optEngine.AddLHS(1, new VariableB_Assign { Employee = i, Day = j });
     optEngine.AddRHS(dataload.Demand[j]);
     optEngine.CreateEqual($"{ConstraintName}@{j:yyyy_MM_dd}");
-    ConstraintCount++;
 }
 ```
 
@@ -933,7 +1012,6 @@ optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = prevD, Employee = e, Grou
 optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "D" });
 optEngine.AddRHS(-1);
 optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
-ConstraintCount++;
 ```
 
 ### 13.2 目標式（penalty 法）
@@ -1001,7 +1079,7 @@ public string Employee { get; set; } = string.Empty;
 
 **問題**：玻璃工廠 LP。決策：`x[Regular], x[Tempered] ≥ 0`，最大化 `8·x[R] + 10·x[T]`，限制 `3·x[R] + 5·x[T] ≤ 300`、`5·x[R] + 8·x[T] ≤ 300`。
 
-> 本節示範**現行建構路徑**：`DataContext` + `OptData.Load`（§7.6）+ `OptModel` fluent；Parameter/Variable 用 §7.5 的 paved path `[OptDim<TSet>]`。與 §7.6 一致，無矛盾。
+> 本節示範**現行建構路徑**：`DataContext` + `OptData.Load`（§7.6）+ `Program.cs` 直接註冊 `OptModel` 三階段 + `OptProject` 執行；Parameter/Variable 用 §7.5 的 paved path `[OptDim<TSet>]`。
 
 ### `GlassFactory.csproj`
 
@@ -1110,46 +1188,10 @@ namespace GlassFactory.Variable
 }
 ```
 
-### `Model/GlassFactoryModel.cs`（模型積木：組裝順序，plug 進 `OptModel`）
-
-```csharp
-using GlassFactory.Set;
-using GlassFactory.Variable;
-using GlassFactory.Objective;
-using GlassFactory.Constraint;
-using OptimFoundation.Cplex;
-
-namespace GlassFactory.Model
-{
-    public class GlassFactoryModel
-    {
-        private readonly GlassDataload _d;
-        public GlassFactoryModel(GlassDataload data) => _d = data;
-
-        public void CreateVariables(OptEngine engine)
-            => engine.BuildVars<VariableX_Production>(_d.GLASSTYPE);
-
-        public void CreateModel(OptEngine engine)
-        {
-            new ObjectiveFunction(_d, engine).Build();
-            new Constraint_Heating(_d, engine).Build();
-            new Constraint_Cooling(_d, engine).Build();
-        }
-
-        // 一次組全（experiment / 手動建 engine 用）
-        public void Build(OptEngine engine)
-        {
-            CreateVariables(engine);
-            CreateModel(engine);
-        }
-    }
-}
-```
-
 ### `Objective/ObjectiveFunction.cs`
 
 ```csharp
-using GlassFactory.Set;
+using GlassFactory.Parameter;
 using GlassFactory.Variable;
 using OptimFoundation.Cplex;
 
@@ -1157,13 +1199,17 @@ namespace GlassFactory.Objective
 {
     public class ObjectiveFunction
     {
-        private readonly GlassDataload _d;
+        private readonly IReadOnlyList<Parameter_Profit> _profit;
         private readonly OptEngine _engine;
-        public ObjectiveFunction(GlassDataload d, OptEngine e) { _d = d; _engine = e; }
+        public ObjectiveFunction(OptEngine engine, IReadOnlyList<Parameter_Profit> profit)
+        {
+            _engine = engine;
+            _profit = profit;
+        }
 
         public void Build()
         {
-            foreach (var p in _d.parameter_Profit)
+            foreach (var p in _profit)
                 _engine.AddLHS(p.QTY, new VariableX_Production { GlassType = p.GlassType });
             _engine.CreateMaximize();
         }
@@ -1174,7 +1220,7 @@ namespace GlassFactory.Objective
 ### `Constraint/Constraint_Heating.cs`
 
 ```csharp
-using GlassFactory.Set;
+using GlassFactory.Parameter;
 using GlassFactory.Variable;
 using OptimFoundation.Cplex;
 
@@ -1183,15 +1229,22 @@ namespace GlassFactory.Constraint
     public class Constraint_Heating
     {
         private const string Name = "C1_Heating";
-        private readonly GlassDataload _d;
+        private readonly IReadOnlyList<Parameter_HeatingTime> _heating;
+        private readonly double _capacity;
         private readonly OptEngine _engine;
-        public Constraint_Heating(GlassDataload d, OptEngine e) { _d = d; _engine = e; }
+        public Constraint_Heating(OptEngine engine,
+            IReadOnlyList<Parameter_HeatingTime> heating, double capacity)
+        {
+            _engine = engine;
+            _heating = heating;
+            _capacity = capacity;
+        }
 
         public void Build()
         {
-            foreach (var h in _d.parameter_HeatingTime)
+            foreach (var h in _heating)
                 _engine.AddLHS(h.QTY, new VariableX_Production { GlassType = h.GlassType });
-            _engine.AddRHS(_d.HeatingCapacity);
+            _engine.AddRHS(_capacity);
             _engine.CreateLessEqual(Name);
         }
     }
@@ -1204,7 +1257,9 @@ namespace GlassFactory.Constraint
 
 ```csharp
 using GlassFactory.Set;
-using GlassFactory.Model;
+using GlassFactory.Variable;
+using GlassFactory.Objective;
+using GlassFactory.Constraint;
 using OptimFoundation.Core;
 using OptimFoundation.Cplex;
 
@@ -1214,17 +1269,40 @@ namespace GlassFactory
     {
         static void Main(string[] args)
         {
-            var dataload = OptData.Load(() => new GlassDataload());   // 唯一建構入口：註冊 + 聚合驗證
-            var def = new GlassFactoryModel(dataload);
+            // ① 材料
+            var data = OptData.Load(() => new GlassDataload());
+            var projectConfig = new ProjectConfig
+            {
+                ProjectName = "GlassFactory",
+                EnableSolverLog = true,
+                ExportSol = true,
+                ExportLP = true,
+            };
+            var solverConfig = new CplexConfig
+            {
+                epGap = 0.0,
+                timeLimit = 60,
+                workThreads = 4,
+            };
 
-            using var model = new OptModel("GlassFactory")
-                .UseConfig(() => new CplexConfig { epGap = 0.0, timeLimit = 60, workThreads = 4, enableLog = true, exportSol = true, exportLP = true })
-                .AddVariables(def.CreateVariables)
-                .AddModel(def.CreateModel)
-                .OnSolved(engine => dataload.WriteSolution(engine));
+            // ② 模型
+            var model = new OptModel("Main")
+                .AddVariables(e => e.BuildCVs<VariableX_Production>(data.GLASSTYPE))
+                .AddObjective(e => new ObjectiveFunction(e, data.parameter_Profit).Build())
+                .AddConstraints(e =>
+                {
+                    new Constraint_Heating(e, data.parameter_HeatingTime, data.HeatingCapacity).Build();
+                    new Constraint_Cooling(e, data.parameter_CoolingTime, data.CoolingCapacity).Build();
+                });
 
-            bool ok = model.Execute();
-            Logging.Info($"[GlassFactory] success={ok}, status={model.optEngine.Status}");
+            // ③ 環境
+            using var project = new OptProject(model)
+                .UseConfig(() => projectConfig)
+                .UseConfig(() => solverConfig)
+                .OnSolved(e => data.WriteSolution(e));
+
+            bool ok = project.Execute();
+            Logging.Info($"[GlassFactory] success={ok}, status={project.optEngine.Status}");
         }
     }
 }
@@ -1262,44 +1340,33 @@ OptimFoundation 框架本體（dlls/ 內編譯版 + sibling ../OptimFoundation/ 
 
 ## 16. Experiment 套件 — Tuning 實驗記錄
 
-> **用途**：套件化的「單次求解記錄器」。套進任何求解一次的 project，跑完自動抓**這一 run 的完整設定 + 收斂數據**，
-> 累積成 `Experiment` 後輸出 `Experiments/<name>.csv` + `.json`。CSV 給人做 tuning 對照，JSON 給後續 LLM tuning 參考。
-> Phase 3 tuning 用它系統化比較不同 solver 設定（取代人工翻 log）。
+`OptExperiment` 是公開的高階 runner：同一份已載入資料可定義 m 個 `OptModel`，加入 n 個具名 `CplexConfig`，`Run()` 會序列執行完整笛卡兒積並輸出 `Experiments/<name>.csv` + `.json`。也可用 `AddTrial` 加入單一明寫 cell。
 
-**檔案**：`Foundation\src\OptimFoundation.Core\Experiments\`、`ITunableConfig.cs`、`ITrajectorySource.cs`
+**檔案**：`OptimFoundation.Cplex/OptExperiment.cs`、`OptimFoundation.Core/Experiment.cs`、`Experiments/`
 
 ### 16.1 核心型別
 
 ```csharp
-// 單次求解的統一 telemetry（EngineBase.LastMetrics）
-public sealed class SolveMetrics
+public sealed class OptExperiment
 {
-    public SolveStatus Status;          public double ObjectiveValue;
-    public double BestBound;            public double MipGap;
-    public double WallTimeMs;           public long?  NodeCount;       // 取不到為 null
-    public long?  IterationCount;       public int    VarCount;
-    public int    ConstraintCount;
-    public List<ConvergencePoint> Convergence;   // 收斂軌跡（CPLEX，選用）
+    public OptExperiment(string name, string description);
+    public OptExperiment UseConfig(Func<ProjectConfig> configFactory);
+    public OptExperiment AddModel(OptModel model);
+    public OptExperiment AddConfig(string label, CplexConfig config);
+    public OptExperiment AddTrial(OptModel model, string label, CplexConfig config);
+    public Experiment Run();
 }
+```
 
-public sealed class ConvergencePoint { public double TimeMs, Objective, Bound, Gap; }
+`AddModel × AddConfig` 產生所有組合；Trial label 固定為 `"{model.Name} | {configLabel}"`。`AddTrial` 不加入笛卡兒積，只追加該 cell。空實驗或空白 label 會丟例外；重複的 `AddConfig` label 在加入時丟 `ArgumentException`。`Run()` 在任何 engine 建立前檢查所有笛卡兒積與 `AddTrial` cell 的**最終 Trial label**，若 cross/cross、cross/explicit 或 explicit/explicit 產生相同 `"{model.Name} | {label}"`，丟 `InvalidOperationException`。`OptExperiment` 沒有 `OnSolved`。
 
-// 設定快照：抽象旋鈕 + reflection 抓的 concrete 專屬欄位（不漏設定）
-public sealed class ConfigSnapshot
-{
-    public string Solver;                              // "Cplex"
-    public Dictionary<string, object> Tunable;         // 抽象旋鈕值
-    public Dictionary<string, object> SolverSpecific;  // concrete 欄位
-    public static ConfigSnapshot From(ISolverConfig config);
-}
+未呼叫 `UseConfig` 時，每個 cell 使用新的 experiment project config：solver log OFF、LP/MPS/SOL 全不匯出；runner 本身不做 housekeeping。若呼叫 `UseConfig`，factory 每個 cell 執行一次。solver config 在 cell 開始時先 `Clone()`，runner 不修改呼叫端持有的 instance。
 
+底層記錄型別仍可供自訂工具使用：
+
+```csharp
 public sealed class Trial
 {
-    public string Label; public DateTime RunAt;
-    public ConfigSnapshot Config; public SolveMetrics Metrics; public string Note;
-
-    // 套件化單次擷取：讀 engine.Config → 跑 solveAction（一次求解）→ 讀 engine.LastMetrics。
-    // 不接管也不 Dispose engine；非 Optimal（TimeLimit/Feasible）仍照記錄。
     public static Trial Capture(ISolverEngine engine, string label,
                                 Func<bool> solveAction, string note = null);
 }
@@ -1307,68 +1374,104 @@ public sealed class Trial
 public class Experiment
 {
     public Experiment(string name, string description);
-    public List<Trial> Trials;
+    public List<Trial> Trials { get; set; }
     public void AddTrial(Trial trial);
-    public void Save();                        // → Experiments/<Name>.csv + .json（跨 run append）
+    public void Save();
     public static Experiment Load(string name);
 }
 ```
 
+`ConfigSnapshot` 只掃 `CplexConfig` / `ISolverConfig`；專案輸出設定不會進 `SolverSpecific`。`Trial.Capture` 會讀 `engine.LastMetrics`，CPLEX 收斂軌跡仍是 opt-in capture 行為。
+
 ### 16.2 標準用法（tuning 掃描）
 
-> 資料建構走 §7.6 的 `OptData.Load` 唯一入口（各 Trial 共用同一份 dataload）；模型組裝沿用 §14 的 `GlassFactoryModel`（`CreateVariables`/`CreateModel`/`Build`），與 §7.6、§14 一致。
+資料、config 與 model 都在 runner 外宣告。所有 cell 共用同一份 `OptData.Load` 結果；建模階段應唯讀使用 data。
 
 ```csharp
 using OptimFoundation.Core;
 using OptimFoundation.Cplex;
 using GlassFactory.Set;
-using GlassFactory.Model;
+using GlassFactory.Variable;
+using GlassFactory.Objective;
+using GlassFactory.Constraint;
 
-var dataload = OptData.Load(() => new GlassDataload());
-var exp = new Experiment("glass-tuning", "比較 mipEmphasis 對求解時間與 gap 的影響");
+// ① 材料
+var data = OptData.Load(() => new GlassDataload());
+var projectConfig = new ProjectConfig { ProjectName = "GlassFactory" };
+var experimentConfig = projectConfig.Clone();
+experimentConfig.EnableSolverLog = false;
+experimentConfig.ExportLP = false;
+experimentConfig.ExportMPS = false;
+experimentConfig.ExportSol = false;
+var baseline = new CplexConfig { epGap = 0.03, timeLimit = 60, randomSeed = 7 };
+var feasible = baseline.Clone();
+feasible.Emphasis = 1;
+var optimal = baseline.Clone();
+optimal.Emphasis = 2;
 
-// 要掃的設定（用 ITunableConfig 抽象旋鈕，跨引擎一致）
-foreach (var (label, tune) in new (string, Action<CplexConfig>)[]
-{
-    ("baseline", _ => { }),
-    ("emphasis=feasible", c => c.Emphasis = 1),
-    ("emphasis=optimal", c => { c.Emphasis = 2; c.Seed = 7; }),
-})
-{
-    var config = new CplexConfig { epGap = 0.03, timeLimit = 60, enableLog = false };
-    tune(config);
+// ② 模型（同 §14，直接註冊三階段）
+var model = new OptModel("Main")
+    .AddVariables(e => e.BuildCVs<VariableX_Production>(data.GLASSTYPE))
+    .AddObjective(e => new ObjectiveFunction(e, data.parameter_Profit).Build())
+    .AddConstraints(e => new Constraint_Heating(e, data.parameter_HeatingTime, data.HeatingCapacity).Build())
+    .AddConstraints(e => new Constraint_Cooling(e, data.parameter_CoolingTime, data.CoolingCapacity).Build());
 
-    using var engine = new OptEngine(config);   // 每個 Trial 用全新 engine
-    engine.Build();
-    new GlassFactoryModel(dataload).Build(engine);   // CreateVariables + CreateModel 一次組全
-
-    // 一行擷取：完整設定 + 收斂數據（CPLEX 自動含收斂軌跡）
-    var trial = Trial.Capture(engine, label, () => engine.Solve());
-    exp.AddTrial(trial);
-}
-
-exp.Save();   // → bin/Debug/net8.0/Experiments/glass-tuning.csv + .json
+// ③ 環境：1 model × 3 configs = 3 trials
+var result = new OptExperiment("glass-tuning-r1", "比較 MIP emphasis")
+    .UseConfig(() => experimentConfig)
+    .AddModel(model)
+    .AddConfig("r1-baseline", baseline)
+    .AddConfig("r1-feasible", feasible)
+    .AddConfig("r1-optimal", optimal)
+    .Run();
 ```
 
-> ★ `Trial.Capture` 會自動偵測 `ITrajectorySource`（CPLEX 支援）並啟用軌跡，**使用者無須額外動作**。
-> ★ 收斂軌跡用 CPLEX `MIPInfoCallback`，**會關閉 dynamic search、可能影響求解時間**，故為 opt-in（只在 Capture 時啟用）。
-> ★ `Experiment.Save()` 跨 run 累積（同名實驗以 RunAt+Label 去重）；net8 專案的 `System.Text.Json` 由 shared framework 提供，dlls/ 無須額外放。
+多模型時繼續 `.AddModel(secondModel)` 即自動形成 m×n；只跑特定一格則：
+
+```csharp
+var result = new OptExperiment("glass-single", "只跑指定 formulation/config")
+    .AddTrial(model, "r2-winner", optimal)
+    .Run();
+```
+
+迭代 tuning 時使用 `Clone()` 保留完整 baseline，再只改本輪變因：
+
+```csharp
+var next = optimal.Clone();
+next.Threads = 2;
+```
+
+輪次應反映在實驗名或 config label，避免跨 run append 後多個不同設定都叫 `baseline`。`Run()` 會先 `Save()` 再回傳，因此同名重跑後 `result.Trials` 已包含磁碟上的歷史 trials；只想處理本輪時使用唯一 experiment name，不能直接 foreach 累積清單再宣稱是本輪結果。
 
 ### 16.3 輸出格式
 
 - **CSV**：每個 Trial 一列，欄位 = label + 抽象旋鈕 + 指標（給人 / Excel / pandas）。
 - **JSON**：巢狀含 `config`（tunable + solverSpecific）、`metrics`、`convergence[]`，中文直出（給 LLM）。
+- `Experiment.Save()` 會跨 run append，去重依 `RunAt + Label`；合併結果會回寫 `Experiment.Trials`。
 
 ---
 
 ## 附錄：API 速查卡
 
 ```csharp
-// === 建構 ===
-var config = new CplexConfig { epGap = 0.0, timeLimit = 60, workThreads = 4,
-                                enableLog = true, exportSol = true, exportLP = true };
-var engine = new OptEngine(config);
+// === 兩層設定 ===
+var projectConfig = new ProjectConfig
+{
+    ProjectName = "MyProject",
+    EnableSolverLog = true, // 預設 true
+    ExportSol = true,
+    ExportLP = true,
+    DataId = "MyProject",
+    UserId = "SYSTEM",
+};
+var solverConfig = new CplexConfig { epGap = 0.0, timeLimit = 60, workThreads = 4 };
+var variant = solverConfig.Clone();
+variant.Emphasis = 2;
+
+// === 低階 engine（一般 Program 優先用下方 OptModel + OptProject）===
+var engine = new OptEngine(solverConfig, projectConfig);
 engine.Build();
+engine.SetModelName(projectConfig.ProjectName); // 低階路徑必須顯式指定輸出前綴
 
 // === 建變數 ===
 engine.BuildCVs<VarX>(setA);                       // 連續 [0, 1e100]
@@ -1385,8 +1488,8 @@ engine.CreateLessEqual ($"{name}@{idx}");          // <=
 engine.CreateGreatEqual($"{name}@{idx}");          // >=
 engine.CreateEqual     ($"{name}@{idx}");          // ==
 engine.CreateRange(lb, ub, $"{name}@{idx}");       // lb <= expr <= ub
-engine.CreateLeSoft(rhs, penalty);                 // soft <=
-engine.CreateGeSoft(rhs, penalty);                 // soft >=
+engine.CreateLeSoft(rhs, penalty, name);           // soft <=；成功自動記錄設定
+engine.CreateGeSoft(rhs, penalty, name);           // soft >=；成功自動記錄設定
 engine.CreateEqSoft(rhs, penalty, name);           // soft ==
 
 // === 目標式 ===
@@ -1409,15 +1512,28 @@ CsvCtrl.WriteSolution<VarX>(engine, "DataId", "User");
 
 // === 日誌 ===
 Logging.Info("...");                                            // INFO 級別
-Logging.SetLogFileName("ProjectName");                          // 改 log 檔名
+Logging.SetLogFileName("ProjectName");                          // 僅低階手動流程；OptProject 自動管理
 
-// === 釋放 ===
+// === 低階 engine 釋放 ===
 engine.Dispose();
 
-// === Tuning 實驗記錄（第 16 節）===
-var exp = new Experiment("my-tuning", "說明");
-var trial = Trial.Capture(engine, "label", () => engine.Solve());  // 抓設定+收斂數據，不 Dispose engine
-exp.AddTrial(trial);
-exp.Save();                                        // → Experiments/my-tuning.csv + .json
-var m = engine.LastMetrics;                         // wall time / gap / bound / node·iter / 軌跡
+// === 標準模型與專案 runner ===
+var model = new OptModel("Main")
+    .AddVariables(e => e.BuildBVs<VarB>(setA, setB))
+    .AddVariables(e => e.BuildCVs<VarX>(setA))
+    .AddObjective(e => new ObjectiveFunction(e, setA, costs).Build())
+    .AddConstraints(e => new Constraint_Capacity(e, setA, capacity).Build());
+using var project = new OptProject(model)
+    .UseConfig(() => projectConfig)
+    .UseConfig(() => solverConfig)
+    .OnSolved(e => WriteSolution(e));
+bool projectOk = project.Execute();
+
+// === Tuning 實驗 runner（第 16 節）===
+var result = new OptExperiment("my-tuning-r1", "說明")
+    .AddModel(model)
+    .AddConfig("r1-baseline", solverConfig)
+    .AddConfig("r1-variant", variant)
+    .Run();
+var accumulatedMetrics = result.Trials.Select(t => t.Metrics).ToList(); // 同名 Save 後包含歷史 + 本輪
 ```

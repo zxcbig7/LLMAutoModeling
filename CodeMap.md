@@ -1,89 +1,95 @@
 ---
 title: AI-Modeling — CPLEX 建模專案架構地圖
-scope: 一個標準 CPLEX 題目專案 + 其依賴的 OptimFoundation pipeline
-updated: 2026-07-21
-related_spec: ROADMAP.md（原 specs/2026-06-21-claudeai-spec-refresh.md 已併入 ROADMAP §2、§3）
+scope: 標準題目專案 + OptimFoundation model / runner / config pipeline
+updated: 2026-08-02
+related_spec: specs/2026-08-01-optim-docs-and-projects-migration.md
 ---
 
-# CodeMap：CPLEX 建模專案（新版 Fluent OptModel + Tuning）
+# CodeMap：模型定義與對稱 runner
 
-> **雙架構更新（2026-06-22）**：框架現支援兩種建構方式——預設 generator（`[OptVar]`/`[OptParam]`）+ Fluent `OptModel`，後路手寫 class + `XxxProblem.Execute()`。本圖描述的是**預設**的 OptModel pipeline；兩架構並排對照（含 Manual 版）見 [`ROADMAP.md`](ROADMAP.md) §2（架構全景）與 §3（決策轉折）——原 dual-architecture CodeMap/spec 已於 2026-07-15 刪除，內容併入 ROADMAP。
->
-> **資料防護層更新（2026-07-18/19）**：所有專案的 `Dataload` 建構一律走 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()`——後者仍可編譯但完全跳過驗證。細節見下方 Dependency Graph 最上游那段鏈路，與 [`CPLEX_API_REFERENCE.md`](CPLEX_API_REFERENCE.md) §7.6。
-
-[TOC]
-
-- [Dependency Graph](#dependency-graph)
-- [File Index](#file-index)
-- [Symbol Index](#symbol-index)
+預設路線使用 `[OptVar]` / `[OptParam]` source generator；`OptModel` 只保存模型定義，`OptProject` 與 `OptExperiment` 是兩個執行環境。需逐行掌控 native engine 時，仍可使用手寫 `XxxProblem.Execute()` 後路。
 
 ## Dependency Graph
 
 ```mermaid
 graph TD
-    Program["Program.cs（雙模式入口）"]
-    Program -->|"無參數"| Solve["Solve 模式"]
-    Program -->|"-- experiment"| Exp["Experiment 模式"]
+    Program["Program.cs<br/>唯一組裝點"]
+    Program --> Load["OptData.Load(() => new Dataload())"]
+    Load --> Init["RegisterAll + DataValidator.Validate"]
+    Init -->|"失敗"| Fail["DataValidationException<br/>聚合全部問題"]
+    Init -->|"成功"| Freeze["Freeze<br/>保護框架受控 mutation API"]
 
-    Solve -->|"OptData.Load(() => new Dataload())"| Load["OptData.Load&lt;T&gt;（唯一建構入口）"]
-    Load --> DL["Dataload : DataContext（Set/）"]
-    DL -->|"ctor 內 LoadParam/Set.Load(source)"| Read["讀 Set/Parameter 資料"]
-    Load -->|"RegisterAll()+DataValidator.Validate()"| Gate{"驗證通過？"}
-    Gate -->|"否"| Fail["DataValidationException（聚合列出全部問題，fail-fast，NEVER 吞掉）"]
-    Gate -->|"是"| OptModel["OptModel（框架 composition root）"]
+    Program --> Model["OptModel<br/>純模型定義"]
+    Model --> Vars["AddVariables<br/>直接 BuildBVs/CVs/IVs"]
+    Model --> Obj["AddObjective<br/>ObjectiveFunction.Build"]
+    Model --> Cons["AddConstraints<br/>Constraint_*.Build"]
+    Freeze -.-> Vars
+    Freeze -.-> Obj
+    Freeze -.-> Cons
 
-    OptModel -->|".AddVariables"| VC["VariableCreate.Build()"]
-    OptModel -->|".AddModel"| BM["BuildModel.Build()"]
-    OptModel -->|".OnSolved"| WCSV["Dataload.WriteToCSV()"]
-    OptModel -->|"內部持有"| Engine["OptEngine（CPLEX）"]
+    Program --> PC["ProjectConfig<br/>專案名 / log / 匯出 / 保留期"]
+    Program --> SC["CplexConfig<br/>solver 旋鈕"]
+    Model --> Project["OptProject<br/>單一模型 × 單一設定"]
+    PC --> Project
+    SC --> Project
+    Project -->|"OnSolved"| CSV["Dataload.WriteToCSV"]
 
-    Exp --> ER["ExperimentRunner.Run()"]
-    ER -->|"每 variant 重新呼叫"| Load
-    ER -->|"每 variant fresh"| Engine
-    ER -->|"手動呼叫（共用）"| VC
-    ER -->|"手動呼叫（共用）"| BM
-    ER -->|"Trial.Capture"| Trial["Trial（ConfigSnapshot+SolveMetrics）"]
-    Trial --> Exp2["Experiment.Save() → Experiments/*.csv+json"]
+    Model --> Experiment["OptExperiment<br/>m 模型 × n 設定"]
+    SC -->|"Clone + AddConfig"| Experiment
+    PC -->|"選用 UseConfig"| Experiment
+    Experiment --> Trial["Trial.Capture"]
+    Trial --> Save["Experiment.Save<br/>Experiments/*.csv + json"]
 
-    VC -->|"BuildBVs/CVs/IVs"| Engine
-    BM --> OBJ["ObjectiveFunction.Build()"]
-    BM --> CONS["Constraint_*.Build()"]
-    OBJ -->|"AddLHS/CreateMax|Min"| Engine
-    CONS -->|"AddLHS/AddRHS/CreateLe|Ge|Eq|Range"| Engine
-    VC -.->|"Sets/Parameters"| DL
-    BM -.-> DL
+    Project --> Engine["OptEngine / CPLEX"]
+    Experiment --> Engine
 ```
 
-要點：**資料防護主幹道**（2026-07-18/19 落地，8/8 專案採用）——`Dataload` 一律 `: DataContext`，唯一建構入口是 `OptData.Load(() => new Dataload())`；裸 `new Dataload()` 仍可編譯但完全跳過 `RegisterAll()`+`DataValidator.Validate()`，NEVER 這樣寫。驗證通過的 `dataload` 才往下遊。`VariableCreate` 與 `BuildModel` 是**兩模式共用**的 build-step；solve 模式由 `OptModel` 驅動、experiment 模式由 `ExperimentRunner` 驅動（且每個 variant 各自重新 `OptData.Load` 一次，取得獨立 fresh dataload），建模邏輯不重複。
+框架固定模型套用順序為 variables → objective → constraints，與 fluent 註冊先後無關。`OptData.Load` 回傳前會凍結 `DataContext` 的框架受控註冊入口；因既有消費端仍有 public fields 與可變 `List`，直接指定欄位或呼叫 `List.Add` 不保證立即攔截。
+
+## Config 邊界
+
+| 型別 | 責任 | 預設 / 規則 |
+|---|---|---|
+| `ProjectConfig` | `ProjectName`、`RetentionDays`、`EnableSolverLog`、`ExportLP/MPS/Sol`、輸出身分 | 專案執行預設 log ON、匯出 OFF；不進 solver snapshot |
+| `CplexConfig` | `epGap`、`timeLimit`、`workThreads`、cuts、emphasis 等 CPLEX 旋鈕 | `null` 交給 CPLEX 預設；可用 `Clone()` 疊加實驗設定 |
+| `OptProject` | housekeeping、有效設定 log、build / solve、成功後 callback | `.UseConfig` 分別接兩層 config；只有它提供 `OnSolved` |
+| `OptExperiment` | 序列執行笛卡兒積或明列 cell，儲存 trial | 預設 solver log OFF、匯出 OFF、不做 housekeeping；沒有 `OnSolved` |
 
 ## File Index
 
-| 路徑 | 角色 | 新版動作 |
-|------|------|----------|
-| `Program.cs` | 唯一入口，solve/experiment 分派 | 重寫為雙模式 |
-| `ExperimentRunner.cs` | tuning 掃描器 | 新增（每專案標配） |
-| `Set/<Proj>Dataload.cs` | Sets/Parameters/WriteToCSV | namespace→`Proj.Set` |
-| `Variable/VariableCreate.cs` | 建立所有決策變數 | 共用，不變邏輯 |
-| `Variable/VariableB_*/X_*/I_*.cs` | 變數型別宣告 | namespace 對齊 |
-| `Constraint/BuildModel.cs` | 目標式+限制式組裝入口 | 共用 |
-| `Constraint/Constraint_*.cs` | 各條限制式 | 可用 `CreateRange` |
-| `Objective/ObjectiveFunction.cs` | 目標式 | 不變 |
-| `Parameter/Parameter_*.cs` | `ParameterBase`（QTY） | namespace 對齊 |
-| `Model/<Proj>_Model.md` | 數學模型 | 不變 |
-| `<Proj>Problem.cs`（手寫 Execute） | Manual 後路架構的問題入口 | **本圖（Generator 預設路線）不用**；官方保留為並存後路，範例 `Projects/HospitalRostering_Manual/HospitalRosteringProblem.cs`（`public sealed class HospitalRosteringProblem : IDisposable`），NEVER 誤刪——見 ROADMAP.md §2 雙 pattern 並存決策 |
+| 路徑 | 行數 | 角色 |
+|---|---:|---|
+| `README.md` | 213 | repo 入口、DLL HintPath 規則、paved-path 範例 |
+| `ROADMAP.md` | 117 | 架構決策與落地狀態 |
+| `tuning/CLAUDE.md` | 306 | solver tuning 流程與 `OptExperiment` 掃描方式 |
+| `tutorial/ai-modeling-framework-tutorial.md` | 378 | Modeling → Coding → Tuning 教學 |
+| `tutorial/development-workflow.md` | 206 | 端到端工作流導覽 |
+| `Template/Program.cs` | 目前專案檔為準 | generator paved path 的 executable composition root |
+| `Projects/<Project>/Program.cs` | 各專案不同 | `OptModel` + `OptProject` + `OptExperiment` 組裝點 |
+| `dlls/OptimFoundation.Core.dll` | binary | `ProjectConfig`、`DataContext`、experiment records |
+| `dlls/OptimFoundation.Cplex.dll` | binary | `CplexConfig`、`OptModel`、兩種 runner、`OptEngine` |
+| `dlls/OptimFoundation.Generators.dll` | binary | consumer-side source generator analyzer |
+
+AI-Modeling 是 DLL 消費端：各 `.csproj` 的 OptimFoundation / ILOG / NLog 都以 `<Reference>` + repo `dlls/` 的 `HintPath` 引用；generator 以 `<Analyzer Include="...OptimFoundation.Generators.dll" />` 掛入。不要改成跨 repo `ProjectReference`。
 
 ## Symbol Index
 
 | Symbol | 模組 | Export / 簽名 | 角色 |
-|--------|------|---------------|------|
-| `OptModel` | OptimFoundation.Cplex | `.UseConfig(Func<CplexConfig>).AddVariables(Action<OptEngine>).AddModel(...).OnSolved(...).Execute()` | solve composition root |
-| `OptEngine` | OptimFoundation.Cplex | `BuildBVs/CVs/IVs<T>`、`AddLHS/AddRHS`、`CreateLessEqual/GreatEqual/Equal/Range`、`CreateLeSoft/GeSoft/EqSoft`、`CreateMaximize/Minimize`、`Solve`、`GetSetVarValues<T>`、`EnableTrajectory` | 求解引擎窗口 |
-| `Experiment` | OptimFoundation.Core | `new(name,desc)`、`.AddTrial(Trial)`、`.Save()` | tuning 結果累積/輸出 |
-| `Trial` | OptimFoundation.Core | `static Capture(ISolverEngine, label, Func<bool>, note=null)` | 單次求解快照 |
-| `ITunableConfig` | OptimFoundation.Core | `Seed/Emphasis/FeasibilityTol/OptimalityTol/RootAlgorithm/Presolve/HeuristicEffort/MemoryLimitMb` | 跨引擎 tuning 抽象旋鈕 |
-| `CplexConfig` | OptimFoundation.Cplex | `ITunableConfig` + CPLEX 專屬欄位（`workThreads/varSel/nodeSelect/epGap/...`） | CPLEX 設定（tuning 單一來源） |
-| `VariableCreate` | `<Proj>.Variable` | `(Dataload,OptEngine)` → `.Build()` | 建變數（兩模式共用） |
-| `BuildModel` | `<Proj>.Constraint` | `(Dataload,OptEngine)` → `.Build()` | 建目標式+限制式（兩模式共用） |
-| `DataContext` | OptimFoundation.Core | `abstract class DataContext`（2026-07-18 新增，paved path） | 資料防護層基底；子類（如 `Dataload`）ctor 內讀資料，欄位漏掛 attribute → 編譯期 `OPTF006` |
-| `OptData` | OptimFoundation.Core | `static T Load<T>(Func<T> factory) where T : DataContext`（唯一多載，無 `IDataSource` 多載） | 唯一建構入口：觸發 `RegisterAll()`+`DataValidator.Validate()`；裸 `new Dataload()` 仍可編譯但跳過驗證 |
-| `Dataload` | `<Proj>.Set` | `public partial class Dataload : DataContext`；欄位含 Sets/Parameters + `WriteToCSV(OptEngine)` | 資料載入；建構唯一入口 `OptData.Load(() => new Dataload())`，失敗丟 `DataValidationException` |
+|---|---|---|---|
+| `OptModel` | OptimFoundation.Cplex | `new(name).AddVariables(Action<OptEngine>).AddObjective(...).AddConstraints(...)` | 可重用、純註冊的模型定義；不持有 engine |
+| `OptProject` | OptimFoundation.Cplex | `new(model).UseConfig(Func<ProjectConfig>).UseConfig(Func<CplexConfig>).OnSolved(...).Execute()` | 單次專案 runner |
+| `OptExperiment` | OptimFoundation.Cplex | `new(name, desc).UseConfig(...).AddModel(model).AddConfig(label, config).AddTrial(...).Run()` | m×n 實驗 runner；label 為 `模型名 | 設定名` |
+| `ProjectConfig` | OptimFoundation.Core | PascalCase properties + `Clone()` | 專案身分與輸出策略；`EnableSolverLog` 預設 `true` |
+| `CplexConfig` | OptimFoundation.Cplex | solver fields / adapters + `Clone()` | 純 solver 設定；snapshot 不含專案輸出開關 |
+| `OptEngine` | OptimFoundation.Cplex | `Build*Vs`、Pool API、`Solve`、取解 API | CPLEX 求解窗口 |
+| `OptData` | OptimFoundation.Core | `Load<T>(Func<T>) where T : DataContext` | 建構、註冊、驗證、凍結後回傳資料 |
+| `DataContext` | OptimFoundation.Core | `Initialize()`、`Freeze()`、`GuardMutation(member)` | 資料防護基底；凍結僅保證框架受控 mutation API |
+| `Experiment` / `Trial` | OptimFoundation.Core | `Experiment.Save()` / `Trial.Capture(...)` | 實驗結果與 solver snapshot；一般由 `OptExperiment` 使用 |
+
+## Paved path
+
+1. 只用 `OptData.Load` 建構一份 `data`。
+2. 在 `Program.cs` 直接註冊三個模型階段，不新增中介組裝類別。
+3. 專案輸出行為放 `ProjectConfig`，solver 參數放 `CplexConfig`。
+4. 同一個 `OptModel` 交給 `OptProject` 求解，或交給 `OptExperiment` 比較 clone 後的 solver 設定。
+5. AI-Modeling 一律保留 repo-local DLL `HintPath`；框架 source tree 內部範本的依賴策略不套用到此 repo。

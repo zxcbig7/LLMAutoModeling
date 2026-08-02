@@ -14,6 +14,14 @@
 
 預設走 **interactive**（下方流程）；要全自動量產才走 automated。
 
+## Canonical 寫法（不得從相容範例反推）
+
+- 新專案唯一 scaffold 是本 repo 的 [`Template/`](Template/)；生成到 `Projects/<Project>/` 後使用 repo 根 `dlls/` 的 `<Reference>` / `<Analyzer>`。
+- canonical 結構是 `Set/Parameter/Variable/Objective/Constraint/Model`，入口是 top-level `Program.cs`，預設 class 宣告走 `[OptVar]` / `[OptParam]` + `[OptDim<TSet>]`。
+- 手寫 `VariableBase` / `ParameterBase` 仍是正式支援的後路，參考 `Projects/HospitalRostering_Manual`；使用後路不代表可以改回舊資料夾或舊 runner 結構。
+- sibling `OptimFoundation/OptimFoundation/Templates/` 是框架整合與相容性案例，可能用 `ProjectReference` 或歷史寫法，**不是** AI 新建專案的 scaffold。
+- 規則與範本 code 衝突時，以本檔、interactive 規範及 `CPLEX_API_REFERENCE.md` 為準；把 Template 標成待修，NEVER 為迎合落後範本而放寬規則。
+
 ## 怎麼開始（interactive 路線）
 
 1. 讀 [`interactive/README.md`](interactive/README.md) —— 三階段流程總綱 + 硬規則（天條）

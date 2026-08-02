@@ -4,6 +4,7 @@ status: draft
 created: 2026-07-21
 updated: 2026-07-21
 modules: [docs, tutorial, tooling, projects]
+superseded_by: 2026-08-01-optimfoundation-dual-config.md, 2026-08-01-optimfoundation-runner-symmetry.md, 2026-08-01-optim-docs-and-projects-migration.md
 ---
 
 # 新手接手開發：讓小白敢動、動了知道對不對

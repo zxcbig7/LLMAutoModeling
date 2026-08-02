@@ -1,58 +1,44 @@
-# Stage 11: BuildModel.cs (OptimFoundation CPLEX)
+# Stage 11: Program.cs objective and constraint pipeline (OptimFoundation CPLEX)
 
 ## Role
+
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Generate the `BuildModel` class that instantiates and calls each Constraint class plus the `ObjectiveFunction`, under `Constraint/` (`namespace <ProjectName>.Constraint`).
+
+Generate the `.AddObjective(...)` and `.AddConstraints(...)` chain fragment for `Program.cs`.
 
 ```csharp
-using OptimFoundation.Core;
-using OptimFoundation.Cplex;
-using <ProjectName>.Set;
-using <ProjectName>.Objective;
-
-namespace <ProjectName>.Constraint
-{
-    public class BuildModel
-    {
-        private readonly Dataload _dataload;
-        private readonly OptEngine _engine;
-
-        public BuildModel(Dataload dataload, OptEngine engine)
-        {
-            _dataload = dataload;
-            _engine = engine;
-        }
-
-        public void Build()
-        {
-            // Instantiate and call Build() on the ObjectiveFunction, then each Constraint_XXX
-        }
-    }
-}
+    .AddObjective(engine =>
+        new ObjectiveFunction(engine, data.ITEM, shortagePenalty).Build())
+    .AddConstraints(engine =>
+        new Constraint_MaxDays(engine, data.ITEM, data.DATE, data.parameter_MaxDays).Build())
+    .AddConstraints(engine =>
+        new Constraint_Coverage(engine, data.ITEM, data.DATE, data.parameter_Demand).Build());
 ```
 
-## Pattern
+The objective MUST be registered before every constraint. The framework applies all registered phases in `variables → objective → constraints` order.
 
-```csharp
-public void Build()
-{
-    new ObjectiveFunction(_dataload, _engine).Build();
+## Dependency rule
 
-    new Constraint_BudgetConstraint(_dataload, _engine).Build();
-    new Constraint_MinimumInvestment(_dataload, _engine).Build();
-    // ... one line per constraint class
-}
-```
-
-- `BuildModel` only calls into `ObjectiveFunction` / `Constraint_Xxx`; NEVER write raw `AddLHS`/`AddRHS` calls directly in this class.
-
----
+- `ObjectiveFunction` and every `Constraint_Xxx` constructor receive only the `OptEngine`, Set bricks, Parameter lists, scalar values, and bounds they actually use.
+- Never pass the whole `Dataload` object to an Objective or Constraint.
+- Extract scalar Parameters once in the material section of `Program.cs`, for example `var shortagePenalty = data.parameter_ShortagePenalty.Single().QTY;`, then pass the scalar explicitly.
+- Each Objective or Constraint gets its own fluent call. Do not combine multiple calls in a block lambda and do not add a forwarding helper.
+- The fluent fragment only instantiates classes and calls `Build()`; raw `AddLHS` / `AddRHS` calls stay inside the Objective or Constraint class.
 
 ## Inputs
 
-### Constraint Classes (from Stage 8)
+### Objective class
+
+{{ObjectiveClass}}
+
+### Constraint classes
+
 {{ConstraintClasses}}
 
-Return code only (no explanation).
+### Dataload class
+
+{{DataloadCode}}
+
+Return the scalar extractions plus fluent chain fragment only, with no explanation.

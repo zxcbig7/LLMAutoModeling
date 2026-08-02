@@ -14,7 +14,7 @@
 
 **動任何 solver 參數或模型結構之前**，先確認資料驗證有通過——這是 tuning 判斷的前提，不是本文件範圍外的事。
 
-框架現況：`OptData.Load<T>(...)` 載入後自動觸發 `DataContext.ValidateData()`，四類檢查全跑：
+框架現況：`OptData.Load<T>(...)` 載入後自動觸發 `DataContext.ValidateData()`，四類檢查全跑，通過後再凍結框架受控的 mutation API：
 
 - **參照完整性**：index 欄位值需在對應 Set 內；區分「型別不符」（`TypeMismatch`，宣告打錯）與「純缺值」（`Dangling`，值真的不在 Set 內）。
 - **index key 唯一性**：同一 parameter 出現重複 index-key（`DuplicateKey`）。
@@ -22,6 +22,8 @@
 - **`[FullGrid]`（opt-in）**：標了此 attribute 的 parameter 缺格即報（未標則不檢查完整性）。
 
 任一違規 → 丟 `DataValidationException`，**一次列出全部問題**（非遇到第一個就中止）。
+
+> Freeze 的保證刻意限於 `RegisterSet` / `RegisterParam` 等框架受控入口；既有 `Dataload` 的 public fields 與可變 `List` 無法由基底類別攔截，直接指定或 `List.Add` 不保證立即拋例外。建模 callback 仍視資料為唯讀。
 
 > **資料錯了就別調參數**——重複的 index key 過去被 `FirstOrDefault` 靜默吃掉，模型會拿到錯的係數；這時 tuning 只是「更快地算出錯答案」。實例佐證：`Template_CPLEX` 上線此防護後當場揪出 9 筆長期潛藏的 `DuplicateKey`。
 
@@ -168,26 +170,45 @@ Gate 順序：**資料驗證（載入時自動）→ 正確性 gate（`Foundatio
 
 ---
 
-## 4.5 用 ExperimentRunner 實際跑掃描（可執行架構）
+## 4.5 用 OptExperiment 實際跑掃描（可執行架構）
 
-§4 的流程已可直接執行——每個專案標配 `ExperimentRunner.cs`：
+§4 的流程直接在 `Program.cs` 以 `OptExperiment` 表達：
 
 ```
 dotnet run -- experiment
 ```
 
-即掃描多組 `CplexConfig`，用框架的 `Trial.Capture` 記錄「完整設定快照 + 收斂數據」（CPLEX 自動含收斂軌跡），`Experiment.Save()` 落地 `Experiments/<name>.csv + .json`。
+即掃描多組 `CplexConfig`；runner 內部用 `Trial.Capture` 記錄「solver 設定快照 + 收斂數據」（CPLEX 自動含收斂軌跡），最後自動 `Experiment.Save()` 落地 `Experiments/<name>.csv + .json`。
 
-- **掃描單位**：`(label, Action<CplexConfig> tune)` 陣列——baseline + 每次只動一個旋鈕（呼應 §4 步驟 3「單一變數測試」）。
+```csharp
+var data = OptData.Load(() => new Dataload());
+var model = new OptModel("baseline-model")
+    .AddVariables(e => CreateVariables(data, e))
+    .AddObjective(e => BuildObjective(data, e))
+    .AddConstraints(e => BuildConstraints(data, e));
+
+var baseline = new CplexConfig { timeLimit = 60, randomSeed = 42, parallelMode = 1 };
+var emphasis = baseline.Clone();
+emphasis.Emphasis = 2;
+
+new OptExperiment("project-tuning", "baseline vs emphasis")
+    .AddModel(model)
+    .AddConfig("baseline", baseline)
+    .AddConfig("emphasis", emphasis)
+    .Run();
+```
+
+- **掃描單位**：`Clone()` baseline，再於 clone 一次只改一個旋鈕（呼應 §4 步驟 3「單一變數測試」）。
 - **抽象旋鈕**（跨引擎，`ITunableConfig`）：`config.Emphasis / Seed / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / MemoryLimitMb`。
 - **CPLEX 專屬欄位**：直接設 camelCase 欄位 `varSel / nodeSelect / workThreads / gomoryCuts / mirCuts / …`（§6.2 對照表）。
-- **每 Trial 用全新 Dataload + engine**，避免狀態跨 Trial 污染；掃描時 `enableLog=false`、關 export 以加速；`timeLimit` 確保每 Trial 收斂。
+- **模型資料共用、engine 隔離**：只載入一份已驗證資料，同一個 `OptModel` 可重複套用；`OptExperiment` 每個 cell 建立並釋放獨立 engine。
+- **實驗預設**：solver log OFF、LP/MPS/Sol 匯出 OFF、不做 housekeeping；只有需要覆寫共同專案設定時才 `.UseConfig(() => projectConfig)`。
 - **可重現**：固定 `randomSeed` + `parallelMode=1`（決定論）+ 用 `detTimeLimit`（§4 末）。
 - **讀回累積**：`Experiment.Load(name)`（同名實驗 append、以 RunAt+Label 去重）。
 
 樣板與完整規範見 `claudemdTemplate/Experiment/CLAUDE.md`。
 
-> 黃金順序（限建模當下）：**automated pipeline** 先在 Stage 4（Model）做模型優化（§1），再用此 runner 掃 solver 旋鈕（§2）。模型已定版的互動式 tuning 反過來——先旋鈕，見檔頭。
+> 黃金順序（限建模當下）：**automated pipeline** 先在 Stage 4（Model）做模型優化（§1），再用 `OptExperiment` 掃 solver 旋鈕（§2）。模型已定版的互動式 tuning 反過來——先旋鈕，見檔頭。
 
 ---
 

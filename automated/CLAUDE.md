@@ -24,10 +24,10 @@ Stage 07: DataloadCode → Set/Dataload.cs
 Stage 07b: DataloadVerify → 驗證 & 修正 Dataload（必要）
 Stage 08: ConstraintCode → Constraint/
 Stage 09: ObjCode → Objective/
-Stage 10: VarCreateCode → VariableCreate
-Stage 11: BuildModel → BuildModel
-Stage 12: ProjectCode → Program 求解主體
-Stage 13: ProgramCode → Program.cs 入口
+Stage 10: VarCreateCode → Program.cs 的 AddVariables chain
+Stage 11: BuildModelCode → AddObjective + AddConstraints chain
+Stage 12: ProjectCode → OptModel + OptProject / OptExperiment runner composition
+Stage 13: ProgramCode → 完整 Program.cs
 Stage 14: FixCode → build 失敗時自動修復（循環最多 5 次）
 ```
 
@@ -53,10 +53,9 @@ Projects/<ProjectName>/
 ├── Set/ # Set 積木 + Dataload
 ├── Parameter/ # Parameter 積木
 ├── Variable/ # Variable 積木
-├── Constraint/ # Constraint 類別 + BuildModel
+├── Constraint/ # Constraint 類別
 ├── Objective/ # ObjectiveFunction
-├── Project.cs # Stage 12：OptModel 組裝根（Dataload + CplexConfig → Run()）
-├── Program.cs # 入口
+├── Program.cs # 唯一組裝點：材料 + OptModel + runner
 ├── status.json # 進度追蹤
 └── <ProjectName>.csproj # 複製 Template_CPLEX，DLL/Analyzer 相對 dlls/
 ```
@@ -91,8 +90,19 @@ public partial class VariableB_ShiftAssign { } // 型別由前綴 B/X/I 決定
 - 前綴天條：`VariableB_`=Binary / `VariableX_`=Continuous / `VariableI_`=Integer（違反 → OPTF001）
 - 逃生口（仍受支援、NEVER 標成已淘汰/已移除/錯誤，只是本 pipeline 不首選輸出）：多參數泛型 `[OptParam<Set_A, Set_B>]`/`[OptVar<Set_A, Set_B>]`（arity 1..6，同 set 多維度時角色名固定=積木類名）；字串式 `[OptVar("Date:DateTime")]` 為遷移期逃生口，永久保留
 - `Dataload` MUST `public partial class Dataload : DataContext`（`partial` + 繼承缺一不可）；建構一律 `OptData.Load(() => new Dataload())`，NEVER 裸 `new Dataload()` 當終點——仍可編譯但跳過框架驗證（參照完整性 / 重複 key / 數值 sanity，聚合丟 `DataValidationException`）
-- NEVER 在 Dataload 手寫驗證邏輯（如手動掃 dangling reference）——`DataContext` 建構時自動聚合檢查
+- `OptData.Load` 完成後把資料視為唯讀。`Freeze()` 只保護框架受控的 mutation API；直接改 public field 或可變 `List` 不保證當下攔截，因此 pipeline MUST 不做這些寫入
+- NEVER 在 Dataload 手寫驗證邏輯（如手動掃 dangling reference）——`OptData.Load` 先執行 factory，再呼叫 `Initialize()`（`RegisterAll()` + `ValidateData()`）完成聚合檢查，最後才 `Freeze()`
 - 數值保真：所有數值與原始問題描述完全一致，NEVER 四捨五入 / 推算 / 佔位符
+
+### Program.cs 組裝規則
+
+- 平坦三段：① `data` + `ProjectConfig` + 具名 `CplexConfig` 材料 → ② `OptModel` → ③ `OptProject` 或 `OptExperiment`
+- `ProjectConfig` 只放專案身分、保留期、solver log 與 LP/MPS/Sol 輸出；`CplexConfig` 只放 solver 旋鈕
+- 每種變數直接一行 `.AddVariables(...)`；目標式一行 `.AddObjective(...)`；每條限制式一行 `.AddConstraints(...)`
+- NEVER 用純轉呼叫 class/local function 隱藏上述組裝；pipeline 必須直接看得到完整順序
+- Objective / Constraint 建構子只收實際用到的 Set、Parameter、scalar 與 `OptEngine`，NEVER 接整包 `Dataload`
+- `OptModel` 是模型定義；一次求解用 `OptProject`，`OnSolved` 只掛這裡；調參用 `OptExperiment`
+- 實驗所有 cell 共用同一份已載入資料；variant 由 `baseline.Clone()` 產具體 `CplexConfig`，NEVER 用突變 delegate
 
 ### Constraint 分類（Stage 02/04 標記）
 

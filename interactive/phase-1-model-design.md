@@ -6,12 +6,13 @@
 
 三階段的第一階段：把自然語言題目轉成完整、無歧義、**程式好轉譯**的數學模型文件 `Projects/<Project>/Model/<Project>_Model.md`。
 方法論：**4 次漸進降維**（去故事化 → 語義判別 → 結構抽取 → 建模自驗），每階段只降一層抽象，少一步錯步步錯。
-本階段**只輸出 Model.md（+ Glossary.md）**。出口 gate：使用者明確說「模型確認」或「開始實作」才進 Phase 2。
+本階段**只輸出單一 Model.md**；術語表直接內嵌，NEVER 另建 `Glossary.md`。出口 gate：使用者明確說「模型確認」或「開始實作」才進 Phase 2。
 
 ## 硬規則
 
 - MUST 依 1a→1b→1c→1d 四階段順序推進，NEVER 跳過 1a/1b 直接上符號 —— Why: 資料沒清乾淨、子句沒歸類就符號化，等於在雜訊上建模
-- MUST Model.md 五段固定順序：**SET → PARAM → VAR → CONSTRAINT → OBJ**，數學式用 LaTeX（`$...$` / `$$...$$`）
+- MUST Model.md 單一文件固定順序：**問題描述 → Terminology Mapping Table → SET → PARAM → VAR → CONSTRAINT → OBJ → 已套用假設**；數學式用 LaTeX（`$...$` / `$$...$$`）
+- MUST Terminology Mapping Table 持久化在 Model.md；術語確認後直接更新該表，NEVER 拆成 `Glossary.md`
 - MUST 每個元素都帶「程式轉譯 metadata」（見下）—— Why: Phase 2 是純機械轉譯，metadata 缺一項 Coding 就得猜
 - NEVER 在 CONSTRAINT 預先移項 / 化簡 / 翻方向 —— ALWAYS 寫成 `LHS (op) RHS` 原形，左邊項留左邊、右邊項留右邊 —— Why: Coding 端 `AddLHS`/`AddRHS` 要逐項對照
 - MUST 每條 constraint 標一個 pattern tag（見 linearization-patterns 8 類）—— Why: 標了就照該 pattern 的 template 填空，不 freehand，這是「不亂寫」的機制
@@ -28,7 +29,7 @@
 ### 1b · 語義判別 + Terminology Table（防漏句、防亂設變數）
 - **語義判別鐵律**：1a 敘述的每個子句，強制歸類成 `parameter` / `variable` / `derived` / `constraint` / `objective` 之一；與模型無關的子句明確標 `irrelevant`，NEVER 靜默略過
 - **單位推理守則**：NEVER 自動推導 derived 值（如「300元/班 ÷ 10小時/班 = 時薪」），除非題目明說；真需要 derived → 另立一列標 `derived` + 註明推導來源
-- 產物：Terminology Mapping Table（見下模板）
+- 產物：Model.md 內的 Terminology Mapping Table（見下模板）
 
 ### 1c · 結構抽取 → Model.md 五段（程式好轉譯角度寫）
 - 依下方元素 metadata 逐段填 SET / PARAM / VAR / CONSTRAINT / OBJ
@@ -96,12 +97,13 @@ Why: Coding 類別名由符號機械對應（`VariableB_Assign`），符號沒�
 | --- | --- |
 | Linearization 選擇 | 同一邏輯有多種等價 formulation、效能差異大 → 指定哪種 |
 | Time boundary | 時間序列有無 wrap-around（末期接回首期）？ |
-| 不熟悉的術語 | Glossary.md 查無 → 必問 |
+| 不熟悉的術語 | Model.md 的 Terminology Mapping Table 查無 → 必問，確認後回填該表 |
 | 子句歸類不明 | 1b 判不出 role（像資料又像約束）→ 問清楚再歸類 |
 
 ## 1d 建模自驗（交付前逐點對照，全過才 gate）
 - [ ] 1a：每個數字都帶單位，單位不一致已換算標明
 - [ ] 1b：每個子句都有 role，無句靜默略過；無自動推導的 derived
+- [ ] Terminology Mapping Table 已寫入 Model.md，且沒有獨立 `Glossary.md`
 - [ ] **宣告先於使用**：CONSTRAINT / OBJ 出現的每個符號，都已在 SET/PARAM/VAR 宣告
 - [ ] **每個數字都是具名 PARAM**：CONSTRAINT / OBJ 內無裸數字
 - [ ] 每個 VAR 標了型別 + LB/UB；每個 PARAM 標了 Dim
@@ -112,6 +114,6 @@ Why: Coding 類別名由符號機械對應（`VariableB_Assign`），符號沒�
 ## Fatal
 - NEVER 本階段產生任何 `.cs`
 - NEVER 用單一字母符號命名模型元素
-- NEVER 自行詮釋不清楚的術語（Glossary 查無 → 問）
+- NEVER 自行詮釋不清楚的術語（Model.md 的 Terminology Mapping Table 查無 → 問，確認後回填）
 - NEVER 在 Model.md 預先移項 / 化簡 constraint（破壞 Coding 的逐項對照）
 </content>

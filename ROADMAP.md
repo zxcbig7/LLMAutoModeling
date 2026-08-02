@@ -1,7 +1,7 @@
 ---
 title: AI Modeling — 系統規格 / 開發方向 / 目標（單一總覽）
 status: living
-updated: 2026-07-21
+updated: 2026-08-02
 scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 ---
 
@@ -35,7 +35,7 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 
 | 建構法 | 機制 | 定位 |
 | --- | --- | --- |
-| **Generator**（預設偏好） | `[OptVar]`/`[OptParam]` → `AutoSetsGenerator` 編譯期生成 class body；Fluent `OptModel` 注入 `Action<OptEngine>` | AI 預設走這條（樣板少、易對） |
+| **Generator**（預設偏好） | `[OptVar]`/`[OptParam]` → `AutoSetsGenerator` 編譯期生成 class body；`OptModel` 註冊 variables / objective / constraints，再交給 runner | AI 預設走這條（樣板少、易對） |
 | **Manual**（後路） | 手寫每個 Variable/Parameter class + 手寫 `XxxProblem.Execute()` 自接 `OptEngine` | 教學用、generator 不適用時的退路 |
 
 並排教學範例：[`Projects/HospitalRostering_Generator`](Projects/HospitalRostering_Generator/)（B）/ [`Projects/HospitalRostering_Manual`](Projects/HospitalRostering_Manual/)（A），**同一份數學模型**、跑同一組 tuning。
@@ -46,14 +46,15 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 | --- | --- | --- |
 | 2026-05-20 | ~~env spec~~（已刪 2026-07-15） | 定調**兩個 Framework**：①Claude Code 互動（先做）②Web API+RAG（後續）。16-stage pipeline、Semantic Kernel RAG 全在此 |
 | 2026-05-29 | ~~cplex 開發說明書~~（已併入本檔） | 舊資料夾慣例：`Data/` / `VariablesClass/` / `Constraints/` + 手寫 `Problem.Execute()`。**已全面被取代** |
-| 2026-06-21 | ~~spec-refresh~~（已併入本檔） | **第一次轉彎**：收斂成「**唯一** Fluent `OptModel` pattern」+ 每專案標配可跑 tuning（`ExperimentRunner`），淘汰手寫 Problem |
+| 2026-06-21 | ~~spec-refresh~~（已併入本檔） | **第一次轉彎**：收斂成「**唯一** Fluent runner pattern」+ 每專案標配手寫 tuning 掃描器；此 runner 與掃描器均已由 2026-08-01 對稱 API 取代 |
 | 2026-06-21 | ~~tuning-protocol~~（已刪 2026-07-15） | 加 **Stage 15 調校協定**：碰模型必先讀，**正確性 gate → 效能 tuning**，實驗回饋接 `Trial.Capture` / `SolveMetrics` |
 | 2026-06-22 | ~~dual-architecture~~（已刪 2026-07-15） | **第二次轉彎（部分推翻 06-21）**：不再「唯一 OptModel」，改**雙 pattern 並存**；Manual 保留為教學/後路，AI 預設偏好 Generator |
 | 2026-07-15 | wave2 Phase A（`LLMDevFramework` repo `specs/2026-07-14-ai-modeling-governance-wave2.md`） | D15：四份 draft spec 刪除（翻案「point-in-time 記錄保留」原則，Vic 拍板：舊規範致混亂優先於保史，git 歷史即封存）+ D16：`HospitalRosteringProblem_new/` 整案刪除 |
 | 2026-07-18 | OptimFoundation `src/OptimFoundation.Core/DataContext.cs`＋`specs/2026-07-18-framework-data-guard.md` | **資料防護層落地**（新增能力層，非推翻先前方向）：框架新增 `DataContext`/`OptData.Load`/`OPTF006`/`Numeric.SafeRatio`/`FullGrid`，`Dataload` 建構自此分兩層——`IDataSource.LoadParam/Set.Load` 負責「讀」，`DataContext`/`OptData.Load` 負責「讀完驗不驗」；裸 `new Dataload()` 仍可編譯但跳過驗證，NEVER 這樣寫 |
 | 2026-07-19 | OptimFoundation commit `46de2b6`「Templates 收斂為三個並全部套用資料防護」＋本 repo commit `21492e2`/`de4917d`「Projects 遷移到 DataContext（3/8→8/8）」 | OptimFoundation 樣板收斂為三個（Tutorial 權威示範／FJSP_BASIC_BRICK／Template_CPLEX），淘汰 4 個未受版控的舊樣板（FJSP_BASIC/FeatureTest/Template_Gurobi/Template_ThreadTest）；本 repo 8 個專案同步全部遷移 `Dataload : DataContext`＋`OptData.Load` 唯一建構入口，資料防護層 100% 落地 |
+| 2026-08-01 | OptimFoundation dual-config + runner-symmetry specs | **執行模型對稱化**：`OptModel` 改為純模型定義；`OptProject` 負責單次專案求解；`OptExperiment` 負責 m×n 實驗。`ProjectConfig` 接專案身分與輸出策略，`CplexConfig` 只留 solver 旋鈕；Program.cs 成為三階段模型與兩種 runner 的唯一組裝點 |
 
-**淨結果**：路線 = interactive / automated 並存；建構法 = Generator（預設）/ Manual（後路）並存。舊的「`Data/`+`VariablesClass/`+手寫 Problem」慣例正式作廢，資料夾標準統一為 `Model/ Parameter/ Set/ Variable/ Objective/ Constraint/`，namespace `ProjectName.*`。
+**淨結果**：路線 = interactive / automated 並存；建構法 = Generator（預設）/ Manual（後路）並存。Generator paved path 在 `Program.cs` 直接呼叫 `AddVariables` / `AddObjective` / `AddConstraints`，同一份模型可交給兩種 runner。舊的「`Data/`+`VariablesClass/`+手寫 Problem」慣例正式作廢，資料夾標準統一為 `Model/ Parameter/ Set/ Variable/ Objective/ Constraint/`，namespace `ProjectName.*`。
 
 ## 4. 系統規格摘要（automated 16-stage）
 
@@ -82,10 +83,10 @@ scope: 整份 AI-Modeling repo；散落各 spec 的方向與目標在此收斂
 | 目標 | 狀態 |
 | --- | --- |
 | NL → Model → C# 全流程走通 | ✅ 已實跑一次（`MaxWeightIndependentSet` 唯一產物） |
-| Fluent OptModel + 可跑 tuning（`ExperimentRunner`） | ✅ 已落地 |
+| `OptModel` 定義 + `OptProject` / `OptExperiment` 對稱 runner | ✅ 已落地；不再維護專案端手寫掃描器 |
 | source generator 免手寫樣板 | ✅ 真有 code、有 build、實際被用 |
 | 雙架構教學（同模型 Manual vs Generator） | 🟡 兩專案 code 已完整、diff 確認等價；**只差本機 build + CPLEX 驗證** |
-| 資料防護層（`DataContext`/`OptData.Load`）全面落地 | ✅ 8/8 專案已遷移（2026-07-19，`de4917d`），建構唯一入口 `OptData.Load(() => new Dataload())` |
+| 資料防護層（`DataContext`/`OptData.Load`）全面落地 | ✅ 8/8 專案已遷移（2026-07-19，`de4917d`）；載入後凍結框架受控 mutation API，直接 public field / 可變 `List` 寫入不保證立即攔截 |
 | Stage 15 調校協定 | 🟡 spec 有，`Prompts/15_ModelTuning.md` 產物待補 |
 | Framework 2：Web API + RAG（Semantic Kernel） | ❌ **只有 spec，未實作** |
 

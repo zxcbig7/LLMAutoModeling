@@ -13,7 +13,7 @@
 | 一個決策變數 $x_i$ | `Variable/Variable{X/B/I}_<Name>.cs` | 前綴定型別（X連續/B二元/I整數）+ 每維一個 `[OptDim]` |
 | 目標式 $\max \sum \dots$ | `Objective/ObjectiveFunction.cs` | 每一項 → 一句 `AddLHS(係數, 變數)` |
 | 每條限制式 `[Cn]` | `Constraint/Constraint_<名>.cs`（一條一檔） | 每一項 → `AddLHS`/`AddRHS`，方向 → `Create{Less/Great}Equal` |
-| 整個模型組裝 | `Model/<Name>Model.cs` | 把上面全部串起來 plug 進 `OptModel` |
+| 整個模型組裝 | `Program.cs` | 每個 variable family、Objective、每條 Constraint 各占一個 `OptModel` fluent call |
 
 **寫模型時的關鍵動作：給每條限制式編號 `[C1]`、`[C2]`…** —— 這個編號會變成 code 的檔名與註記，是模型與 code 對得上的錨點。
 
@@ -91,19 +91,18 @@ _engine.CreateLessEqual($"{ConstraintName}");   // ≤
 > **左式的項 → `AddLHS`，右式的項 → `AddRHS`，比較符號 → `Create{Less/Great}Equal`。**
 > `[C1]` 這個編號同時是：模型的條號、`Constraint_Flour` 的 `///` 註記、驗證時對答案的錨點。
 
-### ⑥ 組裝 → `Model/<Name>Model.cs`
+### ⑥ 組裝 → `Program.cs`
 
-把上面全部串起來（`Model/WeeniesBunsModel.cs`）——**限制式順序照模型的 `[C1][C2][C3]`**：
+把上面全部直接列進唯一 composition root——**限制式順序照模型的 `[C1][C2][C3]`**：
 ```csharp
-public void CreateModel(OptEngine engine)
-{
-    new ObjectiveFunction(_d.parameter_ProductSpec, engine).Build();
-    new Constraint_Flour(_d.parameter_ProductSpec, _d.FlourCapacity, engine).Build(); // [C1] ≤
-    new Constraint_Pork(_d.parameter_ProductSpec, _d.PorkCapacity, engine).Build();   // [C2] ≤
-    new Constraint_Labor(_d.parameter_ProductSpec, _d.LaborCapacity, engine).Build(); // [C3] ≤
-}
+var model = new OptModel("Canonical")
+    .AddVariables(engine => engine.BuildCVs<VariableX_Production>(data.PRODUCTTYPE))
+    .AddObjective(engine => new ObjectiveFunction(engine, data.parameter_ProductSpec).Build())
+    .AddConstraints(engine => new Constraint_Flour(engine, data.parameter_ProductSpec, data.FlourCapacity).Build()) // [C1] ≤
+    .AddConstraints(engine => new Constraint_Pork(engine, data.parameter_ProductSpec, data.PorkCapacity).Build())   // [C2] ≤
+    .AddConstraints(engine => new Constraint_Labor(engine, data.parameter_ProductSpec, data.LaborCapacity).Build()); // [C3] ≤
 ```
-> 每條限制式**只拿它需要的積木**（`parameter_ProductSpec` + 那條的容量上限），不整包傳 Dataload——這樣一看 ctor 就知道這條限制式依賴什麼。
+> 每條限制式**只拿它需要的積木**（engine 第一個，其後是 `parameter_ProductSpec` + 該容量上限），不整包傳 Dataload。NEVER 再包一層 `CreateModel` / `BuildConstraints` 純轉呼叫 helper。
 
 ## 寫模型時就做對的 checklist（讓轉譯零思考）
 

@@ -1,97 +1,67 @@
-# Stage 10: VariableCreate.cs (OptimFoundation CPLEX)
+# Stage 10: Program.cs variable pipeline (OptimFoundation CPLEX)
 
 ## Role
+
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Generate the `VariableCreate` class that calls OptimFoundation API to create decision variables in the CPLEX solver, under `Variable/` (`namespace <ProjectName>.Variable`).
+
+Generate the `.AddVariables(...)` chain fragment that registers every decision-variable family directly on an `OptModel` in `Program.cs`.
 
 ```csharp
-using OptimFoundation.Core;
-using OptimFoundation.Cplex;
-using <ProjectName>.Set;
-
-namespace <ProjectName>.Variable
-{
-    public class VariableCreate
-    {
-        private readonly Dataload _dataload;
-        private readonly OptEngine _engine;
-
-        public VariableCreate(Dataload dataload, OptEngine engine)
-        {
-            _dataload = dataload;
-            _engine = engine;
-        }
-
-        public void Build()
-        {
-            // Call BuildVars<> for each variable type (default), or BuildCVs<>/BuildIVs<>/BuildBVs<> for custom bounds
-            Logging.Info($"Variables created: {_engine.varCount}");
-        }
-    }
-}
+var model = new OptModel("Canonical") // model definition; execution belongs to a runner
+    .AddVariables(engine => engine.BuildVars<VariableX_Amount>(data.PRODUCT, data.MACHINE))
+    .AddVariables(engine => engine.BuildCVs<VariableX_Ratio>(0, 1, data.PRODUCT))
+    .AddVariables(engine => engine.BuildVars<VariableB_UseRoute>(data.ORIGIN, data.DEST))
+    .AddVariables(engine => engine.BuildVars<VariableI_NumberOf>(data.PRODUCT));
 ```
 
-## Variable Type Mapping
+Each variable family gets its own `.AddVariables(...)` call. Do not create a class or local function whose only job is to forward these calls.
 
-| Model Declaration | C# Method (default — prefix-driven) | C# Method (custom bounds) |
-|---|---|---|
-| `var X{Set} >= 0;` (continuous) | `engine.BuildVars<VariableX_X>(dataload.SET)` | `engine.BuildCVs<VariableX_X>(dataload.SET)` |
-| `var X{Set} >= 0, <= 1;` (bounded continuous) | — (bounds need explicit call) | `engine.BuildCVs<VariableX_X>(0, 1, dataload.SET)` |
-| `var X{Set} integer >= 0;` | `engine.BuildVars<VariableI_X>(dataload.SET)` | `engine.BuildIVs<VariableI_X>(dataload.SET)` |
-| `var X{Set} binary;` | `engine.BuildVars<VariableB_X>(dataload.SET)` | `engine.BuildBVs<VariableB_X>(dataload.SET)` |
-| No index set | `engine.BuildVars<VariableX_X>()` | `engine.BuildCVs<VariableX_X>()` |
+## Variable type mapping
+
+| Model declaration | Default registration | Custom bounds |
+| --- | --- | --- |
+| continuous | `engine.BuildVars<VariableX_X>(sets...)` | `engine.BuildCVs<VariableX_X>(lb, ub, sets...)` |
+| integer | `engine.BuildVars<VariableI_X>(sets...)` | `engine.BuildIVs<VariableI_X>(lb, ub, sets...)` |
+| binary | `engine.BuildVars<VariableB_X>(sets...)` | `engine.BuildBVs<VariableB_X>(sets...)` |
+| scalar | `engine.BuildVars<VariableX_X>()` | `engine.BuildCVs<VariableX_X>(lb, ub)` |
 
 ## Rules
 
-- Use `engine.BuildVars<T>(...)` by default — it infers Binary/Continuous/Integer purely from the class name prefix (`VariableB_`/`VariableX_`/`VariableI_`), so there is nothing to get wrong. Only fall back to the explicit `BuildCVs<T>`/`BuildIVs<T>`/`BuildBVs<T>` when the variable needs custom bounds (`lb`, `ub`) other than the type's default.
-- Use the EXACT set field names from the provided Dataload class (e.g., `dataload.PRODUCT`, a `Set_Product` brick)
-- The order of sets passed in must match the `[OptDim<...>("Name")]` attribute order on the Variable class
-- Match variable class names exactly from the provided Variable classes
+- Prefer `BuildVars<T>` because the `VariableB_` / `VariableX_` / `VariableI_` prefix determines the type. Use an explicit `Build*Vs<T>` overload only for custom bounds.
+- Use exact Set field names from `Dataload`.
+- The Set argument order MUST equal the variable's `[OptDim<...>]` declaration order.
+- Match generated variable class names exactly.
+- The variable fragment belongs in `Program.cs` and precedes `.AddObjective(...)` and `.AddConstraints(...)`.
+- Do not add solver configuration or execution here; later stages assemble those sections.
 
-## Example
+## Do not emit
 
-```csharp
-public void Build()
-{
-    // Continuous: Amount[i, j]
-    _engine.BuildVars<VariableX_Amount>(_dataload.PRODUCT, _dataload.MACHINE);
-
-    // Binary: UseRoute[i, j]
-    _engine.BuildVars<VariableB_UseRoute>(_dataload.ORIGIN, _dataload.DEST);
-
-    // Integer: NumberOf[i]
-    _engine.BuildVars<VariableI_NumberOf>(_dataload.PRODUCT);
-
-    Logging.Info($"Variables created: {_engine.varCount}");
-}
-```
-
-## Do NOT emit — outdated API
-
-- ❌ `engine.BuildCVs<VariableY_X>(...)` — the `VariableY_` prefix no longer exists (see Stage 6).
-- ❌ Guessing bounds by variable "role" instead of by class name prefix — `BuildVars<T>` already reads the prefix; don't second-guess it with a manually-picked `BuildCVs`/`BuildIVs`/`BuildBVs` unless custom bounds are actually needed.
+- A forwarding class or helper method for variable registration.
+- `VariableY_` types; that prefix does not exist.
+- Bounds guessed from a variable's business role.
 
 ---
 
 ## Inputs
 
-### Model (variable declarations section)
+### Model variable declarations
+
 {{Model}}
 
-### Variable Classes (use EXACT class names from here)
+### Variable classes
+
 ```csharp
 {{VarClasses}}
 ```
 
-### Dataload Class (use EXACT field names from here)
+### Dataload class
+
 ```csharp
 {{DataloadCode}}
 ```
 
----
-
-Return code only (no explanation).
+Return the fluent chain fragment only, with no explanation.
 
 Take a deep breath and think step by step.

@@ -10,16 +10,16 @@
 2026-08-01 23:14:53.9988 | INFO  | [OptimFoundation.Core]   Parameter_VitaminStock: index=[Vitamin], rows=2
 2026-08-01 23:14:53.9988 | INFO  | [OptimFoundation.Core]     第一列 index=[C]（型別化萃取器讀值，零反射）
 2026-08-01 23:14:54.0043 | INFO  | [OptimFoundation.Cplex] [Housekeeping] 已清除 4 個超過 30 天的舊輸出檔
-2026-08-01 23:14:54.0432 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Threads=4
-2026-08-01 23:14:54.0435 | INFO  | [OptimFoundation.Cplex] [Environment Setting] RowReadLim=30000
-2026-08-01 23:14:54.0456 | INFO  | [OptimFoundation.Cplex] [Environment Setting] WorkMem=2048 MB (NodeFileInd=0)
-2026-08-01 23:14:54.0458 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpGap=0
-2026-08-01 23:14:54.0458 | INFO  | [OptimFoundation.Cplex] [Environment Setting] CPLEX Log → Console (real-time)
-2026-08-01 23:14:54.0460 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled LP File (.lp) Output
-2026-08-01 23:14:54.0460 | INFO  | [OptimFoundation.Cplex] [Environment Setting] Enabled Solution File (.sol) Output
-2026-08-01 23:14:54.0469 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpOpt=1E-06
-2026-08-01 23:14:54.0469 | INFO  | [OptimFoundation.Cplex] [Environment Setting] EpRHS=1E-06
-2026-08-01 23:14:54.0470 | INFO  | [OptimFoundation.Cplex] [Environment Setting] TiLim=60 秒
+2026-08-01 23:14:54.0432 | INFO  | [OptimFoundation.Cplex] [Solver Setting] Threads=4
+2026-08-01 23:14:54.0435 | INFO  | [OptimFoundation.Cplex] [Solver Setting] RowReadLim=30000
+2026-08-01 23:14:54.0456 | INFO  | [OptimFoundation.Cplex] [Solver Setting] WorkMem=2048 MB (NodeFileInd=0)
+2026-08-01 23:14:54.0458 | INFO  | [OptimFoundation.Cplex] [Solver Setting] EpGap=0
+2026-08-01 23:14:54.0458 | INFO  | [OptimFoundation.Cplex] [Solver Setting] CPLEX Log → Console (real-time)
+2026-08-01 23:14:54.0460 | INFO  | [OptimFoundation.Cplex] [Solver Setting] Enabled LP File (.lp) Output
+2026-08-01 23:14:54.0460 | INFO  | [OptimFoundation.Cplex] [Solver Setting] Enabled Solution File (.sol) Output
+2026-08-01 23:14:54.0469 | INFO  | [OptimFoundation.Cplex] [Solver Setting] EpOpt=1E-06
+2026-08-01 23:14:54.0469 | INFO  | [OptimFoundation.Cplex] [Solver Setting] EpRHS=1E-06
+2026-08-01 23:14:54.0470 | INFO  | [OptimFoundation.Cplex] [Solver Setting] TiLim=60 秒
 2026-08-01 23:14:54.0529 | INFO  | [ClinicVitamin.Variable] Variables created: 2
 2026-08-01 23:14:54.0532 | INFO  | [OptimFoundation.Core] 【建構變數完成】 (Elapsed 0h 0m 0s 5ms)
 2026-08-01 23:14:54.0862 | INFO  | [ClinicVitamin.Constraint] [Constraint_VitaminCapacity] 2

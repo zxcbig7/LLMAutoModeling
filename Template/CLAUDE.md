@@ -1,17 +1,19 @@
 # OptimFoundation CPLEX Framework
 
+> 本目錄是 AI-Modeling 新專案的 canonical scaffold。sibling `OptimFoundation/OptimFoundation/Templates/` 僅供 framework integration／相容性驗證，不得拿來覆蓋本文件的結構與寫法。若本目錄現有 `.cs` 與本規範衝突，代表 code 待遷移，規範仍為權威。
+
 ## 開發兩階段原則（天條）
 
 ### 第一階段：數學模型
 
-在 `Model/ProjectName_Model.md` 完整定義 Sets、Parameters、Variables、Objective、Constraints。
+在唯一模型文件 `Model/ProjectName_Model.md` 依序完整定義問題描述、Terminology Mapping Table、Sets、Parameters、Variables、Constraints、Objective 與已套用假設；NEVER 另建 `Glossary.md`。
 數學模型不考慮任何程式細節。
 
 ### 第二階段：程式實作
 
 程式開發是**純粹將數學模型轉譯為程式碼**，沒有任何創意發揮。
 
-**★ 禁止 Hardcode（天條）：所有數值一律在 Dataload 的 Parameter 中定義，Constraint / Objective 只能透過 dataload 查詢係數，不得直接寫死任何數字。**
+**★ 禁止 Hardcode（天條）：所有數值一律在 Dataload 的 Parameter 中定義；`Program.cs` 再把每個 Constraint / Objective 真正使用的 Set、Parameter、scalar 與界限值顯式傳入，不得直接寫死任何數字。**
 
 ---
 
@@ -30,7 +32,7 @@ MyProject/
 ├── MyProject.csproj
 │
 ├── Model\
-│   └── Glossary.md # 名詞定義、數學模型文件
+│   └── ProjectName_Model.md # 含術語表的唯一模型文件
 │
 ├── Set\
 │   ├── Set_Xxx.cs # [OptSet<T>] 維度積木，一顆一個檔
@@ -51,34 +53,39 @@ MyProject/
     └── Constraint_Xxx.cs # 繼承 ConstraintBase
 ```
 
-> **NEVER 另開 `VariableCreate.cs` / `BuildModel.cs` / `ExperimentRunner.cs`** —— ALWAYS 寫成 `Program.cs` 的 local function（`CreateVariables` / `BuildModel` / `RunExperiment`）
-> —— Why: 那三層只有轉呼叫、沒有邏輯，拆成獨立檔之後「這專案怎麼組起來的」要開四個檔才看得完；收進 `Program.cs` 一眼看完，而且 solve 與 experiment 天然共用同一份建模碼。
+> 不另開只負責轉呼叫的變數註冊、模型組裝、local helper 或實驗 facade。`Program.cs` 是單一組裝點，依「材料 → `OptModel` 三階段 → runner」排列；每個 variable family、Objective、每條 Constraint 各占一個 fluent call，solve 與 experiment 共用同一個模型定義。
 
 ---
 
 ## 核心元件
 
-### CplexConfig — 求解器設定
+### ProjectConfig / CplexConfig — 專案與求解器設定
 
 ```csharp
-CplexConfig config = new CplexConfig
+var projectConfig = new ProjectConfig
+{
+    ProjectName = "ProjectName",
+    EnableSolverLog = true, // 預設即為 true
+    ExportSol = true,
+    ExportLP = true,
+    ExportMPS = true,
+    DataId = "ProjectName",
+    UserId = "SYSTEM",
+};
+var solverConfig = new CplexConfig
 {
     epGap = 0.03, // MIP gap 容忍度（3%）
     timeLimit = 300, // 求解時間上限（秒）
     workThreads = 8, // 平行執行緒數
-    enableLog = true, // 顯示 CPLEX log
-    exportSol = true, // 匯出 .sol 檔
-    exportLP = true, // 匯出 .lp 檔（可讀模型）
-    exportMPS = true // 匯出 .mps 檔
 };
 ```
 
-完整欄位（含 2026-07 新增的 ~20 個進階調參旋鈕）與 tuning 策略見 [`../tuning/CLAUDE.md`](../tuning/CLAUDE.md)。
+`ProjectConfig` 管專案名、保留期、solver log、LP/MPS/Sol 輸出及 solution metadata `DataId` / `UserId`；`CplexConfig` 只放 gap、time limit、threads 等 solver 旋鈕。`CsvCtrl.WriteSolution` 目前仍由呼叫端明確傳入 metadata。完整欄位與 tuning 策略見 [`../tuning/CLAUDE.md`](../tuning/CLAUDE.md)。
 
 ### OptEngine — 模型引擎
 
 ```csharp
-optEngine = new OptEngine(config);
+optEngine = new OptEngine(solverConfig, projectConfig);
 optEngine.Build(); // 初始化 CPLEX 環境
 bool isOK = optEngine.Solve(); // 執行求解，回傳是否找到可行解
 int vars = optEngine.varCount; // 目前變數數量
@@ -88,7 +95,7 @@ int vars = optEngine.varCount; // 目前變數數量
 
 ```csharp
 // Program.cs：唯一建構路徑
-var dataload = OptData.Load(() => new Dataload());
+var data = OptData.Load(() => new Dataload());
 
 // Set/Dataload.cs
 public partial class Dataload : DataContext { }
@@ -98,23 +105,44 @@ public partial class Dataload : DataContext { }
 - 建構永遠走 `OptData.Load(() => new Dataload())`，**NEVER** 裸 `new Dataload()`——後者仍可編譯，但完全跳過參照完整性 / 重複 key / 數值 sanity 驗證，壞資料會直接進 solver 產出「看起來最佳」的錯答案
 - 驗證失敗丟 `DataValidationException`（聚合列出所有問題），這是刻意的 fail-fast，NEVER 用 try/catch 吞掉
 - NEVER 在 Dataload 手寫驗證邏輯——機械檢查集中在框架 `DataContext`
+- `OptData.Load` 回傳後把資料視為唯讀。`Freeze()` 只攔截框架受控的 mutation API；直接改 public field 或 mutable `List` 不保證立即攔截，專案 code 仍一律不得修改
 - 細節見 [`Set/CLAUDE.md`](Set/CLAUDE.md)
 
-### OptModel — 組裝與求解（composition root）
+### OptModel / OptProject / OptExperiment — 模型與執行環境
 
 ```csharp
-using (var model = new OptModel("ProjectName")
-    .UseConfig(() => NewConfig(timeLimit: 300, verbose: true))
-    .AddVariables(engine => CreateVariables(dataload, engine))
-    .AddModel(engine => BuildModel(dataload, engine))
-    .OnSolved(engine => dataload.WriteToCSV(engine)))
+var model = new OptModel("Canonical")
+    .AddVariables(engine => engine.BuildVars<VariableB_Assign>(data.Items, data.Machines))
+    .AddObjective(engine => new ObjectiveFunction(engine, data.Items, data.parameter_Profit).Build())
+    .AddConstraints(engine => new Constraint_Capacity(engine, data.Items, data.parameter_Capacity).Build());
+
+if (args.Contains("experiment"))
 {
-    bool ok = model.Execute();
+    var baseline = solverConfig.Clone();
+    var emphasis = baseline.Clone();
+    emphasis.Emphasis = 2;
+
+    new OptExperiment("project-tuning", "baseline vs emphasis")
+        .AddModel(model)
+        .AddConfig("baseline", baseline)
+        .AddConfig("emphasis=optimal", emphasis)
+        .Run();
+    return;
 }
+
+using var project = new OptProject(model)
+    .UseConfig(() => projectConfig)
+    .UseConfig(() => solverConfig)
+    .OnSolved(engine => data.WriteToCSV(engine));
+
+bool ok = project.Execute();
 ```
 
-`CreateVariables` / `BuildModel` / `NewConfig` 都是 `Program.cs` 的 local function（solve 與 experiment 共用）。
-`OptModel` 保證 `AddVariables` 先於 `AddModel`，內建 build/solve 計時與 log；infeasible 時用 `engine.GetConflictConstraints()` 取 IIS。
+- `OptModel` 只記錄模型定義，不持有 engine；框架固定依 variables → objective → constraints 執行，與 fluent 註冊順序無關。
+- 每個 variable family、目標式、每條限制式各自註冊；NEVER 用 `CreateVariables` / `BuildObjective` / `BuildConstraints` local helper 或 block lambda 隱藏組成與順序。
+- `OptProject` 執行一次正式求解，只有它提供 `OnSolved`；infeasible 時可從 `project.optEngine.GetConflictConstraints()` 取 IIS。
+- `OptExperiment` 依 model × solver config 展開實驗，預設 solver log OFF、LP/MPS/Sol 輸出 OFF、housekeeping OFF，並自動儲存 CSV/JSON。
+- `Experiment.Save()` 對同名實驗採 append；`Run()` 回傳的 `result.Trials` 已合併歷史。只處理本輪時使用唯一 experiment name，不要重印整份累積清單。
 
 ---
 
@@ -160,20 +188,20 @@ public class VariableB_Assign : VariableBase
 ### 建立
 
 ```csharp
-// Program.cs 的 CreateVariables(Dataload data, OptEngine engine) 內
-engine.BuildBVs<VariableB_Assign>(data.Items, data.Machines, data.Dates);
-engine.BuildCVs<VariableX_Slack>(data.Items);
-// 選用：有界 Continuous
-engine.BuildCVs<VariableX_Flow>(0, 1000, data.Items);
+var model = new OptModel("Canonical")
+    .AddVariables(engine => engine.BuildBVs<VariableB_Assign>(data.Items, data.Machines, data.Dates))
+    .AddVariables(engine => engine.BuildCVs<VariableX_Slack>(data.Items))
+    // 選用：有界 Continuous
+    .AddVariables(engine => engine.BuildCVs<VariableX_Flow>(0, 1000, data.Items));
 ```
+
+變數種類多時仍維持每個 variable family 一行 `.AddVariables(...)`，讓 review 能直接看完整清單。
 
 ---
 
 ## 限制式建構語法
 
-每個限制式類別繼承 `ConstraintBase`，提供：
-- `ConstraintName` — 自動取得類別名稱
-- `ConstraintCount` — 建立數量計數器
+每個限制式類別繼承 `ConstraintBase`，以 `ConstraintName` 自動取得類別名稱。`ConstraintCount` 已 obsolete；每次 `CreateXxx` 的群組與數量由 `EngineBase` 自動統計。
 
 ### LHS / RHS 累加模式
 
@@ -181,8 +209,8 @@ engine.BuildCVs<VariableX_Flow>(0, 1000, data.Items);
 // 加入 LHS
 optEngine.AddLHS(coefficient, new VariableB_Assign { Item = i, Machine = m, Date = d });
 
-// RHS 常數（MUST 取自 dataload，NEVER 裸數字——見上方天條）
-optEngine.AddRHS(dataload.SomeBound);
+// RHS 常數（MUST 由建構子顯式注入，NEVER 裸數字——見上方天條）
+optEngine.AddRHS(someBound);
 
 // RHS 含變數（移項用）
 optEngine.AddRHS(1.0, new VariableB_OtherVar { Item = i });
@@ -192,8 +220,6 @@ optEngine.AddRHS(-1); // 負常數（繼續累加）
 optEngine.CreateEqual ($"{ConstraintName}@{i}@{d:yyyy_MM_dd}");
 optEngine.CreateLessEqual ($"{ConstraintName}@{i}@{m}");
 optEngine.CreateGreatEqual ($"{ConstraintName}@{i}");
-
-ConstraintCount++;
 ```
 
 > **重要**：`AddLHS`/`AddRHS` 為累加；呼叫 `CreateXxx` 後清空，開始下一條。
@@ -201,7 +227,7 @@ ConstraintCount++;
 ### 時間滑動視窗
 
 ```csharp
-var window = dataload.Dates
+var window = dates
     .Where(sd => d.AddDays(-windowSize) < sd && sd <= d)
     .ToList();
 if (window.Count < windowSize) return; // 資料不足跳過
@@ -209,7 +235,6 @@ window.ForEach(wDate =>
     optEngine.AddLHS(1, new VariableB_AC { A = a, C = wDate }));
 optEngine.AddRHS(windowMax);
 optEngine.CreateLessEqual($"{ConstraintName}@{a}@{d:yyyy_MM_dd}");
-ConstraintCount++;
 ```
 
 ---
@@ -218,8 +243,8 @@ ConstraintCount++;
 
 ```csharp
 // ObjectiveFunction.Build() 內；MUST 在所有 Constraint 之前建（soft constraint 的 penalty 要掛進來）
-dataload.Items.ForEach(i =>
-    optEngine.AddLHS(penaltyWeight, new VariableX_Slack { Item = i }));
+foreach (var i in items)
+    optEngine.AddLHS(penaltyWeight, new VariableX_Slack { Item = i });
 
 optEngine.CreateMinimize(); // 或 CreateMaximize()
 ```
@@ -323,7 +348,7 @@ paramList = CsvCtrl.BuildParameter<Parameter_Demand>("Param_Demand");
 ## Logging
 
 ```csharp
-Logging.SetLogFileName("ProjectName"); // 建構子內呼叫
+// OptProject.Execute() 會依有效 ProjectConfig 設定 log 檔名。
 Logging.Info("訊息");
 Logging.Info("訊息含計時:", stopwatch);
 ```
@@ -333,9 +358,9 @@ Logging.Info("訊息含計時:", stopwatch);
 ## 新增限制式 Checklist
 
 1. `Variable/` 建立 `VariableB_Xxx.cs` 或 `VariableX_Xxx.cs`
-2. `Program.cs` 的 `CreateVariables()` 加 `BuildBVs<>()` / `BuildCVs<>()`
+2. `Program.cs` 的 `OptModel` variables 階段直接新增一行 `.AddVariables(...)`
 3. `Constraint/` 建立 `Constraint_Xxx.cs`（繼承 `ConstraintBase`）
-4. `Program.cs` 的 `BuildModel()` 加 `new Constraint_Xxx(data, engine).Build()`
+4. `Program.cs` 的 constraints 階段直接新增一行 `.AddConstraints(engine => new Constraint_Xxx(engine, 明確依賴...).Build())`
 5. 若有罰分，`Objective/ObjectiveFunction.Build()` 加 `AddLHS(penalty, var)`
 6. `Set/Dataload` 加 penalty 權重與 parameter
 
@@ -347,7 +372,7 @@ Logging.Info("訊息含計時:", stopwatch);
 |------|------|
 | `ILOG.CPLEX` / `ILOG.Concert` | IBM CPLEX 求解器核心 |
 | `OptimFoundation.Core` | VariableBase、ParameterBase、ConstraintBase、Logging、CsvCtrl |
-| `OptimFoundation.Cplex` | OptEngine、CplexConfig |
+| `OptimFoundation.Cplex` | OptEngine、CplexConfig、OptModel、OptProject、OptExperiment |
 | `NLog` | 日誌 |
 
 > **★ 天條**：所有 DLL 統一放在 repo 根 `dlls/`（設置見 `dlls/README.md`）。  

@@ -4,11 +4,12 @@
 
 | 前綴 | 類型 | 預設 Build（依前綴推型） | 自訂 bounds |
 |---|---|---|---|
-| `VariableB_` | Binary（0/1） | `BuildVars<T>(sets...)` | `BuildBVs<T>(sets...)` |
+| `VariableB_` | Binary（0/1） | `BuildVars<T>(sets...)` / `BuildBVs<T>(sets...)` | 不支援自訂 bounds；固定 `[0,1]` |
 | `VariableX_` | Continuous（連續） | `BuildVars<T>(sets...)` | `BuildCVs<T>(lb, ub, sets...)` |
 | `VariableI_` | Integer（整數） | `BuildVars<T>(sets...)` | `BuildIVs<T>(lb, ub, sets...)` |
 
 前綴不合法（非 B_/X_/I_）→ compile error `OPTF001`。
+`BuildBVs<T>` 只有 sets 參數；不存在 `(lb, ub, sets...)` overload。
 
 ## 定義規範（預設：source generator）
 
@@ -42,18 +43,19 @@ public class VariableB_Assign : VariableBase
 }
 ```
 
-## 變數建立規範（寫在 Program.cs，不另開 VariableCreate.cs）
+## Program.cs 三階段註冊規範
 
-- 所有 `BuildVars` / `Build*Vs` 呼叫集中在 `Program.cs` 的 `CreateVariables(Dataload data, OptEngine engine)` local function
-- 結尾 `Logging.Info($"變數建立完成：{engine.varCount}")`
-- NEVER 另開 `VariableCreate.cs` 包裝類別 —— ALWAYS 用 local function —— Why: 只有轉呼叫、沒有邏輯的一層；收進 Program.cs 才看得到完整組裝關係，且 solve / experiment 兩模式天然共用
+- `Program.cs` 先載入材料，再直接建立一個 `OptModel`，最後交給 `OptProject` 或 `OptExperiment`。
+- 每個 variable family 各占一個 `.AddVariables(...)`；即使種類多也不使用純轉呼叫 local helper 隱藏清單。
+- 不建立只負責轉呼叫的 facade class 或 local helper；solve / experiment 共用同一個 `OptModel`。
+- 框架固定依 variables → objective → constraints 執行，不靠註冊順序維持正確性。
 
 ```csharp
-static void CreateVariables(Dataload data, OptEngine engine)
-{
-    engine.BuildVars<VariableB_Assign>(data.EMPLOYEE, data.SHIFT);
-    Logging.Info($"變數建立完成：{engine.varCount}");
-}
+var model = new OptModel("Canonical")
+    .AddVariables(engine => engine.BuildVars<VariableB_Assign>(data.EMPLOYEE, data.SHIFT))
+    .AddVariables(engine => engine.BuildCVs<VariableX_Slack>(0, maxSlack, data.EMPLOYEE))
+    .AddObjective(engine => new ObjectiveFunction(engine, data.EMPLOYEE, data.parameter_Cost).Build())
+    .AddConstraints(engine => new Constraint_Coverage(engine, data.EMPLOYEE, data.SHIFT, data.parameter_Demand).Build());
 ```
 
 > 本範本 `Variable/` 底下的實碼已全部改用光桿 `[OptVar]` + `[OptDim<Set_X>]` 寫法（2026-07-20 遷移完成）。字串式 attribute 仍是框架逃生口，但 NEVER 在新 code 照抄。

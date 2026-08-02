@@ -1,55 +1,95 @@
 # Stage 13: Program.cs (OptimFoundation CPLEX)
 
 ## Role
+
 You are an expert in C# for OptimFoundation CPLEX optimization projects.
 
 ## Task
-Generate the `Program.cs` entry point that initializes `Dataload` (through the framework's blessed construction path) and `CplexConfig`, then runs the project.
 
-## Pattern
+Assemble the complete top-level `Program.cs`: materials, reusable model definition, then runner selection.
+
+## Required shape
 
 ```csharp
-using OptimFoundation.Cplex;
 using OptimFoundation.Core;
-using <ProjectName>;
-using <ProjectName>.Set;
+using OptimFoundation.Cplex;
+// project namespaces
 
-var dataload = OptData.Load(() => new Dataload());
-
-// 下列數值依 {{ProblemType}} 取值，NEVER 照抄本例——對照表在 ../CLAUDE.md §Stage 00
-var config = new CplexConfig
+// 1. Materials
+var data = OptData.Load(() => new Dataload());
+var projectConfig = new ProjectConfig
+{
+    ProjectName = "<ProjectName>",
+    EnableSolverLog = true,
+    ExportLP = true,
+    ExportSol = true,
+};
+var solverConfig = new CplexConfig
 {
     workThreads = 8,
     timeLimit = 3600,
     epGap = 1e-4,
-    enableLog = true,
-    exportLP = true,
-    exportSol = true
 };
+// Extract scalar Parameter values here.
 
-var project = new Project(dataload, config);
-bool ok = project.Run();
+// 2. Model
+var model = new OptModel("Canonical") // model definition; execution belongs to a runner
+    // Stage 10: one AddVariables call per variable family
+    // Stage 11: one AddObjective, then one AddConstraints per constraint
+    ;
+
+// 3. Environment
+if (args.Contains("experiment"))
+{
+    var baseline = solverConfig.Clone();
+    var variant = baseline.Clone();
+    variant.Emphasis = 2;
+
+    new OptExperiment("<project>-tuning", "baseline vs variant")
+        .AddModel(model)
+        .AddConfig("baseline", baseline)
+        .AddConfig("emphasis=optimal", variant)
+        .Run();
+    return;
+}
+
+using var project = new OptProject(model)
+    .UseConfig(() => projectConfig)
+    .UseConfig(() => solverConfig)
+    .OnSolved(engine => data.WriteToCSV(engine));
+
+bool ok = project.Execute();
 ```
 
 ## Rules
-- Keep it minimal — just instantiate and run.
-- `Dataload` MUST be constructed via `OptData.Load(() => new Dataload())`, never a bare `new Dataload()`. `OptData.Load` triggers the framework's referential-integrity / duplicate-key / numeric-sanity validation immediately after construction; skipping it means bad data can reach the solver silently and produce a wrong "optimal" answer.
-- If validation fails, `OptData.Load` throws `DataValidationException` before `Program.cs` gets to build anything — that is the intended fail-fast behavior, do not wrap it in a try/catch that swallows it.
-- `CplexConfig` MUST take `workThreads` / `timeLimit` / `epGap` / `mipEmphasis` from the `{{ProblemType}}` row of the table in `../CLAUDE.md` §Stage 00 — do not copy the numbers in the Pattern block above verbatim (they are the MILP row).
-- Do NOT add business logic here.
 
-## Do NOT emit — outdated API
-
-- ❌ `var dataload = new Dataload();` presented as the entry point's construction call — always `OptData.Load(() => new Dataload())`.
-
----
+- Keep the three sections flat and visible in this order: materials → model → environment.
+- Construct `Dataload` only through `OptData.Load`; never swallow `DataValidationException`.
+- Use `ProjectConfig` for project identity, retention, solver-log visibility, and LP/MPS/Sol export. Use `CplexConfig` only for solver knobs.
+- The default `ProjectConfig.EnableSolverLog` is `true`; set output choices explicitly when the project requires them.
+- Choose `workThreads`, `timeLimit`, `epGap`, and `mipEmphasis` from `../CLAUDE.md` §Stage 00 for `{{ProblemType}}`; do not blindly copy the example.
+- Register each variable, objective, and constraint directly on `OptModel`; do not add forwarding helpers.
+- `OnSolved` belongs only to `OptProject`.
+- `OptExperiment` defaults to solver log off, exports off, and no housekeeping. Use one loaded data instance for all cells and concrete cloned configs.
+- Objective and Constraint constructors receive explicit Set/Parameter/scalar dependencies, never the whole `Dataload`.
+- Do not add business logic or a separate composition-root class.
 
 ## Inputs
 
-### Problem Type (from Stage 00)
+### Problem type
 
 {{ProblemType}}
 
----
+### Stage 10 variable pipeline
 
-Return code only (no explanation).
+{{VariablePipeline}}
+
+### Stage 11 model pipeline
+
+{{ModelPipeline}}
+
+### Stage 12 runner composition
+
+{{RunnerComposition}}
+
+Return code only, with no explanation.
