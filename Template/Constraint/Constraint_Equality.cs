@@ -44,11 +44,8 @@ namespace Template.Constraint
                     engine.AddRHS(qty);
 
                     engine.CreateEqual($"{ConstraintName}@{b}@{c:yyyy_MM_dd}");
-                    ConstraintCount++;
                 }
             }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

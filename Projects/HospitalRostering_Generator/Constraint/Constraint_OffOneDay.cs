@@ -40,11 +40,8 @@ namespace HospitalRostering_Generator.Constraint
                         optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" }); // (1 - 前天休)
                         optEngine.AddRHS(-(duration - 1));
                         optEngine.CreateGreatEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
-                        ConstraintCount++;
                     });
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }
         }

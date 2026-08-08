@@ -29,11 +29,8 @@ namespace HospitalRostering_Generator.Constraint
                             optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = g }));
                         optEngine.AddRHS(1);
                         optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}");
-                        ConstraintCount++;
                     });
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }
         }

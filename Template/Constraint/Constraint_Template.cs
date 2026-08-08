@@ -34,10 +34,7 @@ namespace Template.Constraint
             //         engine.AddLHS(1, new VariableB_ABC { A = a, B = "B1", C = c });
             //         engine.AddRHS(upperBound);
             //         engine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
-            //         ConstraintCount++;
             //     }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

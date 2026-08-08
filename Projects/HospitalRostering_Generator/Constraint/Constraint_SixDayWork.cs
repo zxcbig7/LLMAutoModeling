@@ -40,7 +40,6 @@ namespace HospitalRostering_Generator.Constraint
                             optEngine.AddRHS(1);
                             optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = sd, Employee = e, Group = "O" });
                             optEngine.CreateLessEqual($"{ConstraintName}_ub@{d:yyyy_MM_dd}@{e}@{sd:yyyy_MM_dd}");
-                            ConstraintCount++;
                         });
 
                         // 下界：s^six ≥ 1 - Σ_τ y[e,τ,O]
@@ -49,11 +48,8 @@ namespace HospitalRostering_Generator.Constraint
                         window.ForEach(sd =>
                             optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = sd, Employee = e, Group = "O" }));
                         optEngine.CreateGreatEqual($"{ConstraintName}_lb@{d:yyyy_MM_dd}@{e}");
-                        ConstraintCount++;
                     });
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }
         }

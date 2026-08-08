@@ -3,9 +3,6 @@
 所有 `csproj` 的 `<HintPath>` 都指向這個資料夾。DLL **不進版控**（商用 CPLEX 授權 + 建置產物），
 所以 `git clone` 到新機器後，這裡是空的 → **要放好 6 個 DLL 才能 build**。
 
-> 一鍵佈置：在 repo 根跑 `powershell -File scripts/setup-dlls.ps1`（自動偵測 CPLEX 安裝 + sibling OptimFoundation 建置輸出並複製過來）。
-> 下方是手動對照，腳本失敗時照這張表補齊即可。
-
 ## 需要的 6 個 DLL
 
 | 檔案 | 來源 | 說明 |
@@ -17,7 +14,7 @@
 | `OptimFoundation.Cplex.dll` | 同上 | CPLEX 後端 |
 | `OptimFoundation.Generators.dll` | 同上 | source generator（analyzer）|
 
-## 手動佈置
+## 佈置步驟
 
 1. **CPLEX 兩個 DLL**：從本機 CPLEX 安裝複製（版本目錄依安裝而定）
    ```powershell
@@ -28,9 +25,18 @@
 
 2. **OptimFoundation 四個 DLL**：先建 sibling 框架 repo，再複製 `net8.0` 輸出
    ```powershell
-   dotnet build ..\OptimFoundation\OptimFoundation\OptimFoundation.sln -c Release
-   # Core/Cplex.dll + NLog.dll 在 src\*\bin\Release\net8.0\；Generators.dll 在 bin\Release\netstandard2.0\ —— 複製到 dlls\
+   $fw = "..\OptimFoundation\OptimFoundation"
+   dotnet build "$fw\OptimFoundation.sln" -c Release
+   Copy-Item "$fw\src\OptimFoundation.Core\bin\Release\net8.0\OptimFoundation.Core.dll" dlls\
+   Copy-Item "$fw\src\OptimFoundation.Cplex\bin\Release\net8.0\OptimFoundation.Cplex.dll" dlls\
+   Copy-Item "$fw\src\OptimFoundation.Generators\bin\Release\netstandard2.0\OptimFoundation.Generators.dll" dlls\
+   # NLog 是 transitive 相依，class library 的輸出不含它，要從有 exe 的專案輸出拿
+   Copy-Item "$fw\Templates\Tutorial\bin\Release\net8.0\NLog.dll" dlls\
    ```
+
+3. **更新 `VERSION.txt`**：手寫記下回填時間、來源 commit、build config 與各 DLL 的 last-write —— Why: stale DLL 會遮住 API drift，消費端看似 build 綠實則已編不過（2026-07-11 事故）；VERSION.txt 是唯一能事後比對的線索
+
+框架 rebuild / public API 變更後，重跑第 2、3 步回填即可（CPLEX 兩顆不動）。
 
 ## 執行期注意（run，不是 build）
 

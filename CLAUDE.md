@@ -1,29 +1,30 @@
 # AI Modeling — Claude Code 入口（router）
 
-> 本 repo 的操作規範**單一來源**在 [`AGENTS.md`](AGENTS.md) → [`interactive/`](interactive/) / [`automated/`](automated/)。
-> 本檔只做導引（router）；**天條與細則一律以 AGENTS.md 為準，不在此重複**。
+> 本 repo 的操作規範**單一來源**在 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md) → [`.claude/workflows/interactive/`](.claude/workflows/interactive/)。
+> 本檔只做導引（router）；**天條與細則一律以 .claude/rules/AGENTS.md 為準，不在此重複**。
+
+`Template/` 與 `Projects/<Project>/` 不建立或保留 `CLAUDE.md`。任何專案的 AI 指引一律從 [`.claude/README.md`](.claude/README.md) 開始，專案實作以 [`.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md) 為唯一開發指導原則。
 
 ## 這是什麼
 
-自然語言最佳化題目 → 可求解的 OptimFoundation CPLEX C# 專案。兩條路線：
+自然語言最佳化題目 → 可求解的 OptimFoundation CPLEX C# 專案。
 
-| 路線 | 位置 | 何時用 |
+**唯一路線是三階段 phase gate**，依序推進、每階段之間有 gate，NEVER 跳階或走免 gate 的全自動路線：
+
+| 階段 | skill | 產物 |
 | --- | --- | --- |
-| **interactive**（有 gate，預設） | [`interactive/README.md`](interactive/README.md) | 一般開發：Modeling → Coding → Tuning 三階段 phase gate |
-| **automated**（全自動 16-stage） | [`automated/CLAUDE.md`](automated/CLAUDE.md) | 大量量產 / 不需人在迴路：`00 → 14` 一路生到底 |
+| Phase 1 Modeling | [`modeling`](.claude/skills/modeling/SKILL.md) | `Model/<Project>_Model.md`，停在使用者確認 |
+| Phase 2 Coding | [`coding`](.claude/skills/coding/SKILL.md) | 八資料夾專案，build 綠 + 解已驗證 |
+| Phase 3 Tuning | [`tuning`](.claude/skills/tuning/SKILL.md) | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
 
-**先讀 [`AGENTS.md`](AGENTS.md)**，再依當前 phase 讀對應細則。API 簽名權威來源：[`CPLEX_API_REFERENCE.md`](CPLEX_API_REFERENCE.md)。
+整體任務、三階段 I/O 契約與 `status.json` schema：[`.claude/rules/MILP DevPipeline/README.md`](.claude/rules/MILP%20DevPipeline/README.md)。流程總綱：[`.claude/workflows/interactive/README.md`](.claude/workflows/interactive/README.md)。
+
+**先讀 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md)**，再依當前 phase 讀對應細則。Phase 2 唯一標準（含 API 簽名權威）：[`.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md)，簽名表在其 §9。
 
 ## 換機器設置（clone 後唯一要做的事）
 
-DLL 不進版控（商用 CPLEX + 建置產物）。clone 後在 repo 根跑一次：
-
-```powershell
-powershell -File scripts/setup-dlls.ps1
-```
-
-自動偵測本機 CPLEX 安裝與 sibling `../OptimFoundation/` 建置輸出，把 6 個 DLL 就位。細節與手動步驟見 [`dlls/README.md`](dlls/README.md)。
+DLL 不進版控（商用 CPLEX + 建置產物）。clone 後照 [`dlls/README.md`](dlls/README.md) 把 6 個 DLL 就位：CPLEX 兩顆從本機安裝複製，OptimFoundation 四顆先建 sibling `../OptimFoundation/` 再複製建置輸出。
 
 ## 天條
 
-全部天條（含數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用規則）唯一權威在 [`AGENTS.md`](AGENTS.md#天條全流程通用唯一權威在本檔其他文件只引用不重複)。動手前先讀。
+全部天條（含數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用規則）唯一權威在 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md#天條全流程通用唯一權威在本檔其他文件只引用不重複)。動手前先讀。

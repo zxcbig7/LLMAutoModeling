@@ -30,10 +30,7 @@ namespace HospitalRostering_Generator.Constraint
                         .ToList()
                         .ForEach(d => optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
                     optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
-                    ConstraintCount++;
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }
         }

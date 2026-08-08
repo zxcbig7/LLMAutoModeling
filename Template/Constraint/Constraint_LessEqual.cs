@@ -39,11 +39,8 @@ namespace Template.Constraint
 
                     engine.AddRHS(assignMax);
                     engine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
-                    ConstraintCount++;
                 }
             }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

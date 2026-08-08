@@ -43,14 +43,11 @@ namespace Template.Constraint
 
                 // 軟性 ≥：加 Deficit 變數，短缺多少罰多少
                 engine.CreateGeSoft(target, penalty);
-                ConstraintCount++;
 
                 // 其他軟性方向：
                 // engine.CreateLeSoft(target, penalty);             // 軟性 ≤（加 Surplus）
                 // engine.CreateEqSoft(target, penalty, "Name@idx"); // 軟性 =（加 Delta_Pos/Neg）
             }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

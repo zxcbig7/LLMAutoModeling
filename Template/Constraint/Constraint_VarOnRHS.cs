@@ -47,7 +47,6 @@ namespace Template.Constraint
                     engine.AddRHS(1, new VariableB_A { A = a }); // 正係數 RHS
 
                     engine.CreateLessEqual($"{ConstraintName}_1@{a}@{c:yyyy_MM_dd}");
-                    ConstraintCount++;
                 }
             }
 
@@ -66,11 +65,8 @@ namespace Template.Constraint
                     engine.AddRHS(-1); // 負常數
 
                     engine.CreateGreatEqual($"{ConstraintName}_2@{a}@{c:yyyy_MM_dd}");
-                    ConstraintCount++;
                 }
             }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

@@ -32,11 +32,8 @@ namespace HospitalRostering_Generator.Constraint
                             .FirstOrDefault(x => x.Date == d && x.Group == g)?.QTY ?? 0;
                         optEngine.AddRHS(demand);
                         optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{g}");
-                        ConstraintCount++;
                     });
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }
         }

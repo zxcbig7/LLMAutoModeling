@@ -116,15 +116,15 @@ ProjectName/
 └── Program.cs                 唯一組裝點（模型定義 + project / experiment runners）
 ```
 
-> 資料夾命名以 master `claudemdTemplate/` 為準。舊版 `Data/`→`Set/`、`VariablesClass/`→`Variable/`、`Constraints/`→`Constraint/`。**預設**用框架的 Fluent `OptModel` + `[OptVar]`/`[OptParam]` source generator；手寫 `XxxProblem.cs` + 手寫 class 為**後路**，正式對照看 `Projects/HospitalRostering_Manual`。
+> 資料夾命名以 master `claudemdTemplate/` 為準。舊版 `Data/`→`Set/`、`VariablesClass/`→`Variable/`、`Constraints/`→`Constraint/`。一律用框架的 Fluent `OptModel` + `[OptVar]`/`[OptParam]` source generator；手寫 `XxxProblem.cs` + 手寫 class **已廢止**，`Projects/HospitalRostering_Manual` 僅供理解舊 code。
 
-新專案只從 `AI-Modeling/Template/` 建立。`OptimFoundation/OptimFoundation/Templates/` 是 framework integration／相容性案例，不是 scaffold；其中的 `ProjectReference`、舊資料夾名、手寫 class 或不同入口不能反向定義 canonical 寫法。手寫 `VariableBase` 路線仍有效，但沿用上面的資料夾與 runner contract。
+新專案只從 `AI-Modeling/Template/` 建立。`OptimFoundation/OptimFoundation/Templates/` 是 framework integration／相容性案例，不是 scaffold；其中的 `ProjectReference`、舊資料夾名、手寫 class 或不同入口不能反向定義 canonical 寫法。手寫 `VariableBase` 路線已廢止，generator 是唯一 paved path。
 
 ### 類別命名與建構慣例
 
-| 元素     | 前綴                | 預設寫法（paved path）                                                    | 後路（generator 不適用時） | 建立 API                  |
+| 元素     | 前綴                | 唯一寫法（paved path）                                                    | 舊 code 可能看到（已廢止） | 建立 API                  |
 | -------- | ------------------- | ------------------------------------------------------------------------- | -------------------------- | ------------------------- |
-| 集合     | `Set_`              | `[OptSet<T>] partial class`，元素型別顯式寫出                             | —                          | `LoadInline` / `LoadFrom` |
+| 集合     | `Set_`              | `[OptSet<T>] partial class`，元素型別顯式寫出                             | —                          | `Load(source, "Set_X")`   |
 | 參數     | `Parameter_`        | 光桿 `[OptParam]` + 逐維 `[OptDim<Set_X>("Name")]`                        | 手寫繼承 `ParameterBase`   | —                         |
 | 連續變數 | `VariableX_`        | 光桿 `[OptVar]` + 逐維 `[OptDim<Set_X>("Name")]`                          | 手寫繼承 `VariableBase`    | `BuildVars<T>()`          |
 | 整數變數 | `VariableI_`        | 同上                                                                      | 同上                       | `BuildVars<T>()`          |
@@ -317,7 +317,7 @@ dotnet build → 失敗 → 擷取 compiler error → Fix Prompt 修正對應 .c
 | 要可重現實驗   | `parallelMode=1` + 固定 `randomSeed` + `detTimeLimit`                                   |
 | 數值不穩       | `numericalEmphasis=true`                                                                |
 
-> 完整旋鈕全表與 Foundation 尚未提供的接口，見同層的 tuning 策略文件（`tuning/CLAUDE.md`）。
+> 完整旋鈕全表與 Foundation 尚未提供的接口，見同層的 tuning 策略文件（`../.claude/rules/Ph3_Tuning/cplex-tuning-strategy.md`）。
 
 ### Tuning 流程
 

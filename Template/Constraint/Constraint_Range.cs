@@ -37,10 +37,7 @@ namespace Template.Constraint
                     engine.AddLHS(1, new VariableB_AC { A = a, C = c });
 
                 engine.CreateRange(lb, ub, $"{ConstraintName}@{a}");
-                ConstraintCount++;
             }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }

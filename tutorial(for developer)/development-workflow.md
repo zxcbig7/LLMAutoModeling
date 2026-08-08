@@ -23,7 +23,7 @@ AI-Modeling/                          ← 建模端（題目專案、範本、�
   └── Projects/            題目專案
 ```
 
-`AI-Modeling/Template/` 是新專案唯一 canonical scaffold。`OptimFoundation/OptimFoundation/Templates/` 是 framework integration／compatibility examples，可能保留 `ProjectReference`、舊資料夾或手寫入口，不能拿來當生成規格。generator 是預設路線；手寫 `VariableBase` / `ParameterBase` 仍受支援，但參考 `Projects/HospitalRostering_Manual`，並沿用同一套資料夾與 runner contract。
+`AI-Modeling/Template/` 是新專案唯一 canonical scaffold。`OptimFoundation/OptimFoundation/Templates/` 是 framework integration／compatibility examples，可能保留 `ProjectReference`、舊資料夾或手寫入口，不能拿來當生成規格。generator 是唯一路線；手寫 `VariableBase` / `ParameterBase` 已廢止，`Projects/HospitalRostering_Manual` 僅供理解舊 code，NEVER 照抄其宣告方式。
 
 > **改了框架就要更新 DLL**：`dotnet build src/OptimFoundation.Cplex -c Release` → 複製
 > `OptimFoundation.Core.dll` + `OptimFoundation.Cplex.dll` + `OptimFoundation.Generators.dll` 到 `AI-Modeling/dlls/`。
@@ -60,7 +60,7 @@ AI-Modeling/                          ← 建模端（題目專案、範本、�
 | 步驟 | 觸發 | 產物 |
 |------|------|------|
 | `/sdd <一句話>` | 非 trivial 新功能 / 新題目 | `specs/YYYY-MM-DD-<slug>.md`，approve 後才動 code |
-| `CodeMap.md` | 規格確認後、stub 前；或進陌生模組前 | 依賴圖 + File/Symbol Index |
+| `.claude/reference/CodeMap.md` | 規格確認後、stub 前；或進陌生模組前 | 依賴圖 + File/Symbol Index |
 
 > 規範衝突時：專案自身 `CLAUDE.md` > `claudemdTemplate/` > 框架。
 
@@ -97,7 +97,7 @@ ProjectName/
 | `Constraint/` | `Constraint_*` | `Proj.Constraint` | `claudemdTemplate/Constraint` |
 | `Model/` | 數學模型 `.md` | — | `claudemdTemplate/Model` |
 
-### 4.2 composition root：Program.cs（預設對稱 runner；手寫 XxxProblem 為後路）
+### 4.2 composition root：Program.cs（唯一組裝點；手寫 XxxProblem 已廢止）
 
 ```csharp
 using System.Linq;
@@ -183,21 +183,21 @@ dotnet run -- experiment      →  掃多組 CplexConfig  →  Experiments/<name
 
 - 掃描單位是 baseline 的 `Clone()`：每個 clone 只動一個旋鈕，再以 `.AddConfig(label, config)` 加入。
 - 抽象旋鈕（跨引擎）：`Emphasis / Seed / FeasibilityTol / OptimalityTol / RootAlgorithm / Presolve / MemoryLimitMb`。
-- CPLEX 專屬欄位 + 完整 ✅/❌ 對照：`tuning/CLAUDE.md`。
+- CPLEX 專屬欄位 + 完整 ✅/❌ 對照：`../.claude/rules/Ph3_Tuning/cplex-tuning-strategy.md`。
 - 一份已驗證且凍結 framework-controlled mutation API 的 data 可供所有 cell 共用；每個 cell 使用 fresh engine。直接 public field / 可變 `List` 寫入不保證立即攔截，因此 callback MUST 視 data 為唯讀。
 - `OptExperiment` 預設 solver log OFF、匯出 OFF、不做 housekeeping；`timeLimit` 確保每個 cell 收斂。
 - 同名 experiment 採 append：`Save()` 會把既有 JSON 歷史合併回 `result.Trials`。只想處理本輪時使用唯一名稱；沿用同名時將回傳值視為累積資料。
 
-詳見 `claudemdTemplate/Experiment/CLAUDE.md` 與 `tuning/CLAUDE.md`。
+詳見 `claudemdTemplate/Experiment/CLAUDE.md` 與 `../.claude/rules/Ph3_Tuning/cplex-tuning-strategy.md`。
 
 ---
 
 ## 7. 慣例速查（天條）
 
 - **QTY 天條**：所有數值來自 `Parameter.QTY`，任何地方不得裸數字。
-- **命名**：變數型別由 `Build*Vs<T>` 決定，前綴只是約定（`B`→BVs、`I`→IVs、`X`→CVs）；Parameter/Variable 只宣告 properties、無建構子、用 object initializer；數值欄位固定 `public double QTY` 放最後。
-- **建模兩軸（預設）**：① class 用 `[OptVar]`/`[OptParam]` source generator ② composition 用 Fluent `OptModel`。手寫 class + `XxxProblem.Execute()` 為後路（需逐行掌控時）。兩架構並排見 `tutorial/index.html` §5.8、`Projects/HospitalRostering_Generator`（預設）vs `Projects/HospitalRostering_Manual`（後路）。
-- **資料夾/namespace**：`Set/Variable/Parameter/Objective/Constraint/Model` + `ProjectName.*`（廢 `Data/`、`Constraints/`、`VariablesClass/`、`SandBox`）。
+- **命名**：★ 變數型別**由類名前綴單一決定**（`VariableB_`→Binary、`VariableI_`→Integer、`VariableX_`→Continuous），一律用 `BuildVars<T>(sets...)` 建立——`BuildBVs`/`BuildIVs`/`BuildCVs` 已禁用。前綴不是約定，是型別宣告。Parameter/Variable 只宣告 properties、無建構子、用 object initializer；數值欄位固定 `public double QTY` 放最後。
+- **建模一條路**：class 用 `[OptVar]`/`[OptParam]` + `[OptDim]` source generator，composition 用 Fluent `OptModel`。手寫 class + `XxxProblem.Execute()` **已廢止**；`Projects/HospitalRostering_Generator` 是起手參考，`Projects/HospitalRostering_Manual` 僅供理解舊架構（並排見 `tutorial/index.html` §5.8）。
+- **資料夾/namespace**：八資料夾 `Model/Set/Parameter/Variable/Objective/Constraint/Solution/Data`（NEVER 增減）+ 全專案單一 namespace `<Project>`，NEVER 子 namespace（廢 `Data/` 舊義、`Constraints/`、`VariablesClass/`、`SandBox`）。
 - **模型定義共用**：同一個 `OptModel` 同時供 `OptProject` 與 `OptExperiment`。
 
 ---
@@ -210,6 +210,6 @@ dotnet run -- experiment      →  掃多組 CplexConfig  →  Experiments/<name
 | 各資料夾規範（單一來源） | `claudemdTemplate/<Folder>/CLAUDE.md` |
 | Modeling 階段細節 | `tutorial/ai-modeling-framework-tutorial.md` Part 1 |
 | Coding 細節（Pool / Dataload / 命名） | 同上 Part 2 |
-| 調校策略 + 旋鈕對照 | `tuning/CLAUDE.md` |
+| 調校策略 + 旋鈕對照 | `../.claude/rules/Ph3_Tuning/cplex-tuning-strategy.md` |
 | tuning 可執行架構 | `claudemdTemplate/Experiment/CLAUDE.md` |
 | 框架窗口 / pipeline | `OptimFoundation`（`OptModel` / `OptProject` / `OptExperiment` / `EngineBase`） |

@@ -53,7 +53,6 @@ namespace HospitalRostering_Generator.Constraint
                             optEngine.AddRHS(-(3 - 1));
                         }
                         optEngine.CreateGreatEqual($"{ConstraintName}_a@{d:yyyy_MM_dd}@{e}");
-                        ConstraintCount++;
                     });
                 });
 
@@ -65,10 +64,7 @@ namespace HospitalRostering_Generator.Constraint
                     optEngine.AddLHS(2, new VariableB_DoubleOffLT2 { Employee = e });
                     optEngine.AddRHS(2);
                     optEngine.CreateGreatEqual($"{ConstraintName}_b@{e}");
-                    ConstraintCount++;
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}");
             }
             catch (Exception) { throw; }
         }

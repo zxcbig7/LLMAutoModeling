@@ -9,12 +9,12 @@ namespace HospitalRostering_Generator.Constraint
     public class Constraint_BelowAVG : ConstraintBase
     {
         private readonly OptEngine optEngine;
-        private readonly Dataload  dataload;
+        private readonly Dataload dataload;
 
         public Constraint_BelowAVG(Dataload dataload, OptEngine engine)
         {
             this.optEngine = engine;
-            this.dataload  = dataload;
+            this.dataload = dataload;
         }
 
         public void Build()
@@ -23,10 +23,10 @@ namespace HospitalRostering_Generator.Constraint
             {
                 // AVGOFF：(總可排時段 - 總工作需求) / 人數，向下取整再保留 1 天彈性。人數為資料推導的分母，
                 // 用 Numeric.SafeRatio 防呆（除零 / 非有限 / 量級過大一律 throw，而非靜默解出退化解）。
-                double totalEmp  = dataload.Employee.Count;
-                double allShift  = dataload.Employee.Count * dataload.Date.Count;
+                double totalEmp = dataload.Employee.Count;
+                double allShift = dataload.Employee.Count * dataload.Date.Count;
                 double allDemand = dataload.parameter_ShiftDemand.Where(w => w.Group != "O").Sum(s => s.QTY);
-                double avgOff    = Math.Floor(Numeric.SafeRatio(allShift - allDemand, totalEmp, context: "AVGOFF")) - 1;
+                double avgOff = Math.Floor(Numeric.SafeRatio(allShift - allDemand, totalEmp, context: "AVGOFF")) - 1;
 
                 dataload.Employee.ForEach(e =>
                 {
@@ -35,10 +35,7 @@ namespace HospitalRostering_Generator.Constraint
                     optEngine.AddLHS(1, new VariableX_BelowAVG { Employee = e });
                     optEngine.AddRHS(avgOff);
                     optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
-                    ConstraintCount++;
                 });
-
-                Logging.Info($"[{ConstraintName}] {ConstraintCount}  (AVGOFF={avgOff})");
             }
             catch (Exception) { throw; }
         }

@@ -37,10 +37,7 @@ namespace Template.Constraint
 
                 engine.AddRHS(lowerBound);
                 engine.CreateGreatEqual($"{ConstraintName}@{a}");
-                ConstraintCount++;
             }
-
-            Logging.Info($"[{ConstraintName}] {ConstraintCount}");
         }
     }
 }
