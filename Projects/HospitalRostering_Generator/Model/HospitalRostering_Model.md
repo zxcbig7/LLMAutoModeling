@@ -36,8 +36,8 @@ $$ E = \{\text{E1},\dots,\text{E16}\} \qquad D = \{\text{1/1},\dots,\text{1/31}\
 | 不良轉換 | $s^{ntd}_{ed}$ | Binary | 發生不良班別轉換 | `VariableB_NightToDay` |
 | 連休旗標 | $s^{dfl}_{ed}$ | Binary | 形成一段「連休 2 天」 | `VariableB_DoubleOffFlag` |
 | 整月無連休 | $s^{dlt}_{e}$ | Binary | 整月一次連休 2 天都沒有 | `VariableB_DoubleOffLT2` |
-| 低於平均 | $z^{avg}_{e}$ | Continuous ≥0 | 休假比 AVGOFF 少的天數 | `VariableX_BelowAVG` |
-| 週末不足 | $z^{wkd}_{e}$ | Continuous ≥0 | 週末休假比 4 天少的天數 | `VariableX_WeekendLT4` |
+| 低於平均 | $z^{avg}_{e}$ | Continuous ≥0 | 休假比 AVGOFF 少的天數 | `VariableC_BelowAVG` |
+| 週末不足 | $z^{wkd}_{e}$ | Continuous ≥0 | 週末休假比 4 天少的天數 | `VariableC_WeekendLT4` |
 
 ## Objective（目標式）
 

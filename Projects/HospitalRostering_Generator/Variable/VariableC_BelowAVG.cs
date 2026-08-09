@@ -3,6 +3,7 @@ using OptimFoundation.Modeling;
 namespace HospitalRostering_Generator.Variable
 {
     /// <summary>z^avg[e] ≥ 0：休假比 AVGOFF 少的天數。body 由 AutoSetsGenerator 生成。</summary>
-    [OptVar("Employee")]
-    public partial class VariableX_BelowAVG { }
+    [OptVar]
+    [OptDim<string>("Employee")]
+    public partial class VariableC_BelowAVG { }
 }

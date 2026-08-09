@@ -16,12 +16,12 @@ namespace Template.Constraint
     public class Constraint_Window : ConstraintBase
     {
         private readonly OptEngine engine;
-        private readonly Set_A setA;
-        private readonly Set_C setC;
+        private readonly IReadOnlyList<Set_A> setA;
+        private readonly IReadOnlyList<Set_C> setC;
         private readonly int windowSize;
         private readonly double windowMax;
 
-        public Constraint_Window(OptEngine engine, Set_A setA, Set_C setC, int windowSize, double windowMax)
+        public Constraint_Window(OptEngine engine, IReadOnlyList<Set_A> setA, IReadOnlyList<Set_C> setC, int windowSize, double windowMax)
         {
             this.engine = engine;
             this.setA = setA;
@@ -35,7 +35,7 @@ namespace Template.Constraint
             foreach (var c in setC)
             {
                 var window = setC
-                    .Where(sd => c.AddDays(-(windowSize - 1)) <= sd && sd <= c)
+                    .Where(sd => c.C.AddDays(-(windowSize - 1)) <= sd.C && sd.C <= c.C)
                     .ToList();
 
                 if (window.Count < windowSize) continue; // 視窗不足 → 跳過
@@ -43,10 +43,10 @@ namespace Template.Constraint
                 foreach (var a in setA)
                 {
                     foreach (var wc in window)
-                        engine.AddLHS(1, new VariableB_AC { A = a, C = wc });
+                        engine.AddLHS(1, new VariableB_AC { A = a.A, C = wc.C });
 
                     engine.AddRHS(windowMax);
-                    engine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
+                    engine.CreateLessEqual(this, a, c);
                 }
             }
         }

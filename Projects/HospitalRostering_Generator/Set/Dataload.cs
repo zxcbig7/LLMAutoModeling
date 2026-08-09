@@ -28,17 +28,17 @@ namespace HospitalRostering_Generator.Set
         public List<string>   Group    = new();
         public List<DateTime> Date     = new();
 
-        // Set 積木（供框架資料驗證用；成員與上方 List<T> 一致，ctor 尾端 LoadFrom 灌入，單一資料來源不重複字面值）
-        public Set_Employee EMPLOYEE = new();
-        public Set_Group    GROUP    = new();
-        public Set_Date     DATE     = new();
+        // Canonical Set rows；這個既有範例同時保留 primitive list 供舊有 constraint 使用
+        public List<Set_Employee> EMPLOYEE = new();
+        public List<Set_Group>    GROUP    = new();
+        public List<Set_Date>     DATE     = new();
 
         // Parameters
         public List<Parameter_ShiftDemand> parameter_ShiftDemand = new();
         public List<Parameter_NightToDay>  parameter_NightToDay  = new();
         public List<Parameter_CrossGroup>  parameter_CrossGroup  = new();
-        public Set_PreAssign PRE_ASSIGN = new();
-        public Set_BackupGroup BACKUP_GROUP = new();
+        public List<Set_PreAssign> PRE_ASSIGN = new();
+        public List<Set_BackupGroup> BACKUP_GROUP = new();
 
         private enum GroupE { O, D, E, N, C }
 
@@ -66,7 +66,7 @@ namespace HospitalRostering_Generator.Set
             }
 
             // Backup 班別：E1 的 C 班視為 Backup，跨組別成本歸零
-            BACKUP_GROUP.LoadFrom(new[] { (Employee: "E1", Group: "C") });
+            BACKUP_GROUP.Add(new Set_BackupGroup { Employee = "E1", Group = "C" });
             foreach (var backup in BACKUP_GROUP)
             {
                 var cg = parameter_CrossGroup.FirstOrDefault(w => w.Employee == backup.Employee && w.Group == backup.Group);
@@ -99,26 +99,26 @@ namespace HospitalRostering_Generator.Set
             }
 
             // 預排班 PA（固定指派）
-            PRE_ASSIGN.LoadFrom(new[]
+            PRE_ASSIGN.AddRange(new[]
             {
-                (Date: new DateTime(2026, 1, 1), Employee: "E1", Group: "E"),
-                (Date: new DateTime(2026, 1, 1), Employee: "E3", Group: "O"),
-                (Date: new DateTime(2026, 1, 2), Employee: "E2", Group: "D"),
-                (Date: new DateTime(2026, 1, 2), Employee: "E3", Group: "E"),
+                new Set_PreAssign { Date = new DateTime(2026, 1, 1), Employee = "E1", Group = "E" },
+                new Set_PreAssign { Date = new DateTime(2026, 1, 1), Employee = "E3", Group = "O" },
+                new Set_PreAssign { Date = new DateTime(2026, 1, 2), Employee = "E2", Group = "D" },
+                new Set_PreAssign { Date = new DateTime(2026, 1, 2), Employee = "E3", Group = "E" },
             });
 
-            // Set 積木灌入（與上方 List<T> 同一份資料，供框架資料驗證用）
-            EMPLOYEE.LoadFrom(Employee);
-            GROUP.LoadFrom(Group);
-            DATE.LoadFrom(Date);
+            // 由模型既有 primitive list 建立 canonical Set rows，供輸出與模型 domain 使用。
+            EMPLOYEE.AddRange(Employee.Select(value => new Set_Employee { Employee = value }));
+            GROUP.AddRange(Group.Select(value => new Set_Group { Group = value }));
+            DATE.AddRange(Date.Select(value => new Set_Date { Date = value }));
         }
 
         public void WriteToCSV(OptEngine engine)
         {
             FolderDir.Solution.CreateFolder();
             CsvCtrl.WriteSolution<VariableB_ShiftAssign>(engine, "V1", "VIC");
-            CsvCtrl.WriteSolution<VariableX_WeekendLT4> (engine, "V1", "VIC");
-            CsvCtrl.WriteSolution<VariableX_BelowAVG>   (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableC_WeekendLT4> (engine, "V1", "VIC");
+            CsvCtrl.WriteSolution<VariableC_BelowAVG>   (engine, "V1", "VIC");
             CsvCtrl.WriteSolution<VariableB_Off1Day>    (engine, "V1", "VIC");
         }
     }

@@ -8,7 +8,7 @@ OptimFoundation 的目的不是替使用者猜數學模型，而是把「已確�
 | --- | --- |
 | 資料表與模型類別容易不同步 | `OptDim<T>` 同時定義 property、CSV 欄名與維度順序 |
 | Set 與 Parameter 有兩條不同資料管線 | 都是 row class，統一 `Load<T>()` 與 `WriteRows` |
-| 多維資料靠自訂 tuple 或 Set brick 拼湊 | 多個 primitive `OptDim` 直接表示一列多維資料 |
+| 多維資料需要自行維護 tuple 與欄位對照 | 多個 primitive `OptDim` 直接表示一列多維資料 |
 | scalar 常數混進程式 | 零維 `Parameter_*` 只讀取一筆 `QTY` |
 | 手寫變數 key 與 solver API 容易出錯 | generator、`BuildVars<T>` 與 Pool API 收斂重複工作 |
 | 限制式改寫時符號出錯 | LHS / RHS Pool 保留數學式左右兩側，框架處理移項 |

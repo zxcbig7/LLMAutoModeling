@@ -53,7 +53,7 @@
 | Terminology | Term / 中文語意 / Role / Unit / Derived? / Raw phrase / 來源 S-id | 決定類別命名 | 名稱沒語意，類別名跟著沒語意 |
 | SET | 名 / 語意 / 成員範例 | 決定建哪幾顆 `Set_*` | 不知道要建哪幾顆積木 |
 | PARAM | 名 / 語意 / **Dim** / 值 | 決定 `[OptDim]` property | property 名靠猜 |
-| VAR | 名 / 語意 / Dim / **型別** / LB / UB | 決定 `VariableB_` / `X_` / `I_` 前綴 | 前綴選錯，型別就錯 |
+| VAR | 名 / 語意 / Dim / **型別** / LB / UB | 決定 `VariableB_` / `VariableC_` / `VariableI_` 前綴 | 前綴選錯，型別就錯 |
 | CONSTRAINT | **`LHS op RHS` 原形** + **pattern tag** + Dim + 一句中文 | 逐條對照 `AddLHS` / `AddRHS` | 對不回去，逐條驗收失效 |
 | OBJ | 方向（min/max）+ 所有項在 LHS | 決定 `CreateMinimize` / `CreateMaximize` | Phase 2 直接停止並退回 |
 | 已套用假設 | Phase 1 自行套用的預設清單 | 驗收時分辨哪些是題目、哪些是 AI 補的 | 分不出來，使用者無從確認 |
@@ -227,7 +227,7 @@ Why: Phase 2 的類別名由符號機械對應（`Assign` → `VariableB_Assign`
 | Batch | 生產批數 | Item, Machine | Integer | 0 | INFTY |
 | Makespan | 總完工時間 | （0 維） | Continuous | 0 | INFTY |
 
-- **型別欄是 load-bearing**：`Binary` → `VariableB_`、`Continuous` → `VariableX_`、`Integer` → `VariableI_`。前綴決定 Phase 2 建出來的變數型別，標錯就是換一題
+- **型別欄是 load-bearing**：`Binary` → `VariableB_`、`Continuous` → `VariableC_`、`Integer` → `VariableI_`。前綴決定 Phase 2 建出來的變數型別，標錯就是換一題
 - LB/UB 若非預設值，Phase 2 會把它寫成**一條獨立 constraint**，所以本段標了之後 §4 也 MUST 有對應條目——只寫在 VAR 表裡它不會出現在模型裡
 - 題目沒提 LB/UB → 套 §6 預設慣例（`LB=0, UB=INFTY`；比例變數 `0..1`），並記進「已套用假設」
 

@@ -15,12 +15,12 @@ namespace Template.Constraint
     public class Constraint_Range : ConstraintBase
     {
         private readonly OptEngine engine;
-        private readonly Set_A setA;
-        private readonly Set_C setC;
+        private readonly IReadOnlyList<Set_A> setA;
+        private readonly IReadOnlyList<Set_C> setC;
         private readonly double lb;
         private readonly double ub;
 
-        public Constraint_Range(OptEngine engine, Set_A setA, Set_C setC, double lb, double ub)
+        public Constraint_Range(OptEngine engine, IReadOnlyList<Set_A> setA, IReadOnlyList<Set_C> setC, double lb, double ub)
         {
             this.engine = engine;
             this.setA = setA;
@@ -34,9 +34,9 @@ namespace Template.Constraint
             foreach (var a in setA)
             {
                 foreach (var c in setC)
-                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
+                    engine.AddLHS(1, new VariableB_AC { A = a.A, C = c.C });
 
-                engine.CreateRange(lb, ub, $"{ConstraintName}@{a}");
+                engine.CreateRange(lb, ub, this, a);
             }
         }
     }

@@ -41,8 +41,8 @@ namespace HospitalRostering_Generator.Objective
                 dataload.Employee.ForEach(e =>
                 {
                     optEngine.AddLHS(dataload.Penalty_DoubleOffLT2, new VariableB_DoubleOffLT2 { Employee = e }); // w2
-                    optEngine.AddLHS(dataload.Penalty_BelowAVG,     new VariableX_BelowAVG     { Employee = e }); // w5
-                    optEngine.AddLHS(dataload.Penalty_Weekend4Day,  new VariableX_WeekendLT4   { Employee = e }); // w7
+                    optEngine.AddLHS(dataload.Penalty_BelowAVG,     new VariableC_BelowAVG     { Employee = e }); // w5
+                    optEngine.AddLHS(dataload.Penalty_Weekend4Day,  new VariableC_WeekendLT4   { Employee = e }); // w7
                 });
 
                 optEngine.CreateMinimize();

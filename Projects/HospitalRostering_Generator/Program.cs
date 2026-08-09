@@ -20,11 +20,15 @@ var projectConfig = new ProjectConfig
     ExportLP = true,
     ExportMPS = true,
 };
+// 停止契約：2026-08-09 使用者定案，詳見 TuningHistory.md 契約區塊
+//   MipGap = 0.03 — 接受 2.7% 品質損失換取約 7s；production 穩定停在 obj 3.7（真最佳為 3.6）
+//   TimeLimit = 180 — 3 分鐘；實際求解 5–17s，尚未觸及
+// 環境契約（workThreads / parallelMode）尚未定版，待 S1 sizing
 var baseline = new CplexConfig
 {
-    epGap = 0.03,
-    timeLimit = 100,
-    workThreads = 10,
+    MipGap = 0.03,
+    TimeLimit = 180,
+    Threads = 10,
 };
 
 var model = new OptModel("HospitalRostering_Generator")
@@ -47,10 +51,10 @@ var model = new OptModel("HospitalRostering_Generator")
 if (args.Contains("experiment"))
 {
     var emphasis = baseline.Clone(); emphasis.Emphasis = 2;
-    var varSel = baseline.Clone(); varSel.varSel = 3;
-    var nodeSelect = baseline.Clone(); nodeSelect.nodeSelect = 1;
-    var gap = baseline.Clone(); gap.epGap = 0.01;
-    var threads = baseline.Clone(); threads.workThreads = 4;
+    var varSel = baseline.Clone(); varSel.VariableSelect = 3;
+    var nodeSelect = baseline.Clone(); nodeSelect.NodeSelect = 1;
+    var gap = baseline.Clone(); gap.MipGap = 0.01;
+    var threads = baseline.Clone(); threads.Threads = 4;
     var seed = baseline.Clone(); seed.Seed = 20260622;
 
     var result = new OptExperiment(
@@ -76,4 +80,4 @@ using var project = new OptProject(model)
     .OnSolved(e => data.WriteToCSV(e));
 
 bool ok = project.Execute();
-Logging.Info($"求解結果：{(ok ? "成功" : "失敗")}  Status={project.optEngine.Status}");
+Logging.Info($"求解結果：{(ok ? "成功" : "失敗")}  Status={project.Engine.Status}");

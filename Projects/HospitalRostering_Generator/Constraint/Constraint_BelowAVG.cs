@@ -32,9 +32,9 @@ namespace HospitalRostering_Generator.Constraint
                 {
                     dataload.Date.ForEach(d =>
                         optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
-                    optEngine.AddLHS(1, new VariableX_BelowAVG { Employee = e });
+                    optEngine.AddLHS(1, new VariableC_BelowAVG { Employee = e });
                     optEngine.AddRHS(avgOff);
-                    optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
+                    optEngine.CreateGreatEqual(this, e);
                 });
             }
             catch (Exception) { throw; }

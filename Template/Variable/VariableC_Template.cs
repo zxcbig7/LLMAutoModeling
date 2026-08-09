@@ -13,5 +13,5 @@ namespace Template.Variable
     [OptDim<double>("Set2")]
     [OptDim<int>("Set3")]
     [OptDim<DateTime>("Set4")]
-    public partial class VariableX_Template { }
+    public partial class VariableC_Template { }
 }

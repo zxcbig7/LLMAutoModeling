@@ -36,11 +36,11 @@ namespace Template.Set
         public double SoftTarget = 1.0;
         public double Penalty_Soft = 0.5;
 
-        // ── Sets（積木） ─────────────────────────────────────────────────
-        public Set_A SetA = new();   // 第一維索引
-        public Set_B SetB = new();   // 第二維索引
-        public Set_C SetC = new();   // 時間軸
-        public Set_Arc Arc = new();  // 稀疏二維 tuple Set 範例
+        // ── Sets（canonical row collections） ────────────────────────────
+        public List<Set_A> SetA = new();   // 第一維索引
+        public List<Set_B> SetB = new();   // 第二維索引
+        public List<Set_C> SetC = new();   // 時間軸
+        public List<Set_Arc> Arc = new();  // 稀疏二維 tuple Set 範例
 
         // ── Parameters（實體由 Parameter/ 資料夾的類別承載） ──────────────
         public List<Parameter_AB> parameter_AB = new();
@@ -49,26 +49,28 @@ namespace Template.Set
         public Dataload()
         {
             // ① Sets 建立
-            SetA.LoadFrom(new[] { "A1", "A2", "A3", "A4", "A5" });
-            SetB.LoadFrom(new[] { "B1", "B2", "B3" });
-            Arc.LoadFrom(new[]
+            SetA.AddRange(new[] { "A1", "A2", "A3", "A4", "A5" }
+                .Select(value => new Set_A { A = value }));
+            SetB.AddRange(new[] { "B1", "B2", "B3" }
+                .Select(value => new Set_B { B = value }));
+            Arc.AddRange(new[]
             {
-                (From: "A1", To: "B1"),
-                (From: "A1", To: "B3"),
-                (From: "A3", To: "B2"),
+                new Set_Arc { From = "A1", To = "B1" },
+                new Set_Arc { From = "A1", To = "B3" },
+                new Set_Arc { From = "A3", To = "B2" },
             });
 
             int year = 2026, month = 1;
             var dates = new List<DateTime>();
             for (int d = 1; d <= DateTime.DaysInMonth(year, month); d++)
                 dates.Add(new DateTime(year, month, d));
-            SetC.LoadFrom(dates);
+            SetC.AddRange(dates.Select(value => new Set_C { C = value }));
 
             // ② Parameters 建立
             var rng = new Random(42);
             foreach (var a in SetA)
                 foreach (var b in SetB)
-                    parameter_AB.Add(new Parameter_AB { A = a, B = b, QTY = rng.Next(1, 5) });
+                    parameter_AB.Add(new Parameter_AB { A = a.A, B = b.B, QTY = rng.Next(1, 5) });
 
             // object initializer（generator 生成的 body 已含位置式 ctor，逃生口不再示範）
             parameter_ABC.Add(new Parameter_ABC { A = "A1", B = "B1", C = new DateTime(2026, 1, 1), QTY = 1 });
@@ -76,12 +78,7 @@ namespace Template.Set
 
             RangeUB = SetC.Count;   // 區間上界 = 期數（恆可行示範值）
 
-            // ③ CSV 讀取（取消註解以啟用）
-            // SetA.LoadCsv("Set_A");
-            // SetB.LoadCsv("Set_B");
-            // SetC.LoadCsv("Set_C");
-            // parameter_AB = CSVCtrl.BuildParameter<Parameter_AB>("Param_AB");
-            // parameter_ABC = CSVCtrl.BuildParameter<Parameter_ABC>("Param_ABC");
+            // ③ CSV 讀取改由 IDataSource.Load<T>() 回傳相同的 row list 型別。
         }
 
         public void WriteToCSV(OptEngine engine)
@@ -112,7 +109,7 @@ namespace Template.Set
             // ── 存 CSV → Solution/<VariableName>.csv（必須先 CreateFolder）────
             FolderDir.Solution.CreateFolder();
             CsvCtrl.WriteSolution<VariableB_ABC>(engine, "V1", "USER");
-            CsvCtrl.WriteSolution<VariableX_A>  (engine, "V1", "USER");
+            CsvCtrl.WriteSolution<VariableC_A>  (engine, "V1", "USER");
             CsvCtrl.WriteSolution<VariableI_A>  (engine, "V1", "USER");
         }
     }

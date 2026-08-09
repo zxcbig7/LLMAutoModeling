@@ -38,8 +38,8 @@ Set 與 Parameter 都以 primitive OptDim 宣告；Set CSV 為 Dim 欄，Paramet
 CSV 為 Dim 欄加 QTY；Dataload 只用 source.Load<T>() 讀成 List<T>；輸出使用
 CsvCtrl.WriteRows(rows)。變數使用 BuildVars<T>。
 
-完成條件：dotnet build 成功，輸入資料可驗證載入，並完成每條限制式的解驗證、
-單位與量級檢查、LP bound sanity。若 Model.md 有歧義，停止並指出行號與問題，
+完成條件：dotnet build 成功，輸入資料可載入；另外驗證 Set duplicate、參照與模型要求的完整性，
+並完成每條限制式的解驗證、單位與量級檢查、LP bound sanity。若 Model.md 有歧義，停止並指出行號與問題，
 不要自行補模型假設。
 ```
 
@@ -48,7 +48,7 @@ CsvCtrl.WriteRows(rows)。變數使用 BuildVars<T>。
 ```text
 請只處理 <Project> 的 Phase 2 資料層：Set/、Parameter/、Data/Dataload.cs 與
 Data/*.csv。維持既有 Model.md、Variable/、Objective/、Constraint/ 不變。
-完成後檢查 CSV 表頭、型別轉換、重複 key 與 scalar Parameter 的單筆 QTY。
+完成後檢查 CSV 表頭、型別轉換、Set/Parameter 重複 key、Set-driven lookup 的缺值處理與 scalar Parameter 的單筆 QTY；Parameter 查找使用 `FindParameterOrLog`。
 ```
 
 ## 3. 實作驗收 Prompt

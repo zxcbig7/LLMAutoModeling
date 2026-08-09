@@ -23,13 +23,13 @@ namespace HospitalRostering_Generator.Constraint
             {
                 dataload.Employee.ForEach(e =>
                 {
-                    optEngine.AddLHS(1, new VariableX_WeekendLT4 { Employee = e });
+                    optEngine.AddLHS(1, new VariableC_WeekendLT4 { Employee = e });
                     optEngine.AddRHS(4);
                     dataload.Date
                         .Where(w => w.DayOfWeek == DayOfWeek.Saturday || w.DayOfWeek == DayOfWeek.Sunday)
                         .ToList()
                         .ForEach(d => optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
-                    optEngine.CreateGreatEqual($"{ConstraintName}@{e}");
+                    optEngine.CreateGreatEqual(this, e);
                 });
             }
             catch (Exception) { throw; }

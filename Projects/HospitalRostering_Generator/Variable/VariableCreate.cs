@@ -23,17 +23,17 @@ namespace HospitalRostering_Generator.Variable
         {
             try
             {
-                optEngine.BuildBVs<VariableB_ShiftAssign>(dataload.Date, dataload.Employee, dataload.Group); // y[e,d,g]
-                optEngine.BuildBVs<VariableB_GroupMismatch>(dataload.Date, dataload.Employee);               // s^mis
-                optEngine.BuildBVs<VariableB_NightToDay>(dataload.Date, dataload.Employee);                  // s^ntd
-                optEngine.BuildBVs<VariableB_DoubleOffFlag>(dataload.Date, dataload.Employee);               // s^dfl
-                optEngine.BuildBVs<VariableB_DoubleOffLT2>(dataload.Employee);                               // s^dlt
-                optEngine.BuildBVs<VariableB_Off1Day>(dataload.Date, dataload.Employee);                     // s^off1
-                optEngine.BuildBVs<VariableB_SixDayWork>(dataload.Date, dataload.Employee);                  // s^six
-                optEngine.BuildCVs<VariableX_BelowAVG>(dataload.Employee);                                   // z^avg
-                optEngine.BuildCVs<VariableX_WeekendLT4>(dataload.Employee);                                 // z^wkd
+                optEngine.BuildVars<VariableB_ShiftAssign>(dataload.Date, dataload.Employee, dataload.Group); // y[e,d,g]
+                optEngine.BuildVars<VariableB_GroupMismatch>(dataload.Date, dataload.Employee);               // s^mis
+                optEngine.BuildVars<VariableB_NightToDay>(dataload.Date, dataload.Employee);                  // s^ntd
+                optEngine.BuildVars<VariableB_DoubleOffFlag>(dataload.Date, dataload.Employee);               // s^dfl
+                optEngine.BuildVars<VariableB_DoubleOffLT2>(dataload.Employee);                               // s^dlt
+                optEngine.BuildVars<VariableB_Off1Day>(dataload.Date, dataload.Employee);                     // s^off1
+                optEngine.BuildVars<VariableB_SixDayWork>(dataload.Date, dataload.Employee);                  // s^six
+                optEngine.BuildVars<VariableC_BelowAVG>(dataload.Employee);                                   // z^avg
+                optEngine.BuildVars<VariableC_WeekendLT4>(dataload.Employee);                                 // z^wkd
 
-                Logging.Info($"Variables created: {optEngine.varCount}");
+                Logging.Info($"Variables created: {optEngine.VariableCount}");
             }
             catch (Exception) { throw; }
         }

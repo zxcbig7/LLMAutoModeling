@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- AutoSetsGenerator：以 analyzer DLL 掛入，[OptVar<>]/[OptParam<>] 在編譯期生成 class body -->
+    <!-- AutoSetsGenerator：以 analyzer DLL 掛入，[OptVar]/[OptParam] + [OptDim<T>] 在編譯期生成 class body -->
     <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>
 

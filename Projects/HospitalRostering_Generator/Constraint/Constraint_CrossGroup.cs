@@ -30,7 +30,7 @@ namespace HospitalRostering_Generator.Constraint
                         {
                             optEngine.AddLHS(1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = cg.Group });
                             optEngine.AddRHS(1, new VariableB_GroupMismatch { Date = d, Employee = e });
-                            optEngine.CreateLessEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{e}@{cg.Group}");
+                            optEngine.CreateLessEqual(this, d, e, cg.Group);
                         }
                     });
                 });

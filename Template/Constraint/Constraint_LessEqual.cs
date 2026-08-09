@@ -14,12 +14,12 @@ namespace Template.Constraint
     public class Constraint_LessEqual : ConstraintBase
     {
         private readonly OptEngine engine;
-        private readonly Set_A setA;
-        private readonly Set_B setB;
-        private readonly Set_C setC;
+        private readonly IReadOnlyList<Set_A> setA;
+        private readonly IReadOnlyList<Set_B> setB;
+        private readonly IReadOnlyList<Set_C> setC;
         private readonly double assignMax;
 
-        public Constraint_LessEqual(OptEngine engine, Set_A setA, Set_B setB, Set_C setC, double assignMax)
+        public Constraint_LessEqual(OptEngine engine, IReadOnlyList<Set_A> setA, IReadOnlyList<Set_B> setB, IReadOnlyList<Set_C> setC, double assignMax)
         {
             this.engine = engine;
             this.setA = setA;
@@ -35,10 +35,10 @@ namespace Template.Constraint
                 foreach (var c in setC)
                 {
                     foreach (var b in setB)
-                        engine.AddLHS(1, new VariableB_ABC { A = a, B = b, C = c });
+                        engine.AddLHS(1, new VariableB_ABC { A = a.A, B = b.B, C = c.C });
 
                     engine.AddRHS(assignMax);
-                    engine.CreateLessEqual($"{ConstraintName}@{a}@{c:yyyy_MM_dd}");
+                    engine.CreateLessEqual(this, a, c);
                 }
             }
         }

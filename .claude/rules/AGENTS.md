@@ -47,7 +47,7 @@
 ### 命名
 
 - NEVER 用無意義單一字母符號（`i`、`j`、`k`、`x`、`y`、`z`、`t`）—— ALWAYS 語意名稱
-- 類別名直接對應 Model.md 符號：`Set_` / `Parameter_` / `VariableB_`（binary）/ `VariableX_`（continuous）/ `VariableI_`（integer）/ `Constraint_`
+- 類別名直接對應 Model.md 符號：`Set_` / `Parameter_` / `VariableB_`（binary）/ `VariableC_`（continuous）/ `VariableI_`（integer）/ `Constraint_`
 - **變數前綴是 load-bearing**（決定型別，非慣例）：generator 依前綴判型產碼，前綴非法直接 compile error `OPTF001`；`BuildVars<T>` 亦由前綴推型
 - `Dataload` 欄位名「小寫元件 + PascalCase 語意」：`set_Item` / `parameter_Demand` —— NEVER `ITEM` 全大寫、NEVER `SetA`
 - Set 成員字串 PascalCase 單數：`"Truck"` ✅、`"truck"` ❌、`"Trucks"` ❌
@@ -66,7 +66,7 @@
 ### API 與框架
 
 - NEVER 呼叫 [`Ph2_Coding/optimfoundation-api-guide.md`](Ph2_Coding/optimfoundation-api-guide.md) §9 沒列的 API，也 NEVER 用它標 ❌ 的 API（憑記憶發明 API）
-- NEVER 手寫 `: VariableBase` / `: ParameterBase`，NEVER 用 generator 產的位置式 ctor —— 只用裸 `[OptSet]` / `[OptParam]` / `[OptVar]` + 每維一個 `[OptDim<資料型別>("Name")]`（`T` 是 `string` / `DateTime` / `int`…，**NEVER 是 Set 積木**）
+- NEVER 手寫 `: VariableBase` / `: ParameterBase`，NEVER 用 generator 產的位置式 ctor —— 只用裸 `[OptSet]` / `[OptParam]` / `[OptVar]` + 每維一個 `[OptDim<資料型別>("Name")]`（`T` 是 `string` / `DateTime` / `int`…）
 - NEVER 改 OptimFoundation 框架本體（唯讀）——擴充在專案端寫 helper
 
 ### 路徑與 DLL
@@ -80,7 +80,7 @@
 ## Canonical 寫法（不得從相容範例反推）
 
 - 新專案唯一 scaffold 是本 repo 的 [`../../Template/`](../../Template/)；生成到 `Projects/<Project>/` 後使用 repo 根 `dlls/` 的 `<Reference>` / `<Analyzer>`
-- **generator 是唯一 paved path；手寫 base class 已廢止，沒有後路。** `Projects/HospitalRostering_Manual` 降為歷史參考，可讀來理解 API 行為，NEVER 當新專案的起手範本
+- **generator 是唯一 paved path；手寫 base class 已廢止，沒有後路。** 唯一可照抄的既有專案是 `Projects/HospitalRostering_Generator`
 - sibling `OptimFoundation/OptimFoundation/Templates/` 是框架整合與相容性案例，可能用 `ProjectReference` 或歷史寫法，**不是** AI 新建專案的 scaffold
 - 規則與範本 code 衝突時，以本檔與三個 phase 檔為準；把 Template 標成待修，NEVER 為迎合落後範本而放寬規則
 
@@ -108,7 +108,7 @@ Model.md 固定八段順序，**下游逐項在吃，缺一項轉譯就得猜**�
 | Terminology | Term / 語意 / Role / Unit / Derived? / Raw phrase | 決定類別命名 |
 | SET | 名 / 語意 / 成員範例 | 決定建哪幾顆 `Set_*` |
 | PARAM | 名 / 語意 / **Dim** / 值 | 決定 `[OptDim]` property |
-| VAR | 名 / 語意 / Dim / **型別** / LB / UB | 決定 `VariableB_` / `X_` / `I_` 前綴 |
+| VAR | 名 / 語意 / Dim / **型別** / LB / UB | 決定 `VariableB_` / `VariableC_` / `VariableI_` 前綴 |
 | CONSTRAINT | **`LHS op RHS` 原形** + **pattern tag** + Dim + 一句中文 | 逐條對照 `AddLHS` / `AddRHS` |
 | OBJ | 方向 + 所有項在 LHS | 決定 `CreateMinimize` / `CreateMaximize` |
 | 已套用假設 | Phase 1 自行套用的預設清單 | 驗收時分辨哪些是題目、哪些是 AI 補的 |
@@ -122,7 +122,7 @@ Projects/<Project>/
 ├── Model/              只放 <Project>_Model.md（Phase 1 交付物，本階段唯讀）
 ├── Set/                Set_*.cs
 ├── Parameter/          Parameter_*.cs
-├── Variable/           Variable[B|X|I]_*.cs
+├── Variable/           Variable[B|C|I]_*.cs
 ├── Objective/          ObjectiveFunction.cs
 ├── Constraint/         Constraint_*.cs（一條一檔）
 ├── Solution/           <Project>Solution.cs
@@ -132,7 +132,19 @@ Projects/<Project>/
 
 轉譯順序（依賴決定，不可跳）：Set → Parameter → Dataload + CSV → Variable →（Constraint ∥ Objective）→ Program.cs → Solution。
 
-出口 gate = **解驗證協定四步全過**：① Status 三分診斷 ② 解代回每一條 constraint ③ 單位與量級對得上題目 ④ LP bound sanity。看到 `Optimal` 就宣稱完成不合格。
+出口 gate = **解驗證協定四步全過**：① Status 五態診斷 ② 解代回每一條 constraint ③ 單位與量級對得上題目 ④ LP bound sanity。看到 `Optimal` 就宣稱完成不合格。
+
+**① 的五態依框架 `SolveStatus` 列舉判定，NEVER 只認 `Optimal`**：
+
+| `SolveStatus` | 語意 | Phase 2 gate | 下一步 |
+| --- | --- | --- | --- |
+| `Optimal` | 證明最佳 | ②③④ 照跑 | 過 gate |
+| `Feasible` | **有 incumbent、未證明最佳**（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | ②③④ 對 incumbent 照跑（④ 改比 `BestBound`） | **過 gate**，記錄 `MipGap`；效能不足是 Phase 3 的事 |
+| `TimeLimit` | **中止且無任何可用解**（名字誤導，非時間專屬） | 無解可驗，②③ 做不了 | 換小 instance 求到 `Optimal` 完成 ②③④ 才過 gate |
+| `Infeasible` | 無可行解 | ✗ | 讀 IIS 取證，退回 Phase 1 / 2 |
+| `Unbounded` | 目標式無界 | ✗ | 補漏掉的界限 constraint，退回 Phase 2 |
+
+Why 把 `Feasible` 放進 gate：撞時限但有 incumbent **正是 Phase 3 最典型的進場情境**。要求 `Optimal` 才准出 Phase 2 會讓這類專案卡死在 Phase 2——而 Phase 2 手上沒有任何合法工具能修「太慢」，那顆旋鈕在 Phase 3。轉譯忠實與否用 incumbent 就驗得出來，跟有沒有證明最佳無關。
 
 ### Phase 3 出口契約
 
@@ -178,6 +190,8 @@ _wip/<Project>/
 | `v1Pass` | bool | P2 | P2 gate | checklist 稽核無 FAIL |
 | `v2Faithful` | bool | P2 | P2 gate | 反向翻譯結論為轉譯忠實 |
 | `solveVerified` | bool | P2 | **P3 gate** | 解驗證協定四步全過 |
+| `solveStatus` | string | P2 | **P3 進場分流** | 框架 `SolveStatus` 值：`Optimal` / `Feasible` / `TimeLimit` |
+| `verifiedOn` | string | P2 | **P3 進場分流** | 解驗證是在哪份資料上完成的：`production` 或 `small-instance:<說明>` |
 | `tuningRound` | int | P3 | P3 停損 | 目前輪次 |
 | `productionBaseline` | string | P3 | P3 下輪 | 現行 baseline 的 Trial label 或 `initial` |
 | `baselineSourceExperiment` | string | P3 | provenance | 來源 experiment 名 |
@@ -230,11 +244,8 @@ _wip/<Project>/
 | 專案輸出 | [`../../Projects/`](../../Projects/) | 新專案建這裡：`Projects/<Project>/` |
 | DLL 唯一來源 | [`../../dlls/`](../../dlls/) | csproj HintPath 一律指這裡 |
 | 專案模板 | [`../../Template/`](../../Template/) | 新專案的資料夾結構與程式範本 |
-| 可運作範例 | `Projects/HospitalRostering_Generator`（generator，起手參考）；`Projects/HospitalRostering_Manual`（**已廢止寫法、僅歷史參考**） | 只照抄 generator 版 |
+| 可運作範例 | [`../../Projects/HospitalRostering_Generator/`](../../Projects/HospitalRostering_Generator/) | 唯一可照抄的既有專案 |
 
-## 已知不一致（待修，勿照抄）
+## 文件同步原則
 
-| 位置 | 問題 | 正解 |
-| --- | --- | --- |
-| `tutorial(for developer)/` 7 檔 | 仍教已禁用的 `BuildBVs` / `BuildCVs` / `BuildIVs`（含 `BuildCVs<>(lb, ub, …)` 自訂界限） | 一律 `BuildVars<T>(sets...)`；界限寫成獨立 `Constraint_*` |
-| `Template/`、`Projects/HospitalRostering_Manual` | 早於現行規範，含手寫 base class、舊資料夾結構 | 以本檔與三個 phase 檔為準，範本標成待修 |
+`tutorial(for developer)/`、`Template/` 與 `Projects/HospitalRostering_Generator` 必須與 Phase 2 guide 使用同一套 row-based Set/Parameter、`Load<T>`、B/C/I 前綴與 owner-based constraint naming。歷史設計文件不得作為產碼依據。

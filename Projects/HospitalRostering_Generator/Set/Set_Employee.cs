@@ -2,8 +2,7 @@ using OptimFoundation.Modeling;
 
 namespace HospitalRostering_Generator.Set
 {
-    /// <summary>員工（string set）。Parameter_PreAssign / Parameter_CrossGroup / Parameter_BackupGroup 的
-    /// Employee index-set，供框架資料驗證用（成員與 Dataload.Employee 一致，見 ctor 的 EMPLOYEE.LoadFrom）。</summary>
+    /// <summary>員工資料列；內容由 Dataload 的既有 primitive Employee list 建立。</summary>
     [OptSet]
     [OptDim<string>("Employee")]
     public partial class Set_Employee { }

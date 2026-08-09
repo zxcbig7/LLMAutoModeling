@@ -34,7 +34,7 @@ OptimFoundation 的上層專案把模型資料、模型定義與 solver 執行�
 | CSV | Dim 欄 | Dim 欄 + `QTY` |
 | 載入與輸出 | `Load<T>()` / `WriteRows` | `Load<T>()` / `WriteRows` |
 
-因此多維 Set 不需要另一套語法，也不是由其他 Set 組成的 brick。它就是多個 primitive `OptDim` 所構成的一列 tuple。
+因此多維 Set 不需要另一套語法。它就是多個 primitive `OptDim` 所構成的一列 tuple。
 
 ```csharp
 [OptSet]

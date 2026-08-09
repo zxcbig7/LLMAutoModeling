@@ -3,6 +3,8 @@ using OptimFoundation.Modeling;
 namespace HospitalRostering_Generator.Variable
 {
     /// <summary>s^six[e,d]：連續工作 6 天指示。body 由 AutoSetsGenerator 生成。</summary>
-    [OptVar("Date:DateTime", "Employee")]
+    [OptVar]
+    [OptDim<DateTime>("Date")]
+    [OptDim<string>("Employee")]
     public partial class VariableB_SixDayWork { }
 }

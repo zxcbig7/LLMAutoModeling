@@ -13,7 +13,7 @@
 | **Phase 2 轉譯**：專案結構、資料/變數/模型層、`Program.cs`、解驗證、API 簽名 | [`rules/Ph2_Coding/optimfoundation-api-guide.md`](rules/Ph2_Coding/optimfoundation-api-guide.md) |
 | **Phase 3 調校**：進場 gate、旋鈕全表、promotion 閉環、multi-agent | [`rules/Ph3_Tuning/solver-tuning-guide.md`](rules/Ph3_Tuning/solver-tuning-guide.md) |
 
-**一階段一檔，讀那一份就夠。** Phase 2 因為篇幅（2000+ 行）另拆兩份輔助檔：交付後人工驗收用 [`rules/Ph2_Coding/model-to-code-checklist.md`](rules/Ph2_Coding/model-to-code-checklist.md)、multi-agent 派工用 [`rules/Ph2_Coding/agent-workflow-prompts.md`](rules/Ph2_Coding/agent-workflow-prompts.md)。Phase 1 / 3 的對應內容已內含在各自的規範檔裡（§7 / §8）。
+**一階段一份權威 guide。** Phase 2 另有兩份非權威輔助檔：交付後人工驗收用 [`rules/Ph2_Coding/model-to-code-checklist.md`](rules/Ph2_Coding/model-to-code-checklist.md)、派工用 [`rules/Ph2_Coding/agent-workflow-prompts.md`](rules/Ph2_Coding/agent-workflow-prompts.md)。
 
 ## 資料夾責任
 

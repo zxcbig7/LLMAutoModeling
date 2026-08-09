@@ -31,7 +31,7 @@ namespace HospitalRostering_Generator.Constraint
                         double demand = dataload.parameter_ShiftDemand
                             .FirstOrDefault(x => x.Date == d && x.Group == g)?.QTY ?? 0;
                         optEngine.AddRHS(demand);
-                        optEngine.CreateEqual($"{ConstraintName}@{d:yyyy_MM_dd}@{g}");
+                        optEngine.CreateEqual(this, d, g);
                     });
                 });
             }

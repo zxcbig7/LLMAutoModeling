@@ -24,7 +24,7 @@
 - [ ] 左式的項全在 `AddLHS`、右式的項全在 `AddRHS`——**沒有任何移項**
 - [ ] 比較符號對得上：`>=` → `CreateGreatEqual`、`<=` → `CreateLessEqual`、`=` → `CreateEqual`
 - [ ] 係數與 Model.md 完全一致（沒有四捨五入、沒有合併化簡）
-- [ ] 變數前綴對得上 Model.md 標的型別（`VariableB_` 二元 / `VariableX_` 連續 / `VariableI_` 整數）
+- [ ] 變數前綴對得上 Model.md 標的型別（`VariableB_` 二元 / `VariableC_` 連續 / `VariableI_` 整數）
 - [ ] 變數的 LB / UB 是**一條 constraint**，不是藏在 build 參數裡
 - [ ] Objective 是 OBJ 段的逐項轉譯，方向正確
 
@@ -50,18 +50,20 @@
 
 - [ ] 用到的每個 API 都在 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §9 查得到，且沒有被標 ❌
 - [ ] 沒有用 `GetVarSol` / `GetSetVarSol` / `CsvCtrl.SaveToCSV`（不存在）
-- [ ] 沒有用 `BuildBVs` / `BuildCVs` / `BuildIVs`、`CreateXxx(rhs, name)` overload
+- [ ] 一般變數使用 `BuildVars<T>`；若直接使用 `BuildBVs` / `BuildCVs` / `BuildIVs`，前綴一致且有自訂 bounds 或維護需求
+- [ ] 新限制式使用 `CreateXxx(this, dims...)`；未混用會覆蓋 RHS 常數的 overload
 
 ## Build 與解驗證
 
 - [ ] `dotnet build` 通過，fix loop 沒超過 5 次
-- [ ] `Status` 已三分診斷（Optimal 才往下；Infeasible → IIS；Unbounded → 查漏界）
+- [ ] `Status` 已五態診斷（`Optimal` / `Feasible` 往下；`TimeLimit` 換小 instance；`Infeasible` → IIS；`Unbounded` → 查漏界）
+- [ ] `Feasible`（撞限制但有解）**不算失敗**——已對 incumbent 完成 2–4 並記下 `MipGap` / `BestBound`
 - [ ] 解已代回**每條** constraint，LHS op RHS 成立
 - [ ] 目標值與關鍵變數的單位、量級對得上題目
-- [ ] LP bound sanity 檢查過（max：整數解 ≤ LP bound）
+- [ ] LP bound sanity 檢查過（max：整數解 ≤ LP bound；`Feasible` 時比 `BestBound`）
 - [ ] 與 Model.md 的小例 / 已知解對照過
 
 ## 交付
 
 - [ ] 回報含 build 結果、目標值、解摘要、輸出檔位置
-- [ ] `status.json` 已更新（`buildOk` / `solveVerified`）
+- [ ] `status.json` 已更新（`buildOk` / `solveVerified` / `solveStatus` / `verifiedOn`）

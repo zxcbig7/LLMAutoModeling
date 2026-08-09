@@ -82,7 +82,7 @@ Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pat
 | 1 | `Set/Set_*.cs` | Model.md 的 SET 段 |
 | 2 | `Parameter/Parameter_*.cs` | PARAM 段，同下標的係數併一個類 |
 | 3 | `Data/Dataload.cs` + `Data/*.csv` | 顯式載入，數值保真 |
-| 4 | `Variable/Variable{B,X,I}_*.cs` | VAR 段，型別由前綴決定 |
+| 4 | `Variable/Variable{B,C,I}_*.cs` | VAR 段，型別由前綴決定 |
 | 5 | `Constraint/Constraint_*.cs` | 每條 `[Cn]` 一檔，`///` 註記寫回條號 |
 | 6 | `Objective/ObjectiveFunction.cs` | OBJ 段逐項 |
 | 7 | `Program.cs` | 材料 → OptModel → runner，順序照 `[C1][C2]…` |
@@ -99,12 +99,21 @@ Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pat
 
 ## Step 5 · 解驗證協定（四步全過才算完成）
 
-1. **Status 三分診斷**：Optimal 才往下；Infeasible 走 IIS；Unbounded 查漏掉的界限
+1. **Status 五態診斷**（依框架 `SolveStatus`，NEVER 只認 `Optimal`）：
+
+   | 狀態 | 意義 | 動作 |
+   | --- | --- | --- |
+   | `Optimal` | 證明最佳 | 往下做 2–4 |
+   | `Feasible` | 有解未證明最佳（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | **照樣往下做 2–4**，對 incumbent 驗；記下 `MipGap` 與 `BestBound`。**「太慢」不是本階段能修的事**，那是 Phase 3 |
+   | `TimeLimit` | 中止且**無任何可用解**（名字誤導，非時間專屬；`ObjectiveValue` / `MipGap` 皆 `NaN`） | 沒有解可驗 → 縮小 `Data/*.csv` 成小 instance 求到 `Optimal`，用它完成 2–4，並記 `verifiedOn: "small-instance:<說明>"` |
+   | `Infeasible` | 無可行解 | 走 IIS（`bin/Debug/net8.0/IISs/*.ilp`），回 `modeling` |
+   | `Unbounded` | 目標式無界 | 查漏掉的界限 constraint |
+
 2. **可行性代回**：把解代回每條 constraint，確認 LHS op RHS 成立
 3. **單位一致**：目標值與關鍵變數的單位、量級對得上題目
-4. **LP bound sanity**：max 的整數解 ≤ LP bound；min 反之
+4. **LP bound sanity**：max 的整數解 ≤ LP bound；min 反之（`Feasible` 時比 `BestBound`）
 
-看到 `Optimal` 就宣稱正確**不合格**。
+看到 `Optimal` 就宣稱正確**不合格**；看到非 `Optimal` 就宣稱失敗**同樣不合格**——只有 `Infeasible` / `Unbounded` 是真的擋。
 
 ## Step 6 · 交付 + 更新 status.json
 
@@ -114,7 +123,7 @@ Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pat
 `Projects/<Project>/status.json` **只更新下列欄位**（完整 schema 見 `modeling` skill，NEVER 整檔覆寫掉其他欄位）：
 
 ```json
-{ "phase": "coding", "buildOk": true, "solveVerified": true, "updated": "YYYY-MM-DD" }
+{ "phase": "coding", "buildOk": true, "solveVerified": true, "solveStatus": "Optimal", "verifiedOn": "production", "updated": "YYYY-MM-DD" }
 ```
 
 ## Fatal

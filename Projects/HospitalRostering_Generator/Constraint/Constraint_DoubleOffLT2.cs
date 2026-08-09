@@ -52,7 +52,7 @@ namespace HospitalRostering_Generator.Constraint
                             optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" });
                             optEngine.AddRHS(-(3 - 1));
                         }
-                        optEngine.CreateGreatEqual($"{ConstraintName}_a@{d:yyyy_MM_dd}@{e}");
+                        optEngine.CreateGreatEqual(this, "Window", d, e);
                     });
                 });
 
@@ -63,7 +63,7 @@ namespace HospitalRostering_Generator.Constraint
                         optEngine.AddLHS(1, new VariableB_DoubleOffFlag { Date = d, Employee = e }));
                     optEngine.AddLHS(2, new VariableB_DoubleOffLT2 { Employee = e });
                     optEngine.AddRHS(2);
-                    optEngine.CreateGreatEqual($"{ConstraintName}_b@{e}");
+                    optEngine.CreateGreatEqual(this, "Monthly", e);
                 });
             }
             catch (Exception) { throw; }

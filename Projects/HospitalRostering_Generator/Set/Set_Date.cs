@@ -2,8 +2,7 @@ using OptimFoundation.Modeling;
 
 namespace HospitalRostering_Generator.Set
 {
-    /// <summary>排程日期（DateTime set）。Parameter_ShiftDemand / Parameter_PreAssign 的 Date index-set，
-    /// 供框架資料驗證用（成員與 Dataload.Date 一致，見 ctor 的 DATE.LoadFrom）。</summary>
+    /// <summary>排程日期資料列；內容由 Dataload 的既有 primitive Date list 建立。</summary>
     [OptSet]
     [OptDim<System.DateTime>("Date")]
     public partial class Set_Date { }

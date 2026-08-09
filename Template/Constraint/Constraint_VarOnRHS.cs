@@ -26,10 +26,10 @@ namespace Template.Constraint
     public class Constraint_VarOnRHS : ConstraintBase
     {
         private readonly OptEngine engine;
-        private readonly Set_A setA;
-        private readonly Set_C setC;
+        private readonly IReadOnlyList<Set_A> setA;
+        private readonly IReadOnlyList<Set_C> setC;
 
-        public Constraint_VarOnRHS(OptEngine engine, Set_A setA, Set_C setC)
+        public Constraint_VarOnRHS(OptEngine engine, IReadOnlyList<Set_A> setA, IReadOnlyList<Set_C> setC)
         {
             this.engine = engine;
             this.setA = setA;
@@ -43,10 +43,10 @@ namespace Template.Constraint
             {
                 foreach (var c in setC)
                 {
-                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
-                    engine.AddRHS(1, new VariableB_A { A = a }); // 正係數 RHS
+                    engine.AddLHS(1, new VariableB_AC { A = a.A, C = c.C });
+                    engine.AddRHS(1, new VariableB_A { A = a.A }); // 正係數 RHS
 
-                    engine.CreateLessEqual($"{ConstraintName}_1@{a}@{c:yyyy_MM_dd}");
+                    engine.CreateLessEqual(this, "Upper", a, c);
                 }
             }
 
@@ -55,16 +55,16 @@ namespace Template.Constraint
             {
                 foreach (var c in setC)
                 {
-                    var prevC = setC.FirstOrDefault(sd => sd == c.AddDays(-1));
-                    if (prevC == default) continue; // 第一期無前期 → 跳過
+                    var prevC = setC.FirstOrDefault(sd => sd.C == c.C.AddDays(-1));
+                    if (prevC == null) continue; // 第一期無前期 → 跳過
 
-                    engine.AddLHS(1, new VariableB_AC { A = a, C = c });
+                    engine.AddLHS(1, new VariableB_AC { A = a.A, C = c.C });
 
-                    engine.AddRHS(1, new VariableB_AC { A = a, C = prevC }); // 正係數
-                    engine.AddRHS(1, new VariableB_A { A = a }); // 正係數
+                    engine.AddRHS(1, new VariableB_AC { A = a.A, C = prevC.C }); // 正係數
+                    engine.AddRHS(1, new VariableB_A { A = a.A }); // 正係數
                     engine.AddRHS(-1); // 負常數
 
-                    engine.CreateGreatEqual($"{ConstraintName}_2@{a}@{c:yyyy_MM_dd}");
+                    engine.CreateGreatEqual(this, "Lower", a, c);
                 }
             }
         }

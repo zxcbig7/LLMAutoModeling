@@ -16,17 +16,18 @@ using Template.Constraint;
 //
 //  層級關係（整條鏈都在本檔可見，沒有額外的包裝類別）
 //
-//    ① 資料  Set/Set_*.cs           [OptSet] + [OptDim<T>]   維度積木（一顆一個檔）
+//    ① 資料  Set/Set_*.cs           [OptSet] + [OptDim<T>]   Set row schema（一種一個檔）
 //            Parameter/Parameter_*  [OptParam]    係數（值一律放 QTY 欄位）
 //            Set/Dataload.cs        DataContext   載入資料 + 輸出解
 //              └ OptData.Load(...)  唯一建構入口：註冊 + 聚合驗證，壞資料當場丟例外
-//    ② 變數  Variable/VariableB_|X_|I_*  [OptVar]  決策變數宣告（前綴決定型別）
-//              └ CreateVariables()  本檔 §2：engine.BuildBVs / BuildCVs / BuildIVs
+//    ② 變數  Variable/VariableB_|C_|I_*  [OptVar]  決策變數宣告（前綴決定型別）
+//              └ CreateVariables()  本檔 §2：預設 BuildVars；自訂 bounds 才用型別專用 builder
 //    ③ 模型  Objective/ObjectiveFunction  目標式（MUST 先建）
 //            Constraint/Constraint_*      限制式（一條或一組邏輯相關 = 一個檔）
 //              └ BuildObjective() / BuildConstraints()  本檔 §3：逐一 .Build()
 //    ④ 引擎  ProjectConfig（輸出）+ CplexConfig（求解）
-//              └ NewSolverConfig()  本檔 §5：兩模式共用的求解器設定
+//              └ 兩處各自具名宣告，內容直接看得見：§1 的 solverConfig、§4 的 baseline
+//                NEVER 用 factory helper 包裝 config——設定值要能在使用處一眼讀完
 //    ⑤ 執行  solve       OptProject（單模型×單設定，本檔 §1）
 //            experiment  OptExperiment（單模型×多設定，本檔 §4）
 //
@@ -35,8 +36,8 @@ using Template.Constraint;
 // ══════════════════════════════════════════════════════════════════════════
 
 // ── §1 solve 模式 ─────────────────────────────────────────────────────────
-// OptData.Load 是資料層唯一建構入口：跑參照完整性 / 重複 key / 數值 sanity 驗證，
-// 失敗丟 DataValidationException（fail-fast，NEVER try/catch 吞掉）。
+// OptData.Load 是資料層唯一建構入口：現行自動檢查 Parameter 重複 key 與數值 sanity；
+// Set 參照或全格完整性若為模型需求，必須由專案另外驗證。
 var data = OptData.Load(() => new Dataload());
 
 // OptModel 只定義可重用的三階段模型；實際引擎生命週期交給 runner。
@@ -59,7 +60,12 @@ var projectConfig = new ProjectConfig
     ExportLP = true,
     ExportMPS = true,
 };
-var solverConfig = NewSolverConfig(timeLimit: 300);
+var solverConfig = new CplexConfig
+{
+    MipGap = 0.03,
+    TimeLimit = 300,
+    Threads = 8,
+};
 
 using var project = new OptProject(model)
     .UseConfig(() => projectConfig)
@@ -67,33 +73,33 @@ using var project = new OptProject(model)
     .OnSolved(engine => data.WriteToCSV(engine));
 
 bool ok = project.Execute();
-Logging.Info($"求解結果：{(ok ? "成功" : "失敗")} Status={project.optEngine.Status}");
+Logging.Info($"求解結果：{(ok ? "成功" : "失敗")} Status={project.Engine.Status}");
 
 // Infeasible → 框架已自動跑 IIS，這裡讀回最小衝突限制式集合
-if (!ok && project.optEngine.Status == SolveStatus.Infeasible)
+if (!ok && project.Engine.Status == SolveStatus.Infeasible)
 {
-    var conflicts = project.optEngine.GetConflictConstraints();
+    var conflicts = project.Engine.GetConflictConstraints();
     Logging.Info($"衝突限制式（{conflicts.Count}）：{string.Join(", ", conflicts)}");
 }
 
 return;
 
 // ── §2 變數層 ─────────────────────────────────────────────────────────────
-// 型別由類別名前綴決定：VariableB_ = Binary、VariableX_ = Continuous、VariableI_ = Integer。
+// 型別由類別名前綴決定：VariableB_ = Binary、VariableC_ = Continuous、VariableI_ = Integer。
 // 傳入 sets 的順序 MUST 對齊該變數 [OptDim] 的宣告順序，否則索引會錯位而不報錯。
 static void CreateVariables(Dataload data, OptEngine engine)
 {
-    engine.BuildBVs<VariableB_ABC>(data.SetA, data.SetB, data.SetC);
-    engine.BuildBVs<VariableB_AC>(data.SetA, data.SetC);
-    engine.BuildBVs<VariableB_A>(data.SetA);
+    engine.BuildVars<VariableB_ABC>(data.SetA, data.SetB, data.SetC);
+    engine.BuildVars<VariableB_AC>(data.SetA, data.SetC);
+    engine.BuildVars<VariableB_A>(data.SetA);
 
-    engine.BuildCVs<VariableX_A>(data.SetA);
-    engine.BuildCVs<VariableX_AB>(data.SetA, data.SetB);
+    engine.BuildVars<VariableC_A>(data.SetA);
+    engine.BuildVars<VariableC_AB>(data.SetA, data.SetB);
 
-    // 有界整數 [0, 10]；連續有界同理：BuildCVs<VariableX_A>(0, 100, data.SetA)
+    // 有界整數 [0, 10]；連續有界同理：BuildCVs<VariableC_A>(0, 100, data.SetA)
     engine.BuildIVs<VariableI_A>(0, 10, data.SetA);
 
-    Logging.Info($"變數建立完成：{engine.varCount}");
+    Logging.Info($"變數建立完成：{engine.VariableCount}");
 }
 
 // ── §3 模型層 ─────────────────────────────────────────────────────────────
@@ -101,7 +107,7 @@ static void CreateVariables(Dataload data, OptEngine engine)
 // 新增一條限制式 = Constraint/ 新增一個檔 + 這裡加一行，沒有別的地方要改。
 //
 // 這裡是唯一知道 Dataload 的地方：Constraint / Objective 的建構子只收自己用得到的
-// 積木、Parameter 清單與界限值，NEVER 收整包 Dataload——換資料結構不必動任何式子。
+// Set row 清單、Parameter 清單與界限值，NEVER 收整包 Dataload——換資料結構不必動任何式子。
 static void BuildObjective(Dataload data, OptEngine engine)
 {
     Logging.Info("【建構目標式】");
@@ -110,8 +116,8 @@ static void BuildObjective(Dataload data, OptEngine engine)
         penaltyABC: data.Penalty_1,
         penaltyAC: data.Penalty_2,
         penaltyA: data.Penalty_3,
-        penaltyXA: data.Penalty_4,
-        penaltyXAB: data.Penalty_5,
+        penaltyCA: data.Penalty_4,
+        penaltyCAB: data.Penalty_5,
         penaltyIA: data.Penalty_6).Build();
 }
 
@@ -132,12 +138,17 @@ static void BuildConstraints(Dataload data, OptEngine engine)
 // 所有 cell 共用同一份已載入 data，輸出 Experiments/<name>.csv + .json。
 static void RunExperiment(OptModel model)
 {
-    var baseline = NewSolverConfig(timeLimit: 60);
+    var baseline = new CplexConfig
+    {
+        MipGap = 0.03,
+        TimeLimit = 60,
+        Threads = 8,
+    };
     var emphasis = baseline.Clone(); emphasis.Emphasis = 2;
-    var varSel = baseline.Clone(); varSel.varSel = 3;
-    var nodeSelect = baseline.Clone(); nodeSelect.nodeSelect = 1;
-    var gap = baseline.Clone(); gap.epGap = 0.01;
-    var threads = baseline.Clone(); threads.workThreads = 4;
+    var varSel = baseline.Clone(); varSel.VariableSelect = 3;
+    var nodeSelect = baseline.Clone(); nodeSelect.NodeSelect = 1;
+    var gap = baseline.Clone(); gap.MipGap = 0.01;
+    var threads = baseline.Clone(); threads.Threads = 4;
     var seed = baseline.Clone(); seed.Seed = 20260621;
 
     var result = new OptExperiment(
@@ -165,13 +176,3 @@ static void RunExperiment(OptModel model)
 
     Logging.Info($"[Experiment] 完成：{result.Trials.Count} 個 Trial 已寫入 {FolderDir.Experiment.GetPath()}");
 }
-
-// ── §5 求解器設定（兩模式共用）────────────────────────────────────────────
-// solver 調校與輸出策略分離；solve 的匯出開關在 ProjectConfig，experiment 採框架的靜默預設。
-// 完整欄位與 tuning 策略見 ../tuning/CLAUDE.md。
-static CplexConfig NewSolverConfig(double timeLimit) => new CplexConfig
-{
-    epGap = 0.03,
-    timeLimit = timeLimit,
-    workThreads = 8,
-};

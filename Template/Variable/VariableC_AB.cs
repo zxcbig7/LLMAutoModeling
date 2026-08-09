@@ -7,5 +7,5 @@ namespace Template.Variable
     [OptVar]
     [OptDim<string>("A")]
     [OptDim<string>("B")]
-    public partial class VariableX_AB { }
+    public partial class VariableC_AB { }
 }
