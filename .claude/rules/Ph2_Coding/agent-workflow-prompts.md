@@ -182,7 +182,9 @@ grep -n "BuildVars\|AddLHS\|CreateLessEqual" ".claude/rules/Ph2_Coding/optimfoun
 
 做法：
 1. 一個型別一個檔，sealed，帶 <summary> 標明對應 Model.md 符號
-2. Set 用 [OptSet<T>]；Parameter 用 [OptParam] + [OptDim<TSet>]，只用 object initializer 建構
+2. Set 與 Parameter 同一套宣告法：裸 [OptSet] / [OptParam] + 每維一個 [OptDim<資料型別>("Name")]
+   （T 是 string / DateTime / int…，NEVER 是 Set 積木；Set 至少一維，Parameter 可零維且一律含 QTY）
+   Parameter 只用 object initializer 建構
 3. Dataload : DataContext，Dataload(IDataSource) 內只允許 Load(source, name) 與 LoadParam<T>(name) 兩種句子
    NEVER 在此 ctor 內出現迴圈、if、Random、日期運算、補值
 4. Data/*.csv 依 Model.md 的值逐筆填，數值與題目完全一致，NEVER 四捨五入或填佔位值
@@ -210,7 +212,7 @@ grep -n "BuildVars\|AddLHS\|CreateLessEqual" ".claude/rules/Ph2_Coding/optimfoun
 
 做法：
 1. Model.md 標 Binary → VariableB_、Continuous → VariableX_、Integer → VariableI_
-2. [OptVar] + [OptDim<TSet>]；NEVER 用 [OptVar] 參數指定型別（該參數已移除）
+2. [OptVar] 裸寫 + 每維一個 [OptDim<資料型別>("Name")]；型別完全由類名前綴決定
 3. sealed + <summary> 標明對應 Model.md 符號
 4. Model.md 的 LB/UB 若非預設值 → **不要寫進變數宣告**，記進回報，交給 C5 寫成一條 constraint
 

@@ -1,6 +1,6 @@
 # coding · 交付前自檢
 
-> 規則本體在 `.claude/workflows/interactive/phase-2-coding.md`、對應表在 `.claude/workflows/interactive/model-to-code.md`、API 在 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §9。
+> 規則本體在 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`（API 在 §9）；交付後的人工驗收用 `.claude/rules/Ph2_Coding/model-to-code-checklist.md`。
 > 本檔只是交付前的勾選面。**逐條對照回 Model.md**，不是掃一眼 code 就打勾。
 
 ## 入口 gate
@@ -11,7 +11,8 @@
 ## 結構
 
 - [ ] 專案在 `Projects/<Project>/`，從 `Template/` 長出來
-- [ ] 資料夾：`Model/` `Set/` `Parameter/` `Variable/` `Objective/` `Constraint/`，沒有自創資料夾
+- [ ] 八資料夾：`Model/` `Set/` `Parameter/` `Variable/` `Objective/` `Constraint/` `Solution/` `Data/`，沒有增減
+- [ ] `Model/` 只放 `<Project>_Model.md`；`Dataload.cs` 在 `Data/`，與 CSV 同層
 - [ ] 一個型別一個 `.cs`，檔名 = 類別名（沒有 `Sets.cs` 這種集中檔）
 - [ ] DLL 走 `<Reference>` + HintPath `..\..\dlls\`；generator 走 `<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />`
 - [ ] csproj 有 `<Compile Remove="Generated/**/*.cs" />`

@@ -40,6 +40,7 @@ namespace Template.Set
         public Set_A SetA = new();   // 第一維索引
         public Set_B SetB = new();   // 第二維索引
         public Set_C SetC = new();   // 時間軸
+        public Set_Arc Arc = new();  // 稀疏二維 tuple Set 範例
 
         // ── Parameters（實體由 Parameter/ 資料夾的類別承載） ──────────────
         public List<Parameter_AB> parameter_AB = new();
@@ -48,8 +49,14 @@ namespace Template.Set
         public Dataload()
         {
             // ① Sets 建立
-            SetA.LoadInline("A1", "A2", "A3", "A4", "A5");
-            SetB.LoadInline("B1", "B2", "B3");
+            SetA.LoadFrom(new[] { "A1", "A2", "A3", "A4", "A5" });
+            SetB.LoadFrom(new[] { "B1", "B2", "B3" });
+            Arc.LoadFrom(new[]
+            {
+                (From: "A1", To: "B1"),
+                (From: "A1", To: "B3"),
+                (From: "A3", To: "B2"),
+            });
 
             int year = 2026, month = 1;
             var dates = new List<DateTime>();

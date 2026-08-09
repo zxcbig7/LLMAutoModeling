@@ -61,7 +61,7 @@ graph TD
 |---|---:|---|
 | `README.md` | 213 | repo 入口、DLL HintPath 規則、paved-path 範例 |
 | `ROADMAP.md` | 117 | 架構決策與落地狀態 |
-| `../rules/Ph3_Tuning/cplex-tuning-strategy.md` | 306 | solver tuning 流程與 `OptExperiment` 掃描方式 |
+| `../rules/Ph3_Tuning/solver-tuning-guide.md` | — | Phase 3 唯一規範：進場 gate、旋鈕全表、`OptExperiment` 掃描、promotion 閉環 |
 | `../../tutorial(for developer)/ai-modeling-framework-tutorial.md` | 378 | Modeling → Coding → Tuning 教學 |
 | `../../tutorial(for developer)/development-workflow.md` | 206 | 端到端工作流導覽 |
 | `Template/Program.cs` | 目前專案檔為準 | generator paved path 的 executable composition root |

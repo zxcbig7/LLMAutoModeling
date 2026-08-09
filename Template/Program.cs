@@ -16,7 +16,7 @@ using Template.Constraint;
 //
 //  層級關係（整條鏈都在本檔可見，沒有額外的包裝類別）
 //
-//    ① 資料  Set/Set_*.cs           [OptSet<T>]   維度積木（一顆一個檔）
+//    ① 資料  Set/Set_*.cs           [OptSet] + [OptDim<T>]   維度積木（一顆一個檔）
 //            Parameter/Parameter_*  [OptParam]    係數（值一律放 QTY 欄位）
 //            Set/Dataload.cs        DataContext   載入資料 + 輸出解
 //              └ OptData.Load(...)  唯一建構入口：註冊 + 聚合驗證，壞資料當場丟例外

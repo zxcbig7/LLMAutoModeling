@@ -1,220 +1,60 @@
-# AI Modeling — OptimFoundation CPLEX
+# AI MILP 開發框架
 
-自然語言最佳化題目 → 可求解的 **OptimFoundation**（封裝 IBM ILOG CPLEX）C# 專案。
-建模預設走 **source generator（`[OptVar]`/`[OptParam]`）+ `OptModel` 模型定義**；同一模型可交給 `OptProject` 單次求解或 `OptExperiment` 做交叉實驗。需逐行掌控時可退回手寫。
+AI Modeling 是一套用於建立混合整數線性規劃（MILP）應用的開發框架。它以 **OptimFoundation** 為建模層、**IBM ILOG CPLEX** 為求解器，將從問題定義、數學模型到求解與實驗的工作，以一致的專案結構和規範串接起來。
 
-## 入口與路線
+## 框架定位
 
-任何 AI agent 先讀 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md)（通用入口）；規範單一來源在 `.claude/rules/` 與 [`.claude/workflows/interactive/`](.claude/workflows/interactive/)。
+這個框架的目的，是讓 AI 協助把真實世界的最佳化問題轉換為可驗證、可求解、可維護的 MILP 應用。它不只著眼於取得一個可行答案，也重視模型假設、資料品質、求解設定與結果可追溯性。
 
-**唯一路線是三階段 phase gate**，依序推進、每階段之間有 gate，NEVER 跳階或走免 gate 的全自動路線：
+適合處理的情境包括：
 
-| 階段 | skill | 產物 |
-| --- | --- | --- |
-| Phase 1 Modeling | `/modeling` | `Model/<Project>_Model.md`，停在使用者確認 |
-| Phase 2 Coding | `/coding` | 八資料夾專案，build 綠 + 解已驗證 |
-| Phase 3 Tuning | `/tuning` | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
+- 生產與產能規劃
+- 排班與人力配置
+- 資源指派與選址
+- 配送、庫存與供應鏈規劃
+- 預算配置與組合最佳化
 
-整體任務、三階段 I/O 契約與 `status.json` schema 見 [`.claude/rules/MILP DevPipeline/README.md`](.claude/rules/MILP%20DevPipeline/README.md)。
+## 核心能力
 
-## 換機器設置（clone 後唯一要做的事）
+- **結構化建模**：以集合、參數、決策變數、目標函數與限制式，清楚表達 MILP 問題。
+- **AI 開發流程**：提供由問題理解、模型設計到實作驗證的自動化階段流程，降低需求描述與最佳化模型之間的落差。
+- **框架化實作**：OptimFoundation 提供一致的資料、模型、求解與結果輸出抽象；source generator 協助維持模型元件的規格一致。
+- **求解與實驗管理**：以 CPLEX 執行求解，並支援不同求解設定的比較、基準結果與後續調校。
+- **開發護欄**：將資料驗證、模型檢核、API 使用規則與專案慣例集中管理，讓 AI 與開發者能在相同契約下協作。
 
-DLL 不進版控（商用 CPLEX + 建置產物），所以 clone 後 `dlls/` 是空的，要放好 6 個 DLL 才能 build：CPLEX 兩顆從本機安裝複製，OptimFoundation 四顆先建 sibling `../OptimFoundation/` 再複製 `Release` 輸出。逐步指令與執行期 PATH 注意事項見 [`dlls/README.md`](dlls/README.md)。
-
----
-
-## 目錄結構
-
-```text
-AI-Modeling/
-├── CLAUDE.md                    ← Claude Code 入口 router（指向 .claude/）
-├── README.md                    ← 本檔
-├── ROADMAP.md                   ← 路線圖與待辦
-│
-├── .claude/                     ← ★ 所有 AI 規範、工作流與工具集中於此
-│   ├── rules/                   ←   規範層（該怎麼做）
-│   │   ├── AGENTS.md            ←     天條唯一權威（任何 AI agent 先讀這）
-│   │   ├── milp-domain-rules.md ←     MILP domain 天條（跨三 phase）
-│   │   ├── Ph1_Modeling/        ←     建模規範 + linearization 手法 + multi-agent 拓樸
-│   │   ├── Ph2_Coding/          ←     API guide（唯一標準）+ 人工驗收 checklist + multi-agent 拓樸
-│   │   └── Ph3_Tuning/          ←     調校規範 + CPLEX 旋鈕策略 + 文獻地圖
-│   ├── workflows/               ←   開發流程
-│   │   ├── interactive/         ←     ★ 唯一路線：三階段 phase gate
-│   │   └── automated/           ←     已停用（16-stage 量產線），僅供歷史查閱
-│   ├── reference/               ←   查閱資料
-│   │   ├── CodeMap.md              ← 模型定義與 runner 架構地圖
-│   │   └── baseline/               ← 遷移前基準值（驗收依據）
-│   ├── skills/                  ←   /modeling · /coding · /tuning 三個 phase orchestrator
-│   ├── commands/                ←   slash command
-│   ├── agents/                  ←   subagent 定義
-│   ├── hooks/                   ←   dotnet build 摘要 hook
-│   └── evals/                   ←   behavioral eval cases
-│
-├── dlls/                        ← ★ 所有 DLL 唯一來源（不進版控；見 dlls/README.md）
-│   └── README.md                ←   6 個 DLL 清單 + 佈置說明
-├── Template/                    ← 新專案起始範本（generator + 對稱 runner API）
-├── Projects/                    ← 所有練習題目
-│   ├── HospitalRostering_Generator/ ← 雙架構教學：generator + 注入 Action（預設）
-│   ├── HospitalRostering_Manual/    ← 歷史對照：手寫 class + Problem.Execute（已廢止，NEVER 照抄）
-│   └── …（GlassFactory / SandwichProduction / ClinicVitamin / …）
-│
-├── tutorial(for developer)/     ← 端到端教學（醫院排班，含兩架構對照）
-├── dataset/                     ← 題庫與資料集
-└── specs/                       ← SDD 規格文件
-```
-
----
-
-## 環境需求
-
-| 項目      | 版本                       |
-| --------- | -------------------------- |
-| .NET      | 8.0                        |
-| IBM CPLEX | 22.1.1                     |
-| IDE       | Visual Studio 2022 / Rider / VS Code |
-
-> clone 後先照 [`dlls/README.md`](dlls/README.md) 佈置 `dlls/`（見上「換機器設置」）；不需另行安裝 NuGet 套件。框架本體唯讀，API 對照 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §9。
-
----
-
-## 快速開始
-
-1. **複製範本**：把 `Template/` 複製到 `Projects/MyProject/`
-2. **改 `csproj` 兩處相對路徑**（複製後都會多一層，不改會編不過）：DLL HintPath `..\dlls\` → `..\..\dlls\`；generator Analyzer `..\dlls\` → `..\..\dlls\`（範本 csproj 開頭也有此提示）
-3. **先寫數學模型**：在 `Model/MyProject_Model.md` 完成 Sets/Parameters/Variables/Objective/Constraints（確認前不寫 `.cs`）
-4. **再翻譯成 code**：變數/參數預設用 `[OptVar]`/`[OptParam]` 宣告
-5. **執行**：
-   - `dotnet run` — 求解
-   - `dotnet run -- experiment` — 參數掃描（tuning）
-
-### csproj 參考（標準寫法）
-
-```xml
-<ItemGroup>
-  <!-- source generator：以 analyzer DLL 掛入（repo 根 dlls/） -->
-  <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
-</ItemGroup>
-<ItemGroup>
-  <Reference Include="ILOG.Concert"><HintPath>..\..\dlls\ILOG.Concert.dll</HintPath></Reference>
-  <Reference Include="ILOG.CPLEX"><HintPath>..\..\dlls\ILOG.CPLEX.dll</HintPath></Reference>
-  <Reference Include="NLog"><HintPath>..\..\dlls\NLog.dll</HintPath></Reference>
-  <Reference Include="OptimFoundation.Core"><HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath></Reference>
-  <Reference Include="OptimFoundation.Cplex"><HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath></Reference>
-</ItemGroup>
-```
-
----
-
-## 專案標準結構
+## 整體架構
 
 ```text
-Projects/MyProject/
-├── MyProject.csproj
-├── Program.cs                  ← 唯一組裝點（模型、單次求解、實驗）
-│
-├── Model/
-│   └── MyProject_Model.md      ← 數學模型文件
-│
-├── Set/
-│   └── Dataload.cs             ← Sets / Parameters / WriteToCSV
-│
-├── Parameter/
-│   └── Parameter_Xxx.cs        ← [OptParam] + [OptDim] 宣告（generator 唯一路線）
-│
-├── Variable/
-│   ├── VariableB_Xxx.cs        ← [OptVar] + [OptDim] 宣告（generator 唯一路線）
-│   ├── VariableX_Xxx.cs
-│
-├── Objective/
-│   └── ObjectiveFunction.cs
-│
-└── Constraint/
-    └── Constraint_Xxx.cs
+業務問題
+  → MILP 數學模型
+  → OptimFoundation 模型元件
+  → CPLEX 求解
+  → 解答、指標與實驗結果
 ```
 
-### 執行流程（paved path）
+主要組成如下：
 
-```csharp
-// Program.cs
-var data = OptData.Load(() => new Dataload());
+| 元件 | 角色 |
+| --- | --- |
+| `Projects/` | 各個最佳化案例與應用專案。 |
+| `Template/` | 新專案共用的結構與基礎設定。 |
+| `.claude/` | AI 開發規範、自動化流程與驗證資源。 |
+| `dlls/` | CPLEX 與 OptimFoundation 的執行相依元件。 |
+| `dataset/` | 範例與測試資料。 |
 
-var projectConfig = new ProjectConfig
-{
-    ProjectName = "MyProject",
-    EnableSolverLog = true,
-    ExportSol = true,
-};
-var baseline = new CplexConfig { epGap = 0.03, timeLimit = 300, workThreads = 8 };
+## 技術基礎
 
-var model = new OptModel("baseline")
-    .AddVariables(e =>
-    {
-        e.BuildBVs<VariableB_Xxx>(data.Items);
-        e.BuildCVs<VariableX_Xxx>(data.Items);
-    })
-    .AddObjective(e => new ObjectiveFunction(data.Items, data.Profit, e).Build())
-    .AddConstraints(e =>
-    {
-        new Constraint_Capacity(data.Items, data.Capacity, e).Build();
-    });
+| 技術 | 用途 |
+| --- | --- |
+| .NET 8 | 應用程式執行環境。 |
+| OptimFoundation | 最佳化模型與專案生命週期框架。 |
+| IBM ILOG CPLEX 22.1.1 | MILP 求解器。 |
+| C# Source Generator | 模型宣告與框架元件的自動產生支援。 |
 
-if (args.Contains("experiment"))
-{
-    var emphasis = baseline.Clone();
-    emphasis.Emphasis = 2;
-    new OptExperiment("my-project-tuning", "baseline vs emphasis")
-        .AddModel(model)
-        .AddConfig("baseline", baseline)
-        .AddConfig("emphasis", emphasis)
-        .Run();
-    return;
-}
+## 延伸文件
 
-using var project = new OptProject(model)
-    .UseConfig(() => projectConfig)
-    .UseConfig(() => baseline)
-    .OnSolved(e => data.WriteToCSV(e));
-bool ok = project.Execute();
-```
-
-> `Dataload` MUST `public partial class Dataload : DataContext`；NEVER 裸 `new Dataload()` 當建構終點——仍可編譯但跳過框架的參照完整性 / 重複 key / 數值 sanity 驗證。`OptData.Load` 驗證後會凍結框架受控的註冊 mutation API；既有 public fields 與可變 `List` 不保證在直接寫入當下攔截。細節見 [`.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md) §2.4 與 §9.2.4。
->
-> 需逐行掌控引擎生命週期時，可退回手寫 `MyProblem : IDisposable` 的 `Execute()`（完整示範見 `Projects/HospitalRostering_Manual`）。
-
----
-
-## 重點練習題目
-
-| 專案 | 類型 | 說明 |
-| ---- | ---- | ---- |
-| [GlassFactory](Projects/GlassFactory/) | LP | 玻璃工廠 — 產能限制下最大化生產利潤 |
-| [SandwichProduction](Projects/SandwichProduction/) | LP | 早餐店 — 有限食材下最大化三明治收益 |
-| [ClinicVitamin](Projects/ClinicVitamin/) | MIP | 診所 — 維生素原料限制下最大化藥品利潤 |
-| [HospitalRostering_Generator](Projects/HospitalRostering_Generator/) | MIP | 醫院排班 — **generator + 注入 Action（預設架構）** |
-| [HospitalRostering_Manual](Projects/HospitalRostering_Manual/) | MIP | 醫院排班 — 手寫 class + Problem.Execute，**已廢止寫法、僅歷史對照** |
-
-> 兩個 HospitalRostering 專案用**同一份數學模型**、跑同一組 tuning 實驗，專門對照兩種建構方式。其餘練習見 `Projects/`，端到端教學見 `tutorial/`。
-
----
-
-## 關鍵規則（天條）
-
-1. **DLL 唯一來源**：所有 `csproj` HintPath 指向 repo 根 `dlls/`（佈置見 `dlls/README.md`）
-2. **框架唯讀**：OptimFoundation 為編譯版 DLL，需擴充在專案端寫 helper，不改框架
-3. **Parameter 資料夾必須存在**：Sets 由 Parameters 衍生
-4. **禁止 Hardcode**：所有數值放 `Parameter.QTY`，Constraint / Objective 不得出現裸數字
-5. **先模型後實作**：數學模型（`Model/`）確認前不寫 `.cs`
-6. **WriteSolution 前先 CreateFolder**：`FolderDir.Solution.CreateFolder();`
-
----
-
-## 參考文件
-
-| 文件 | 說明 |
-| ---- | ---- |
-| [CLAUDE.md](CLAUDE.md) | AI 操作規範與天條 |
-| [optimfoundation-api-guide.md](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md) | Phase 2 唯一標準：端到端轉譯規範 + §9 完整 API 簽名／速查卡／黑名單 |
-| [claudemdTemplate/](claudemdTemplate/) | 各資料夾規則的單一來源（few-shot 範本） |
-| [Template/CLAUDE.md](Template/CLAUDE.md) | 框架語法詳細範例（generator 預設） |
-| [tutorial(for developer)/](tutorial%28for%20developer%29/) | 端到端教學（醫院排班 + 兩架構對照） |
-| [.claude/rules/Ph3_Tuning/cplex-tuning-strategy.md](.claude/rules/Ph3_Tuning/cplex-tuning-strategy.md) | CPLEX tuning 策略與旋鈕對照 |
+- [總流程：天條與三階段契約](.claude/rules/AGENTS.md)
+- [Phase 1 建模規範](.claude/rules/Ph1_Modeling/model-design-guide.md)
+- [Phase 2 OptimFoundation API 指引](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md)
+- [Phase 3 調校規範](.claude/rules/Ph3_Tuning/solver-tuning-guide.md)
+- [開發者教材](tutorial%28for%20developer%29/)

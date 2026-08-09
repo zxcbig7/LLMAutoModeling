@@ -1,6 +1,6 @@
 # modeling · 交付前自檢
 
-> 規則本體在 `.claude/workflows/interactive/phase-1-model-design.md`（1d 建模自驗）與 `.claude/rules/AGENTS.md`（天條）。
+> 規則本體在 `.claude/rules/Ph1_Modeling/model-design-guide.md` §7（自驗清單）與 `.claude/rules/AGENTS.md`（天條）。
 > 本檔只是交付前的勾選面——每項都要**實際回去檔案裡看過**才打勾，不憑印象。
 
 ## 1a 去故事化 + 單位
@@ -23,7 +23,7 @@
 - [ ] **宣告先於使用**：CONSTRAINT / OBJ 出現的每個符號都已在 SET / PARAM / VAR 宣告
 - [ ] 每個 PARAM 標了 Dim；每個 VAR 標了型別（Continuous / Binary / Integer）+ LB / UB
 - [ ] 每條 CONSTRAINT 是 `LHS op RHS` 原形，**未預先移項 / 化簡 / 翻方向**
-- [ ] 每條 CONSTRAINT 標了 pattern tag（`linearization-patterns.md` 8 類之一）+ Dim + 條號 `[Cn]`
+- [ ] 每條 CONSTRAINT 標了 pattern tag（`model-design-guide.md` 附錄 A 的 8 類之一）+ Dim + 條號 `[Cn]`
 - [ ] 每個 `sum` 標明 index 範圍（∀ 哪個 set、over 哪個 set）
 - [ ] OBJ 段存在且標明方向（max / min），所有項在 LHS
 - [ ] CONSTRAINT / OBJ 內**沒有裸數字**，每個數值都是具名 PARAM

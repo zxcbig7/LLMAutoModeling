@@ -47,13 +47,14 @@ Model.md 不合格，Phase 2 一定是猜的。發現任一項不過 → 退回 
 - [ ] Model.md 的每顆 SET / PARAM 都能對到一個 `.cs` + 一個 CSV + 一行載入敘述，數量三邊相等
 - [ ] Set CSV：檔名 `Set_<名>.csv`、單欄、**無表頭**、保序、不重複
 - [ ] Parameter CSV：檔名 = 類別名、表頭 = 各 `[OptDim]` 名 + 最後一欄 `QTY`、同一維度組合只出現一次
-- [ ] ★ `HasValue = false` 的純 key 參數**有寫表頭**（沒寫 → 第一筆資料被當表頭吃掉，錯誤訊息裡的「檔內表頭」會印出你的第一筆資料）
+- [ ] 只有 key、沒有值的 tuple 做成**多維 Set**而不是 Parameter（`Parameter` 一律含 `QTY`）
 - [ ] scalar（零維）Parameter 的 CSV 恰好一列資料
 - [ ] ★ key 欄的值全部出現在對應的 `Set_*.csv` 裡（否則載入報 `Dangling`）
 - [ ] 數值用 `.` 當小數點、沒有千分位逗號；`DateTime` 一律 `yyyy-MM-dd`
-- [ ] `[OptSet<T>]` 有顯式泛型參數（不是裸 `[OptSet]`）；沒有拿 `List<string>` 當 Set
+- [ ] ★ `[OptSet]` 是**裸寫**且至少掛一個 `[OptDim<資料型別>("Name")]`；沒有拿 `List<string>` 當 Set
 - [ ] Parameter 只用 object initializer 建構；沒有位置式 ctor、沒有自寫 ctor；數值欄一律叫 `QTY`
-- [ ] ★ 同一顆 Set 當多個維度時走 `[OptDim<Set_Lot>("LotFrom")]` 取角色名，沒用泛型式 / 字串式逃生口；同一類別上三種寫法沒有混用
+- [ ] ★ 每個 `[OptDim<T>` 的 `T` 都是**資料型別**（`string` / `DateTime` / `int` / …）——填成別的東西不會 compile error，但 property 型別會錯
+- [ ] ★ Parameter 每個維度名與它該對應的 Set 維度名**逐字相同**；取了角色名（`LotFrom` vs `Lot`）的維度已知會脫離參照檢查，且該處有註記說明為什麼可以接受
 - [ ] `[FullGrid]` 判準對：缺一格代表**資料有問題**才加（例 `Capacity{Machine,Date}`），缺一格代表**組合不存在**就不加（例 `PreAssign{Item}`、`Distance{From,To}`）；有加的都在 `<summary>` 寫了為什麼必須全格
 - [ ] ★ 結構常數（3×3 的 3、時間窗 7、班別數）做成了 `Set_*` / `Parameter_*`，迴圈邊界一律 `foreach (var x in set)` 或 `set.Count`，沒有 `for (i = 0; i < 3; i++)`
 - [ ] 換一批合法 CSV 後不必改任何 `.cs`（拿實際的第二組資料試，不要用想像的）
@@ -64,7 +65,7 @@ Model.md 不合格，Phase 2 一定是猜的。發現任一項不過 → 退回 
 - [ ] `Dataload(IDataSource source)` 內**只有兩種句子**：`set_X.Load(source, "Set_X")` 與 `parameter_X = source.LoadParam<Parameter_X>("Parameter_X")`
 - [ ] 沒有 `for` / `foreach` / `Enumerable.Range` / `Random` / enum 掃描 / 日期運算 / `if` / 補值 / 預設值
 - [ ] ★ 沒有 `LoadFrom(parameter_X.Select(...).Distinct())` 這種從參數反推 set（會讓題目允許但這批資料沒用到的成員靜默消失）
-- [ ] Set 載入一律顯式帶名稱；沒有 `LoadCsv` / `LoadInline` / 省略名的 `Load(source)`
+- [ ] Set 載入一律 `Load(source, "Set_X")` 顯式帶名稱，沒有省略名的 `Load(source)`
 - [ ] 建構走 `OptData.Load(() => new Dataload())`，沒有裸 `new Dataload()` 當終點
 - [ ] penalty / capacity / bound / Big-M 都是 Parameter CSV，不是 Dataload 的 hardcode public field
 - [ ] 沒有手寫驗證邏輯（`ValidateSetsCoverParameters()` 這種）、沒有 `try/catch` 吞 `DataValidationException`
@@ -148,7 +149,7 @@ Model.md 不合格，Phase 2 一定是猜的。發現任一項不過 → 退回 
 ## K. API 黑名單（出現任一直接打回，§9.3）
 
 - [ ] 不存在的 API：`GetVarSol` / `GetSetVarSol<T>` / `CsvCtrl.SaveToCSV` / `CSVCtrl`（大寫 V）/ `FolderDir.Result` / `OptEngineConfig` / `AddPool` / `AddPoolRHS`
-- [ ] 已禁用的 API：`BuildBVs|BuildCVs|BuildIVs` / `CreateXxx(rhs, name)` / `LoadCsv` / `LoadInline` / Parameter 位置式 ctor / 手寫 `: VariableBase`｜`: ParameterBase` / `ConstraintCount++`
+- [ ] 已禁用的 API：`BuildBVs|BuildCVs|BuildIVs` / `CreateXxx(rhs, name)` / Parameter 位置式 ctor / 手寫 `: VariableBase`｜`: ParameterBase` / `ConstraintCount++`
 - [ ] 沒有 `override Build()` / `override Solve()`（已非 virtual，要覆寫是 `BuildCore()` / `SolveCore()`）
 - [ ] 沒有改動 OptimFoundation 框架本體（`dlls/` 唯讀）
 
@@ -167,11 +168,15 @@ Model.md 不合格，Phase 2 一定是猜的。發現任一項不過 → 退回 
 有輸出不等於錯，但每一筆都要能講出為什麼合法。
 
 ```powershell
-$proj = "C:/Users/zxcbi/Desktop/Projects/OptimizationFramework/AI-Modeling/Projects/<Project>"
+# 在 repo 根執行；<Project> 換成實際專案名
+$proj = "Projects/<Project>"
 $cs = Get-ChildItem $proj -Recurse -Filter *.cs | Where-Object { $_.FullName -notmatch '\\(bin|obj|Generated)\\' }
 
 # 黑名單 API + 手寫 base + soft constraint：有輸出即打回
-$cs | Select-String 'GetVarSol|GetSetVarSol|SaveToCSV|CSVCtrl|BuildBVs|BuildCVs|BuildIVs|LoadCsv|LoadInline|FolderDir\.Result|OptEngineConfig|AddPool|ConstraintCount|:\s*(VariableBase|ParameterBase)|Create(Le|Ge|Eq)Soft'
+$cs | Select-String 'GetVarSol|GetSetVarSol|SaveToCSV|CSVCtrl|BuildBVs|BuildCVs|BuildIVs|FolderDir\.Result|OptEngineConfig|AddPool|ConstraintCount|:\s*(VariableBase|ParameterBase)|Create(Le|Ge|Eq)Soft'
+
+# 宣告法：attribute MUST 裸寫，維度全走 [OptDim<資料型別>("Name")]；有輸出即打回
+$cs | Select-String 'OptSet<|OptDim<Set_|OptVar\("|OptParam\("'
 
 # 常數位裸數字（單參數 Add）：只有 pattern 自帶的 1 / -1 / 0 合法
 $cs | Select-String 'Add(LHS|RHS)\(\s*-?[0-9.]+\s*\)'

@@ -13,9 +13,8 @@ argument-hint: <專案名> [調校方向或症狀]
 **本 skill 只動一樣東西：`CplexConfig` 的 solver 旋鈕。** 進場時模型與資料已凍結、已 feasible；`Data/*.csv`、`Dataload`、`Constraint_*`、`Objective`、`Model.md` 在本階段一律唯讀。要動它們就不是 tuning，退回對應 phase。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/tuning/SKILL.md`）。
-> 規則單一來源：`.claude/rules/AGENTS.md`（天條）+ `.claude/workflows/interactive/phase-3-tuning.md`（範圍界線、solver 決策表、Experiment paved path、退場條件）+ `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §8–§9（Experiment API 與框架簽名）。
-> 例外：Step 4 的 **promotion 閉環與 provenance 產出**是本 skill 定義的交付要求（工作流層），數學與 API 規則一律回讀 `.claude/workflows/interactive/`。
-> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**。
+> 規則單一來源：`.claude/rules/AGENTS.md`（天條 + 三階段契約）+ `.claude/rules/Ph3_Tuning/solver-tuning-guide.md`（**Phase 3 唯一規範**：範圍界線 §1、症狀→旋鈕 §2、實驗設計 §3、champion 判定 §4、promotion 閉環 §5、`TuningHistory.md` §6、停損 §7、multi-agent §8、旋鈕全表 附錄 A）。
+> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
 
 ## 輸入（`$ARGUMENTS`）
 

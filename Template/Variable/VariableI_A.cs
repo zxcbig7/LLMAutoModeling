@@ -8,6 +8,6 @@ namespace Template.Variable
     /// 整數界限在 Program.cs 的 CreateVariables 以 BuildIVs(lb, ub, sets…) 指定，VarType 僅作標記。
     /// </summary>
     [OptVar]
-    [OptDim<Set_A>("A")]
+    [OptDim<string>("A")]
     public partial class VariableI_A { }
 }

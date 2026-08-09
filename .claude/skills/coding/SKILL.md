@@ -11,8 +11,8 @@ argument-hint: <Model.md 路徑，或專案名>
 你是第二棒：把已經定案的 `Model/<Project>_Model.md` **逐條機械翻譯**成可 build、可求解的專案。你不是在「寫程式解問題」，是在抄一份已經寫好的數學模型——發現模型有歧義就停下回 `modeling`，NEVER 自行補假設。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/coding/SKILL.md`）。
-> 規則單一來源：`.claude/rules/AGENTS.md`（天條）+ `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`（**Phase 2 唯一標準**：端到端規範 + §9 API 簽名權威 + 黑名單）。
-> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那三份檔，不憑記憶。
+> 規則單一來源：`.claude/rules/AGENTS.md`（天條 + 三階段契約）+ `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`（**Phase 2 唯一標準**：端到端規範 + §9 API 簽名權威 + 黑名單）。
+> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -46,9 +46,27 @@ argument-hint: <Model.md 路徑，或專案名>
 
 ## Step 1 · 讀本階段細則
 
-讀 `.claude/workflows/interactive/phase-2-coding.md`（專案結構、`Program.cs` paved path、Pool API、取解 API、解驗證協定、Fatal）。
-逐段對應規則查 `.claude/workflows/interactive/model-to-code.md`（模型的哪一段 → 哪個檔）。
-API 簽名有任何疑慮查 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §9——**NEVER 憑記憶發明 API**。
+讀 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`——Phase 2 唯一標準。**NEVER 整份讀**，依需要定位章節：
+
+```powershell
+Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
+```
+
+| 要查什麼 | 節 |
+| --- | --- |
+| 進場檢查（Model.md 合格嗎） | §0.0 |
+| 建專案 / csproj / DLL | §1 |
+| 資料層 Set / Parameter / Dataload / CSV | §2 |
+| 變數層 | §3 |
+| Objective 與 Constraint | §4 |
+| `Program.cs` 組裝 + 三態 CLI | §5 |
+| Solution 取解與輸出 | §6 |
+| 解驗證協定四步 | §7 |
+| **API 簽名與黑名單** | §9（**NEVER 憑記憶發明 API**） |
+| 常見錯誤與反模式 | §10 |
+| 線性化 pattern 對照 | 附錄 A |
+
+題目大（constraint > 8 條或 Model.md > 300 行）→ 依 `.claude/rules/Ph2_Coding/agent-workflow-prompts.md` 的 C0–C9 / V1–V3 拓樸派工。
 
 ## Step 2 · 建專案
 
@@ -63,13 +81,13 @@ API 簽名有任何疑慮查 `.claude/rules/Ph2_Coding/optimfoundation-api-guide
 | --- | --- | --- |
 | 1 | `Set/Set_*.cs` | Model.md 的 SET 段 |
 | 2 | `Parameter/Parameter_*.cs` | PARAM 段，同下標的係數併一個類 |
-| 3 | `Set/Dataload.cs` | 顯式載入，數值保真 |
+| 3 | `Data/Dataload.cs` + `Data/*.csv` | 顯式載入，數值保真 |
 | 4 | `Variable/Variable{B,X,I}_*.cs` | VAR 段，型別由前綴決定 |
 | 5 | `Constraint/Constraint_*.cs` | 每條 `[Cn]` 一檔，`///` 註記寫回條號 |
 | 6 | `Objective/ObjectiveFunction.cs` | OBJ 段逐項 |
 | 7 | `Program.cs` | 材料 → OptModel → runner，順序照 `[C1][C2]…` |
 
-轉譯鐵律（細則見 `phase-2-coding.md`）：左式項 → `AddLHS`、右式項 → `AddRHS`、比較符號 → `Create{Less/Great}Equal`；係數先存局部變數再傳入；Objective MUST 先於所有 Constraint。
+轉譯鐵律（細則見 api-guide §4）：左式項 → `AddLHS`、右式項 → `AddRHS`、比較符號 → `Create{Less/Great}Equal`；係數先存局部變數再傳入；Objective MUST 先於所有 Constraint。
 
 **中途發現 Model.md 歧義 → 立即停止，回 `modeling` 補模型**，NEVER 自己選一種解釋繼續。
 

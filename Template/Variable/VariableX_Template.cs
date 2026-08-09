@@ -9,9 +9,9 @@ namespace Template.Variable
     /// Set2/Set3 引用的 Set_D/Set_E 僅供本範本示範型別，非實際模型維度。
     /// </summary>
     [OptVar]
-    [OptDim<Set_A>("Set1")]
-    [OptDim<Set_D>("Set2")]
-    [OptDim<Set_E>("Set3")]
-    [OptDim<Set_C>("Set4")]
+    [OptDim<string>("Set1")]
+    [OptDim<double>("Set2")]
+    [OptDim<int>("Set3")]
+    [OptDim<DateTime>("Set4")]
     public partial class VariableX_Template { }
 }

@@ -35,10 +35,10 @@ namespace HospitalRostering_Generator.Set
 
         // Parameters
         public List<Parameter_ShiftDemand> parameter_ShiftDemand = new();
-        public List<Parameter_PreAssign>   parameter_PreAssign   = new();
         public List<Parameter_NightToDay>  parameter_NightToDay  = new();
         public List<Parameter_CrossGroup>  parameter_CrossGroup  = new();
-        public List<Parameter_BackupGroup> parameter_BackupGroup = new();
+        public Set_PreAssign PRE_ASSIGN = new();
+        public Set_BackupGroup BACKUP_GROUP = new();
 
         private enum GroupE { O, D, E, N, C }
 
@@ -66,8 +66,8 @@ namespace HospitalRostering_Generator.Set
             }
 
             // Backup 班別：E1 的 C 班視為 Backup，跨組別成本歸零
-            parameter_BackupGroup.Add(new Parameter_BackupGroup { Employee = "E1", Group = "C" });
-            foreach (var backup in parameter_BackupGroup)
+            BACKUP_GROUP.LoadFrom(new[] { (Employee: "E1", Group: "C") });
+            foreach (var backup in BACKUP_GROUP)
             {
                 var cg = parameter_CrossGroup.FirstOrDefault(w => w.Employee == backup.Employee && w.Group == backup.Group);
                 if (cg != null) cg.QTY = Penalty_BackupGroup;
@@ -99,10 +99,13 @@ namespace HospitalRostering_Generator.Set
             }
 
             // 預排班 PA（固定指派）
-            parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 1), Employee = "E1", Group = "E" });
-            parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 1), Employee = "E3", Group = "O" });
-            parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 2), Employee = "E2", Group = "D" });
-            parameter_PreAssign.Add(new Parameter_PreAssign { Date = new DateTime(2026, 1, 2), Employee = "E3", Group = "E" });
+            PRE_ASSIGN.LoadFrom(new[]
+            {
+                (Date: new DateTime(2026, 1, 1), Employee: "E1", Group: "E"),
+                (Date: new DateTime(2026, 1, 1), Employee: "E3", Group: "O"),
+                (Date: new DateTime(2026, 1, 2), Employee: "E2", Group: "D"),
+                (Date: new DateTime(2026, 1, 2), Employee: "E3", Group: "E"),
+            });
 
             // Set 積木灌入（與上方 List<T> 同一份資料，供框架資料驗證用）
             EMPLOYEE.LoadFrom(Employee);

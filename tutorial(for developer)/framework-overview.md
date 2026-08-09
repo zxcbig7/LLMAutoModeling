@@ -1,88 +1,51 @@
-# 框架全景：AI 建模框架 × OptimFoundation
-
-自然語言題目 → AI 建模框架（三階段 phase gate）→ 生成 C# 專案 → 消費底層 OptimFoundation MILP 框架求解。
+# 新版框架全景
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-  'fontFamily':'ui-sans-serif, -apple-system, Segoe UI, Roboto, sans-serif',
-  'fontSize':'14px',
-  'primaryColor':'#eef2ff',
-  'primaryTextColor':'#1e293b',
-  'primaryBorderColor':'#6366f1',
-  'lineColor':'#94a3b8',
-  'secondaryColor':'#f1f5f9',
-  'tertiaryColor':'#f8fafc'
-},'flowchart':{'curve':'basis','nodeSpacing':50,'rankSpacing':60,'htmlLabels':true}}}%%
-flowchart TD
-  IN["自然語言<br/>最佳化題目"]
+flowchart LR
+    A[自然語言題目] --> B[Phase 1<br/>Model.md]
+    B --> R
+    M --> D[驗證過的解]
+    D --> E[Phase 3<br/>solver tuning]
 
-  subgraph AI["AI 建模開發框架 · AI-Modeling"]
-    direction TB
-    subgraph INT["唯一路線：三階段 phase gate"]
-      direction LR
-      M1["Phase 1 建模<br/>Model Design"] --> M2["Phase 2 轉譯<br/>Coding"] --> M3["Phase 3 調校<br/>Tuning"]
+    subgraph DATA[Phase 2：row-data C# 專案]
+        direction TB
+        R[Set / Parameter<br/>同一套 OptDim row class]
+        I[DataSource.Load&lt;T&gt;<br/>List&lt;T&gt;]
+        M[Variable / Objective / Constraint]
+        R --> I --> M
     end
-  end
-
-  CS["生成的 C# 專案<br/>Model/ + Project/ + Program.cs<br/>繼承 OptEngine"]
-
-  subgraph OF["OptimFoundation · solver-agnostic MILP 框架"]
-    direction TB
-    CORE["Core<br/>EngineBase・ISolverEngine<br/>VariableBuilder・Experiments"]
-    subgraph BACK["Solver 後端（可插拔）"]
-      direction LR
-      CPX["Cplex<br/>OptEngine・CplexConfig"]
-      GRB["Gurobi<br/>OptEngine・GurobiConfig"]
-      SLV["Solver<br/>變體"]
-    end
-    GEN["Generators<br/>AutoSetsGenerator"]
-    DBO["Db.Oracle<br/>OracleDBCtrl"]
-    CORE --> BACK
-    CORE --> GEN
-    CORE --> DBO
-  end
-
-  IN --> INT
-  INT --> CS
-  CS -->|"繼承 / 呼叫 Pool API"| CORE
-  CS -.->|"目標後端"| CPX
-
-  classDef primary fill:#eef2ff,stroke:#6366f1,stroke-width:2px,color:#3730a3;
-  classDef success fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#065f46;
-  classDef accent fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
-  classDef muted fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#64748b;
-
-  class IN primary;
-  class M1,M2,M3 primary;
-  class CS success;
-  class CORE primary;
-  class CPX,GRB,SLV accent;
-  class GEN,DBO muted;
 ```
 
-## 圖例
+OptimFoundation 的上層專案把模型資料、模型定義與 solver 執行分開：
 
-| 顏色 | 含義 |
-| --- | --- |
-| 靛藍（primary） | 入口 / 三階段主流程 / 核心模組 |
-| 藍（accent） | 可插拔 Solver 後端 |
-| 綠（success） | 產出物：生成的 C# 專案 |
-| 灰（muted） | 支援模組（source generator、Oracle 資料層） |
+- **Set**：描述存在的組合，例如可用弧 `(From, To)`；CSV 只有 Dim 欄。
+- **Parameter**：描述組合對應的數值；CSV 是同一組 Dim 欄，再加最後一欄 `QTY`。
+- **Data source**：用 `Load<T>()` 讀取兩者，回傳 `List<T>`；CSV、資料庫或記憶體來源的差異封裝在 `IDataSource`。
+- **Variable / Objective / Constraint**：以 row list 與 parameter list 建立數學模型。變數由 `BuildVars<T>` 展開。
+- **Program.cs**：唯一知道完整 `Dataload` 的組裝點；`Objective` 與 `Constraint` 只接收自己需要的資料。
 
-## 兩層各含什麼
+## Set / Parameter 的關鍵差異
 
-**AI 建模開發框架（上層）** — 把自然語言題目變成可求解 C# 專案。**唯一路線是三階段 phase gate**，依序推進、每階段之間有 gate：
+| 項目 | Set | Parameter |
+| --- | --- | --- |
+| 是否為 row class | 是 | 是 |
+| Dim 宣告 | 一個以上 | 零個以上 |
+| 值欄 | 無 | 固定為最後一欄 `QTY` |
+| CSV | Dim 欄 | Dim 欄 + `QTY` |
+| 載入與輸出 | `Load<T>()` / `WriteRows` | `Load<T>()` / `WriteRows` |
 
-- **Phase 1 建模**：自然語言 → `Model/<Project>_Model.md`，停在使用者確認
-- **Phase 2 轉譯**：Model.md 逐條機械翻譯成 C#，build 綠 + 解驗證協定四步全過
-- **Phase 3 調校**：模型與資料凍結，只調 solver 旋鈕（使用者提出才做）
+因此多維 Set 不需要另一套語法，也不是由其他 Set 組成的 brick。它就是多個 primitive `OptDim` 所構成的一列 tuple。
 
-沒有免 gate 的全自動量產路線——跳過 gate 等於放棄整條 pipeline 的驗證能力。
+```csharp
+[OptSet]
+[OptDim<string>("From")]
+[OptDim<string>("To")]
+public sealed partial class Set_Arc { }
 
-**OptimFoundation（下層）** — solver-agnostic MILP 框架（C# / .NET 8）：
-- **Core**：EngineBase、ISolverEngine、VariableBuilder、Experiments、Csv/Db/Logging 工具
-- **Solver 後端**：Cplex、Gurobi、Solver 變體（同一套 API、可換後端）
-- **Generators**：AutoSetsGenerator（source generator）
-- **Db.Oracle**：OracleDBCtrl（Oracle 資料存取）
+[OptParam]
+[OptDim<string>("From")]
+[OptDim<string>("To")]
+public sealed partial class Parameter_ArcCost { }
+```
 
-**銜接**：生成的 C# 專案繼承 `OptEngine`、用 Pool API（`AddLHS`/`AddRHS`）建模，目標後端為 CPLEX。
+設計原則是：資料來源只負責轉型與供應 row；CSV 輸出忠實輸出 row；資料詮釋與最佳化邏輯留在模型層。

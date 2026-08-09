@@ -11,8 +11,8 @@ argument-hint: <問題敘述，或題目檔路徑>
 你是第一棒：把自然語言題目變成完整、無歧義、程式好轉譯的 `Model/<Project>_Model.md`，然後**停下來等使用者確認**。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/modeling/SKILL.md`）。
-> 規則單一來源：`.claude/rules/AGENTS.md`（天條）+ `.claude/workflows/interactive/README.md`（三階段總綱）+ `.claude/workflows/interactive/phase-1-model-design.md`（本階段細則）。
-> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那三份檔，不憑記憶。
+> 規則單一來源：`.claude/rules/AGENTS.md`（天條 + 三階段契約）+ `.claude/rules/Ph1_Modeling/model-design-guide.md`（**Phase 1 唯一規範**：四階段降維、Model.md 契約、線性化 pattern、multi-agent 調度）。
+> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -28,7 +28,7 @@ argument-hint: <問題敘述，或題目檔路徑>
 
 ## Step 0 · 定位
 
-1. 讀 `.claude/rules/AGENTS.md` 的天條段、`.claude/workflows/interactive/README.md`
+1. 讀 `.claude/rules/AGENTS.md`（天條 + 三階段契約）
 2. 決定 `<Project>` 名（PascalCase，無空白）；專案位置固定 `Projects/<Project>/`
 3. 讀 `Projects/<Project>/status.json`（不存在 = 全新題目）判斷是否已有進度：
 
@@ -42,9 +42,21 @@ argument-hint: <問題敘述，或題目檔路徑>
 
 ## Step 1 · 讀本階段細則
 
-讀 `.claude/workflows/interactive/phase-1-model-design.md`（含 4 階段建模法、元素 metadata 模板、預設慣例表、追問表、1d 自驗清單）。
-constraint 手法查 `.claude/workflows/interactive/linearization-patterns.md`。
-想確認「這樣寫模型 Phase 2 好不好轉譯」查 `.claude/workflows/interactive/model-to-code.md` 的一句話對應表。
+讀 `.claude/rules/Ph1_Modeling/model-design-guide.md`——Phase 1 唯一規範，讀這一份就夠：
+
+| 要查什麼 | 節 |
+| --- | --- |
+| 輸入 / 輸出契約、四階段降維總覽 | §0 |
+| 1a 去故事化 + 單位正規化 | §1 |
+| 1b 語義判別 + Terminology Table | §2 |
+| SET / PARAM / VAR 的必填 metadata | §3 |
+| CONSTRAINT 寫法（原形、pattern tag、Big-M） | §4 |
+| OBJ | §5 |
+| 預設慣例表 vs 追問表 | §6 |
+| 自驗清單 + 反向紅隊 + 交付格式 | §7 |
+| multi-agent 派工（M0–M6） | §8 |
+| 線性化手法庫（8 類 + 非線性 recipe） | 附錄 A |
+| Model.md 骨架範例 | 附錄 B |
 
 ## Step 2 · 4 階段降維（依序，NEVER 跳步）
 
@@ -60,7 +72,7 @@ Model.md 固定順序：問題描述 → Terminology Mapping Table → SET → P
 
 ## Step 3 · 歧義處理協定
 
-1. 先查 `phase-1-model-design.md` 的**預設慣例表**——表內項目直接套用，不追問，但 MUST 列進「已套用假設」
+1. 先查 `model-design-guide.md` §6.1 的**預設慣例表**——表內項目直接套用，不追問，但 MUST 列進「已套用假設」
 2. 表外的不確定 → 查 Model.md 的 Terminology Mapping Table
 3. 兩處都查不到 → **停下來問使用者**，NEVER 猜；確認後回填同一張表再繼續
 

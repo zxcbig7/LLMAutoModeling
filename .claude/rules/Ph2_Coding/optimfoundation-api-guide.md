@@ -5,16 +5,49 @@
 > **怎麼用**：從 §0 一路往下做，每節結尾的 checklist 過了才進下一節。API 簽名有疑慮 → 查 §9（框架完整簽名表就在本檔內），**NEVER 憑記憶發明方法名**。
 > **前置**：數學模型必須先定完並經使用者確認，成果就是 `Model/<Project>_Model.md`。它長什麼樣、缺哪一項就得退回重補，見 §0.0。
 > **本檔自足**：讀這一份就能從模型走到可交付的專案，不需要開任何其他文件。凡本檔會用到的外部規則（phase gate、Model.md 契約、線性化 pattern、框架 API 簽名、solver 旋鈕）都已內嵌在對應章節與附錄。
-> **沿革**：2026-08-08 起本檔是 Phase 2 的**唯一**文件。原先另有一份 `.claude/reference/CPLEX_API_REFERENCE.md` 並列為「API 簽名權威」，內容已過期（缺 `BuildVars`、教 `BuildBVs/CVs/IVs` 與 `CreateXxx(rhs, name)`、舊資料夾結構、子 namespace、engine 進建構子），其獨有簽名經 OptimFoundation 原始碼核實後併入 §9.2，該檔已刪除。**再看到指向它的連結，一律視為過期指路，改查本檔 §9。**
+> **本檔是 Phase 2 的唯一文件**：專案結構、命名、注入方式、允許的 API 與框架簽名全在這裡，§9 是簽名權威。
 
-`$OPT` = `C:/Users/zxcbi/Desktop/Projects/OptimizationFramework`（只是磁碟位置，例如 DLL 放在 `$OPT/AI-Modeling/dlls/`；本檔不要求你去讀那底下的任何文件）。
+路徑一律**相對本 repo 根**（`.claude/` 的上一層），NEVER 絕對路徑。`$SIB` 指 sibling 的框架 repo `../OptimFoundation/`，只在說明「哪些東西不是 scaffold」時出現，本檔不要求你去讀那底下的任何文件。
 
 ### Canonical 邊界（AI MUST 先判斷）
 
 - **本 guide 是專案結構與寫法的唯一權威**。結構、命名、namespace、注入方式、允許的 API 一律以本檔為準。
 - **權威順序**：本 guide 的規則 → 本檔 §9 的框架簽名表 → 任何既有專案 code。既有專案與本檔衝突 → 視為待遷移，NEVER 反向修改本檔去迎合它。
-- **NEVER 從既有專案推導結構**。`$OPT/AI-Modeling/Template/`、`$OPT/AI-Modeling/Projects/*`、`$OPT/OptimFoundation/OptimFoundation/Templates/*` 都**早於本版規範**，含已被禁止的寫法（手寫 `VariableBase`、`Sets.cs` 集中檔、子 namespace、`CreateXxx(rhs, name)`、`ProjectReference`）。它們可讀來理解 API 行為，NEVER 複製其結構。
-- **只有一條 paved path**：generator（`[OptSet<T>]` / `[OptParam]` / `[OptVar]` + `[OptDim]`）。**手寫 `: VariableBase` / `: ParameterBase` 已廢止，沒有後路。**
+- **NEVER 從既有專案推導結構**。`Template/`、`Projects/*`、sibling 的 `$SIB/OptimFoundation/Templates/*` 都**早於本版規範**，含已被禁止的寫法（手寫 `VariableBase`、`Sets.cs` 集中檔、子 namespace、`CreateXxx(rhs, name)`、`ProjectReference`）。它們可讀來理解 API 行為，NEVER 複製其結構。
+- **只有一條 paved path**：generator（`[OptSet]` / `[OptParam]` / `[OptVar]` + `[OptDim<T>("Name")]`）。`T` 直接是支援的 C# 基礎型別（`string` / `DateTime` / `int` / `long` / `double` / `decimal`），不引用 `Set_*` 積木。Set 與 Param 共用同一個 Dim→property→CSV 欄位流程；Param 僅在最後固定多 `QTY`。**手寫 `: VariableBase` / `: ParameterBase` 已廢止，沒有後路。**
+
+---
+
+## Set / Param row-data contract (2026-08-08)
+
+`Set_*` and `Parameter_*` are both generated **row classes**.  A Set is not a
+brick or collection object.  Keep loaded rows as `List<T>` and use one reader:
+
+```csharp
+var arcs = source.Load<Set_Arc>();
+var arcCosts = source.Load<Parameter_ArcCost>();
+```
+
+Declare every index as ordered primitive `OptDim<T>` (`string`, `DateTime`,
+`int`, `long`, `double`, or `decimal`).  Set requires one or more Dims; Param
+may have zero Dims, which is a scalar parameter.  CSV is header-based:
+
+```csv
+# Set_Arc.csv
+From,To
+A,B
+
+# Parameter_ArcCost.csv
+From,To,QTY
+A,B,12.5
+
+# Parameter_Alpha.csv (scalar)
+QTY
+0.95
+```
+
+Set 與 Param 都使用 `CsvCtrl.WriteRows(rows)`。不得使用 `SetBase`、
+`ISetBrick`、`LoadSet`、`LoadParam`、`LoadFrom`、`WriteSet` 或 `WriteParam`。
 
 ---
 
@@ -137,7 +170,8 @@ using OptimFoundation.Modeling;
 namespace MyProject
 {
     /// <summary>可生產的品項；對應 Model.md 的 ITEM。</summary>
-    [OptSet<string>]
+    [OptSet]
+    [OptDim<string>("Item")]
     public sealed partial class Set_Item { }
 }
 ```
@@ -206,7 +240,7 @@ namespace MyProject
 - 三處要改：`RootNamespace`、`AssemblyName`、資料夾名與 `.csproj` 檔名 → `<Project>`
 - `Generated/` 是 generator 產碼落地供人檢視，MUST `Compile Remove`，否則與編譯期輸出撞名
 - `Data\**\*.csv` MUST 複製到輸出，否則執行時在 bin 讀不到 input
-- DLL 唯一來源是 `$OPT/AI-Modeling/dlls/` —— NEVER 用 NuGet、NEVER 用 `ProjectReference` 指向框架 src、NEVER 從 CPLEX Studio 安裝路徑抓 DLL —— Why: `ProjectReference` 只在框架 repo 內部成立，`Projects/` 底下編不過；指向安裝路徑則綁死本機環境。**限定例外**：`$OPT/OptimFoundation/OptimFoundation/Templates/*` 位於框架 repo 與 solution 內，MUST 保留 framework source / generator 的 `ProjectReference` 及 solver 的 `$(CplexDir)` HintPath，讓 template 隨框架 API 一起 build；例外不得複製到 `$OPT/AI-Modeling/Projects/*`。
+- DLL 唯一來源是 repo 根的 `dlls/` —— NEVER 用 NuGet、NEVER 用 `ProjectReference` 指向框架 src、NEVER 從 CPLEX Studio 安裝路徑抓 DLL —— Why: `ProjectReference` 只在框架 repo 內部成立，`Projects/` 底下編不過；指向安裝路徑則綁死本機環境。**限定例外**：`$SIB/OptimFoundation/Templates/*` 位於框架 repo 與 solution 內，MUST 保留 framework source / generator 的 `ProjectReference` 及 solver 的 `$(CplexDir)` HintPath，讓 template 隨框架 API 一起 build；例外不得複製到 `Projects/*`。
 
 **✅ 過關條件**：`dotnet build` 成功（此時還沒寫模型，只驗環境）。
 
@@ -218,7 +252,8 @@ namespace MyProject
 
 ```csharp
 // 你寫的
-[OptSet<string>]
+[OptSet]
+[OptDim<string>("Item")]
 public sealed partial class Set_Item { }
 ```
 
@@ -234,8 +269,8 @@ public partial class Set_Item : global::OptimFoundation.Core.SetBase<string>
 ```csharp
 // 你寫的
 [OptParam]
-[OptDim<Set_Item>("Item")]
-[OptDim<Set_Date>("Date")]
+[OptDim<string>("Item")]
+[OptDim<DateTime>("Date")]
 public sealed partial class Parameter_Demand { }
 ```
 
@@ -257,8 +292,8 @@ public partial class Parameter_Demand : global::OptimFoundation.Core.ParameterBa
 ```csharp
 // 你寫的
 [OptVar]
-[OptDim<Set_Item>("Item")]
-[OptDim<Set_Date>("Date")]
+[OptDim<string>("Item")]
+[OptDim<DateTime>("Date")]
 public sealed partial class VariableB_Assign { }
 ```
 
@@ -305,25 +340,43 @@ public partial class Dataload
 | 誰            | base                     | 屬性                 | `QTY`                  | 建構子                                |
 | ------------- | ------------------------ | -------------------- | ---------------------- | ------------------------------------- |
 | `Set_*`       | `SetBase<T>`             | —                    | —                      | —                                     |
-| `Parameter_*` | `ParameterBase`          | 每個 `[OptDim]` 一個 | `HasValue = true` 才有 | 位置式 + 無參數各一                   |
+| `Parameter_*` | `ParameterBase`          | 每個 `[OptDim]` 一個 | 一律有                | 位置式 + 無參數各一                   |
 | `Variable*_*` | `VariableBase`           | 每個 `[OptDim]` 一個 | —                      | **不產**（只能用 object initializer） |
 | `Dataload`    | 你自己寫的 `DataContext` | —                    | —                      | —                                     |
 
 **除錯用法**：`Generated/` 裡找不到對應的 `.g.cs`，就是這個類別沒被 generator 認到——Set / Parameter / Variable 檢查 attribute 與 `partial`，`Dataload` 檢查 `partial` 與 `: DataContext`（見 §2.4 的無訊號坑）。
 
-### 1.6 逃生口 — 舊 code 會看到的另外兩種寫法
+### 1.6 新 code 唯一宣告法
 
-同一顆 Parameter / Variable 有三種宣告法，產出的 code 完全相同，差別只在維度名怎麼來。**新 code 一律用第一種**；另外兩種仍受支援、既有專案不必遷移，列在這裡是為了讓你看得懂舊 code。
+**Set 與 Parameter 用同一套宣告法**：光桿 `[OptSet]` / `[OptParam]` / `[OptVar]`，加上每維一個 `[OptDim<T>("Name")]`，其中 **`T` 是該維度的資料型別**（`string` / `DateTime` / `int` / `long` / `double` / `decimal`），不是 Set 積木。`Name` 就是生成 property 名、CSV key 欄名，也是 Set 與 Parameter 之間的連結依據；宣告順序就是 key 順序。
 
-| 寫法                                       | 範例                                                                         | 維度名怎麼來                                     | 何時用                                           |
-| ------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------ |
-| **`[OptDim<TSet>("Name")]`**（paved path） | `[OptParam]` + `[OptDim<Set_Lot>("LotFrom")]` + `[OptDim<Set_Lot>("LotTo")]` | 自己取，字串就是 property 名                     | **唯一該寫的**                                   |
-| 多參數泛型（arity 1..6）                   | `[OptParam<Set_Item, Set_Date>]`                                             | **固定** = 積木類名去掉 `Set_` → `Item` / `Date` | 舊 code；同一顆 Set 取多個角色名時會撞名，做不到 |
-| 字串式                                     | `[OptParam("Item", "Date:DateTime")]`                                        | 字串，型別要自己用 `:型別` 標                    | 最舊；沒有編譯期檢查，set 名打錯不會報錯         |
+```csharp
+// Set：一顆成員名單。維度數 ≥ 1；多維即 tuple Set
+[OptSet]
+[OptDim<string>("Lot")]
+public sealed partial class Set_Lot { }
 
-- 裸 `[OptSet]`（無泛型參數）同理：產碼與 `[OptSet<string>]` 完全相同，但元素型別在宣告處看不出來 —— ALWAYS 寫 `[OptSet<string>]`
-- 三種寫法**不可混用在同一個類別**上
-- 讀舊 code 時的判讀順序：先看有沒有 `[OptDim]` → 沒有就看 attribute 是不是泛型 → 都不是就是字串式
+// Parameter：同一套 [OptDim]，generator 一律再補一欄 QTY
+[OptParam]
+[OptDim<string>("LotFrom")]
+[OptDim<string>("LotTo")]
+public sealed partial class Parameter_ChangeoverCost { }
+```
+
+- **`[OptSet]` / `[OptParam]` / `[OptVar]` 一律裸寫**，維度全部靠 `[OptDim]` 表達
+- **`[OptDim<T>` 的 `T` 是該維度的資料型別**：`string` / `DateTime` / `int` / `long` / `double` / `decimal` —— ★ 這個泛型參數不做型別檢查，填錯不會 compile error，generator 會直接拿它當 property 型別，所以填的必須是資料型別本身
+- **Set 至少要有一個 `[OptDim]`**；Parameter 可以零維（scalar），且一律自動補 `QTY`
+- 全專案只用這一套宣告法，NEVER 混用其他形式
+
+**維度名稱是 Set ↔ Parameter 的唯一連結**。generator 產出的註冊碼把兩者都按名字登記：
+
+```csharp
+RegisterSet("Date", set_Date);                              // Set_Date 的 [OptDim<DateTime>("Date")]
+RegisterParam(parameter_Demand, new[] { "Item", "Date" },   // Parameter_Demand 的兩個 [OptDim]
+              …, fullGrid: false);
+```
+
+所以 Parameter 某個維度要能被驗證（值必須存在於某顆 Set），它的 `[OptDim]` 名稱 MUST 與那顆 Set 的 `[OptDim]` 名稱**逐字相同**。名稱對不上不會 compile error，那個維度只是不受參照完整性保護。
 
 ---
 
@@ -335,22 +388,36 @@ public partial class Dataload
 
 ### 2.0 input CSV 的形狀
 
-`Data/*.csv` 是模型輸入的事實來源，形狀由 Model.md 的維度決定。**Set 是「有哪些東西」，Parameter 是「這些東西的組合各自值多少」** —— 所以 Parameter 的每個 key 欄，都必須指得到某份 Set 名單上的成員。
+`Data/*.csv` 是模型輸入的事實來源，形狀由 Model.md 的維度決定。**表頭不是裝飾，也不只是區分第一筆資料：它是 CSV 欄位與積木維度對齊的契約。** Set 的表頭對齊該 Set 積木的成員維度；Parameter 的表頭對齊各 `[OptDim]` 與值欄。**Set 是「有哪些東西」，Parameter 是「這些東西的組合各自值多少」** —— 所以 Parameter 的每個 key 欄，都必須指得到某份 Set 名單上的成員。
 
-**Set = 一份成員名單。** 檔名固定 `Set_<名>.csv`，單欄、無表頭、一列一個成員，保序且不可重複。型別由 `[OptSet<T>]` 決定，不必自己轉。
+**Set = 一份成員名單。** 檔名固定 `Set_<名>.csv`，第一列 MUST 是對齊 Set 成員維度的表頭、其後一列一個成員，保序且不可重複。表頭 MUST 等於各 `[OptDim]` 的名稱（例如 `Set_Item` 掛 `[OptDim<string>("Item")]`，欄名就是 `Item`）；型別由 `[OptDim<T>` 的 `T` 決定，不必自己轉。
 
 ```text
 Set_Item.csv
+Item
 ItemA
 ItemB
 ItemC
 
 Set_Date.csv
+Date
 2026-01-01
 2026-01-02
 ```
 
-**Parameter = key 欄 + 值欄的一張表。** 檔名 = 類別名，表頭 = 每個 `[OptDim]` 的名字加最後一欄 `QTY`，一列一個維度組合、同組合只能出現一次。
+**多維 Set = 由單維 Set 組成的一份 tuple 成員名單。** 每列是一個完整組合，欄名使用 tuple 分量名稱；同一組合不可重複。這適合「合法弧／可行路徑」這類組合本身就是模型集合的情況。
+
+```text
+Set_Arc.csv
+From,To
+Taipei,Taichung
+Taichung,Kaohsiung
+Kaohsiung,Taipei
+```
+
+`Set_Arc` 的成員是三個有序 pair：`(Taipei, Taichung)`、`(Taichung, Kaohsiung)`、`(Kaohsiung, Taipei)`。讀取時依完整欄名對齊維度，**不依 CSV 欄位位置**；因此欄位順序可交換，但每個值仍由其欄名決定角色。若只是「`Item × Date` 各自對應一個需求量」，仍應使用兩個單維 Set 加二維 `Parameter_Demand`，不要把它建成多維 Set。
+
+**Parameter = key 欄 + 值欄的一張表。** 檔名 = 類別名，表頭以欄名對齊每個 `[OptDim]` 的名字與最後一欄 `QTY`，一列一個維度組合、同組合只能出現一次。
 
 ```text
 Parameter_Demand.csv
@@ -362,8 +429,8 @@ ItemB,2026-01-01,8
 
 ```csharp
 [OptParam]
-[OptDim<Set_Item>("Item")] // → 欄 ITEM
-[OptDim<Set_Date>("Date")] // → 欄 DATE
+[OptDim<string>("Item")] // → 欄 ITEM
+[OptDim<DateTime>("Date")] // → 欄 DATE
 public sealed partial class Parameter_Demand { } // → 欄 QTY（generator 自動補）
 ```
 
@@ -380,22 +447,22 @@ QTY
 public sealed partial class Parameter_ShortagePenalty { } // 無 [OptDim] → 只有欄 QTY
 ```
 
-**變形二：純 key（`HasValue = false`）** —— 只有 key 欄、沒有 `QTY`，語意是「這些組合存在」。★ 這種 MUST 寫表頭（原因見下方解析規則）。
+**無值組合不是 Parameter。** 只有 key、語意是「這些 tuple 存在」時，MUST 使用多維 Set；`Parameter` 一律有 `QTY`。例如已預先指派的品項：
 
 ```text
-Parameter_PreAssign.csv
-ITEM
+Set_PreAssign.csv
+PreAssign_1
 ItemA
 ItemC
 ```
 
 ```csharp
-[OptParam(HasValue = false)] // 不產 QTY 欄位
-[OptDim<Set_Item>("Item")] // → 欄 ITEM
-public sealed partial class Parameter_PreAssign { }
+[OptSet]
+[OptDim<string>("Item")]
+public sealed partial class Set_PreAssign { }
 ```
 
-- MUST 先用維度思考：CSV 每個 key 欄對應一個 `[OptDim<Set_X>("Name")]`；數值欄才是 `QTY`
+- MUST 先用維度思考：CSV 每個 key 欄對應一個 `[OptDim<string>("Name")]`；數值欄才是 `QTY`
 - MUST key 欄的值都出現在對應的 Set 檔裡 —— `ItemZ` 沒在 `Set_Item.csv` → 載入時報 `Dangling`
 - MUST 讓 CSV 成為模型輸入的可檢視事實來源；換一批資料只換 CSV，**Dataload、Objective、Constraint 一行都不改**
 
@@ -412,21 +479,21 @@ MILP 的 parameter 本來就多半稀疏——沒列到的組合代表「這組�
 
 | 規則                                  | 行為                                                                                |
 | ------------------------------------- | ----------------------------------------------------------------------------------- |
-| 表頭是選用的                          | 框架讀第一行的**最後一欄**：parse 得出數字 → 當資料列；parse 不出來 → 當表頭        |
-| 有表頭 → **按欄名對位**               | 大小寫不敏感（`ITEM` = `Item`）、欄序可以與 property 順序不同、**多餘的欄自動忽略** |
+| 表頭                                  | **MUST 存在**；欄名用來對齊 `[OptDim]` 與值欄，資料從第二列開始                      |
+| 按欄名對位                            | 大小寫不敏感（`ITEM` = `Item`）、欄序可以與 property 順序不同、**多餘的欄自動忽略** |
 | 缺欄                                  | 丟 `InvalidDataException`，訊息列出「這個類別需要哪些欄、檔內表頭有哪些」           |
-| 無表頭 → **按 property 宣告順序對位** | 即 `[OptDim]` 的順序，`QTY` 在最後；順序錯會靜默接錯                                |
+| 無表頭                                | 丟 `InvalidDataException`；表頭是必要的，欄位一律按名稱對位                    |
 | 數值                                  | 小數點用 `.`；NEVER 寫千分位逗號（逗號是欄位分隔符）                                |
 | `DateTime`                            | 用 `yyyy-MM-dd`，與框架產生變數名時的格式一致                                       |
 | 檔名                                  | 省略 `LoadParam<T>("...")` 的參數時 = 型別名；本規範一律**顯式帶上**，與類別名相同  |
 
-- ★ **`HasValue = false` 的純 key 參數 MUST 寫表頭**（唯一有此強制的情形，範例見下）
-- Set 的 CSV 是另一套：**單欄、無表頭、保序**，檔名固定 `Set_<名>.csv`
-- `Solution/*.csv` 的表頭欄名就是 property 名，所以解檔可以直接被 `BuildParameter` 讀回當下一輪的輸入（多出來的 `VAR_TYPE` 欄會被自動忽略）
+- **所有 input CSV MUST 寫表頭**：Set 與 Parameter 以表頭對齊積木維度；以 `LoadData` 讀取的 raw CSV 則以表頭定義其獨立 `DataTable` 欄位。
+- Set 的 CSV 是單欄、表頭為 Set 名、保序；多維 Set 的欄名是 attribute 指定的分量名（例如 `From`,`To`），讀取時依完整欄名對齊積木維度，不依 CSV 欄位位置，檔名固定 `Set_<名>.csv`。
+- `Solution/*.csv` 的表頭欄名就是 property 名，所以在欄位相容時可由 `LoadParam` 讀回當下一輪的輸入（多出來的 `VAR_TYPE` 欄會被自動忽略）。
 
-**純 key 參數少寫表頭會怎樣**
+**少寫表頭會怎樣**
 
-因為表頭偵測是看「第一行最後一欄是不是數字」，純 key 參數的最後一欄本來就是字串，不寫表頭就會被當成表頭。
+不再做「第一行最後一欄能否轉數字」的猜測。第一列一律被視為表頭；任一 input CSV 少寫表頭都會在後續 schema 驗證失敗，且原本的第一筆資料不會成為資料列。
 
 ❌ Bad —— `Parameter_PreAssign.csv` 沒有表頭
 
@@ -440,7 +507,7 @@ InvalidDataException:
 [CsvCtrl] Parameter_PreAssign.csv 表頭缺少欄位 'Item'。Parameter_PreAssign 需要：Item；檔內表頭：ITEMA
 ```
 
-★ **判讀訣竅**：訊息裡的「檔內表頭」印出來的是你的**第一筆資料**（`ITEMA`）——看到這個就知道是漏寫表頭，不是欄名打錯。順帶一提，第一筆資料同時也被吃掉了。
+★ **判讀訣竅**：先確認第一列是否為欄名；框架不會再從資料內容推測表頭。
 
 ✅ Good
 
@@ -450,10 +517,11 @@ ItemA
 ItemC
 ```
 
-對照組：**有 `QTY` 的參數不寫表頭是合法的**（最後一欄是數字 → 認得出是資料列），此時改成按 property 宣告順序對位。但本規範仍建議一律寫表頭 —— Why: 欄序寫錯不會報錯，只會靜默把維度接反。
+含 `QTY` 的 Parameter 也同樣 MUST 有表頭；欄位只按名稱對位，不能依 property 宣告順序省略表頭。
 
 ```text
-Parameter_Demand.csv —— 無表頭也讀得進來，欄序 MUST 等於 [OptDim] 宣告順序
+Parameter_Demand.csv
+ITEM,DATE,QTY
 ItemA,2026-01-01,10
 ```
 
@@ -492,7 +560,8 @@ using OptimFoundation.Modeling;
 namespace MyProject
 {
     /// <summary>可生產的品項；對應 Model.md 的 ITEM。</summary>
-    [OptSet<string>]
+    [OptSet]
+    [OptDim<string>("Item")]
     public sealed partial class Set_Item { }
 }
 ```
@@ -504,13 +573,90 @@ using OptimFoundation.Modeling;
 namespace MyProject
 {
     /// <summary>規劃期間的每一天；對應 Model.md 的 DATE。</summary>
-    [OptSet<DateTime>]
+    [OptSet]
+    [OptDim<DateTime>("Date")]
     public sealed partial class Set_Date { }
 }
 ```
 
-- 合法元素型別：`string` / `DateTime` / `int` / `long` / `double` / `decimal`
-- NEVER 寫裸 `[OptSet]` —— ALWAYS 顯式 `[OptSet<string>]` —— Why: 兩者產碼相同，但顯式讓元素型別在宣告處一眼可見
+**多維 Set** 用來表示「存在的 tuple 本身就是集合成員」，例如可行弧 `ARC ⊆ NODE × NODE`。每個 tuple 一列，只有列出的組合存在；它不是把兩個單維 Set 做完整笛卡兒積。
+
+```csharp
+// Set/Set_Arc.cs
+using OptimFoundation.Modeling;
+
+namespace MyProject
+{
+    /// <summary>可行的有向弧（來源節點、目的節點）；對應 Model.md 的 ARC。</summary>
+    [OptSet]
+    [OptDim<string>("From")]
+    [OptDim<string>("To")]
+    public sealed partial class Set_Arc { }
+}
+```
+
+generator 會產生 `SetBase<(string From, string To)>`。因此迭代時可直接使用具名分量：
+
+```csharp
+foreach (var arc in set_Arc)
+{
+    string from = arc.From;
+    string to = arc.To;
+}
+```
+
+```text
+Set_Arc.csv
+From,To
+Taipei,Taichung
+Taichung,Kaohsiung
+Kaohsiung,Taipei
+```
+
+- 多維 Set 就是掛多個 `[OptDim]`，寫法與單維、與 Parameter 完全一致；沒有上限以外的特別語法
+- CSV 欄名固定為各 `[OptDim]` 的名稱；讀取時按欄名映射，所以 CSV 實體欄位可調換，但每列的值必須跟著其欄名
+- `(Taipei, Taichung)` 與 `(Taichung, Taipei)` 是不同成員；完全相同的 tuple 重複才會報錯
+- 無值、只代表存在的組合 MUST 用多維 Set；若每組還有需求量、成本等數值，改用「單維 Set + 多維 `Parameter` 的 `QTY`」
+
+**Parameter 不會去驗證多維 Set 的 tuple**。Parameter 的每個 `[OptDim]` 是獨立維度，各自按名稱對回某顆 Set；框架不會檢查「這一組 `(From, To)` 是否存在於 `Set_Arc`」。要讓組合本身受約束，就在建模時只對 `Set_Arc` 的成員展開變數與限制式，不要指望資料驗證幫你擋。
+
+```csharp
+// Parameter/Parameter_ArcCost.cs
+[OptParam]
+[OptDim<string>("From")]
+[OptDim<string>("To")]
+public sealed partial class Parameter_ArcCost { } // From, To, QTY
+```
+
+```text
+Data/Set_Node.csv                 # 單維 Set_Node
+Node
+Taipei
+Taichung
+Kaohsiung
+
+Data/Set_Arc.csv                  # 多維 Set_Arc：無值、可行 arc 名單
+FROM,TO
+Taipei,Taichung
+Taichung,Kaohsiung
+Kaohsiung,Taipei
+
+Data/Parameter_ArcCost.csv        # Parameter：有值、每個 key 對應單維 Set_Node
+FROM,TO,QTY
+Taipei,Taichung,120
+Taichung,Kaohsiung,85
+Kaohsiung,Taipei,140
+```
+
+| 資料 | C# 宣告 | CSV key 欄 | 驗證範圍 |
+| --- | --- | --- | --- |
+| `Set_Arc` | `[OptSet]` + `[OptDim<string>("From")]` + `[OptDim<string>("To")]` | `FROM`, `TO` | tuple 不可重複 |
+| `Parameter_ArcCost` | `[OptParam]` + 同樣兩個 `[OptDim<string>]` | `FROM`, `TO`，另加 `QTY` | 各維度按**名稱**對回同名 Set 維度 |
+
+因此 `Set_Arc.csv` 與 `Parameter_ArcCost.csv` 是**兩份不同 schema 的檔案**，目前不能共用。資料準備時 MUST 確保 `Parameter_ArcCost` 只列 `Set_Arc` 中存在的 pair；框架尚未自動驗證這個跨積木子集合關係。
+
+- `[OptDim<T>` 的合法型別：`string` / `DateTime` / `int` / `long` / `double` / `decimal`
+- **`[OptSet]` 一律裸寫**，元素型別寫在 `[OptDim<T>]`
 - NEVER 用裸 `List<string>` 當 Set —— Why: 積木化才會被 `DataContext` 註冊進驗證，裸 List 永遠驗不到
 
 `SetBase<T>` 本身是 `IReadOnlyList<T>`，可直接 `foreach` / LINQ / 丟進 `BuildVars`，不必另存 `List` 視圖。四道防呆會丟例外：未載入即用、載入後為空、二次載入、成員重複。
@@ -525,22 +671,22 @@ namespace MyProject
 {
     /// <summary>各品項各日的需求量；對應 Model.md 的 DemandQty_{Item,Date}。</summary>
     [OptParam]
-    [OptDim<Set_Item>("Item")]
-    [OptDim<Set_Date>("Date")]
+    [OptDim<string>("Item")]
+    [OptDim<DateTime>("Date")]
     public sealed partial class Parameter_Demand { }
 }
 ```
 
 ```csharp
-// Parameter/Parameter_PreAssign.cs — 純 key 參數（沒有數值，只表示「這組合存在」）
+// Set/Set_PreAssign.cs — 純 key tuple（只有存在與否，不帶數值）
 using OptimFoundation.Modeling;
 
 namespace MyProject
 {
     /// <summary>已預先指派的品項；對應 Model.md 的 PREASSIGN。</summary>
-    [OptParam(HasValue = false)]
-    [OptDim<Set_Item>("Item")]
-    public sealed partial class Parameter_PreAssign { }
+    [OptSet]
+    [OptDim<string>("Item")]
+    public sealed partial class Set_PreAssign { }
 }
 ```
 
@@ -559,7 +705,7 @@ namespace MyProject
 | 規則           | 說明                                                                                                                     |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | 數值欄位名     | **一律 `QTY`**，NEVER `Quantity` / `Amount`（generator 生成的就叫 QTY）                                                  |
-| property 名    | `[OptDim<TSet>("Name")]` 的字串，PascalCase，NEVER `ALL_CAPS`                                                            |
+| property 名    | `[OptDim<T>("Name")]` 的字串，PascalCase，NEVER `ALL_CAPS`                                                            |
 | attribute 順序 | = key 組成順序，改順序 = 改 key                                                                                          |
 | 建構物件       | **只允許 object initializer**：`new Parameter_Demand { Item = item, Date = date, QTY = 5 }`                              |
 | 位置式建構子   | generator 有產，但 **NEVER 使用** —— Why: 改 `[OptDim]` 順序時 `new Parameter_Demand(a, b)` 不會報錯，只會靜默把維度接錯 |
@@ -578,8 +724,8 @@ namespace MyProject
 /// [FullGrid]：排程期間每台機每天都必須有產能值，缺格是資料漏了，不是「產能為 0」。</summary>
 [FullGrid]
 [OptParam]
-[OptDim<Set_Machine>("Machine")]
-[OptDim<Set_Date>("Date")]
+[OptDim<string>("Machine")]
+[OptDim<DateTime>("Date")]
 public sealed partial class Parameter_Capacity { }
 ```
 
@@ -610,11 +756,12 @@ double p3 = data.parameter_ShortagePenalty.Sum(x => x.QTY);
 
 **同一顆 Set 當多個維度（`LotFrom` / `LotTo`）**
 
-換線成本、距離矩陣、前後關係這類「同一份名單自己對自己」的資料，兩個維度都來自同一顆 Set，只是角色不同。`[OptDim<TSet>("Name")]` 的字串就是拿來取角色名的——**這是它被定為唯一 paved path 的理由**。
+換線成本、距離矩陣、前後關係這類「同一份名單自己對自己」的資料，兩個維度都來自同一顆 Set，只是角色不同。`[OptDim<T>("Name")]` 的字串就是拿來取角色名的——**這是它被定為唯一 paved path 的理由**。
 
 ```csharp
 // Set/Set_Lot.cs
-[OptSet<string>]
+[OptSet]
+[OptDim<string>("Lot")]
 public sealed partial class Set_Lot { }
 ```
 
@@ -622,8 +769,8 @@ public sealed partial class Set_Lot { }
 // Parameter/Parameter_SetupCost.cs
 /// <summary>從前一批換到後一批的換線成本；對應 Model.md 的 SetupCost_{LotFrom,LotTo}。</summary>
 [OptParam]
-[OptDim<Set_Lot>("LotFrom")] // → property LotFrom（string），欄 LOTFROM
-[OptDim<Set_Lot>("LotTo")] // → property LotTo（string），欄 LOTTO
+[OptDim<string>("LotFrom")] // → property LotFrom（string），欄 LOTFROM
+[OptDim<string>("LotTo")] // → property LotTo（string），欄 LOTTO
 public sealed partial class Parameter_SetupCost { }
 ```
 
@@ -631,8 +778,8 @@ public sealed partial class Parameter_SetupCost { }
 // Variable/VariableB_Sequence.cs —— 變數同理，兩維同源
 /// <summary>是否緊接在該批之後生產；對應 Model.md 的 Sequence_{LotFrom,LotTo} ∈ {0,1}。</summary>
 [OptVar]
-[OptDim<Set_Lot>("LotFrom")]
-[OptDim<Set_Lot>("LotTo")]
+[OptDim<string>("LotFrom")]
+[OptDim<string>("LotTo")]
 public sealed partial class VariableB_Sequence { }
 ```
 
@@ -649,11 +796,9 @@ engine.BuildVars<VariableB_Sequence>(lots, lots);
 engine.AddLHS(cost, new VariableB_Sequence { LotFrom = from, LotTo = to });
 ```
 
-- 兩維都會對 `Set_Lot` 做 index 參照檢查——`LotZ` 沒在 `Set_Lot.csv` 就報 `Dangling`，不因為同源而放寬。但**不要求寫滿** `8 × 8 = 64` 列，稀疏是常態（除非你另外標 `[FullGrid]`）
-- 載入摘要會把同一顆 Set 的多個角色名併成一行顯示（`Lot: 8 個成員（別名: LotFrom, LotTo）`），不會誤報成兩顆 Set
+- ★ **角色名會使該維度脫離參照檢查**：維度靠**名稱**對回 Set（§1.6），`LotFrom` / `LotTo` 與 `Set_Lot` 的維度名 `Lot` 不同字，所以框架**不會**檢查 `LotZ` 是否存在於 `Set_Lot.csv`。要保住這道檢查，就讓 Parameter 的維度名與 Set 的維度名逐字相同（兩維都叫 `Lot` 則無法區分角色），或另外建一顆維度名為 `LotFrom` 的 Set。**取角色名 = 用可讀性換掉一道靜默錯誤的防線，取捨要自己想清楚**
+- 不要求寫滿 `8 × 8 = 64` 列，稀疏是常態（除非另外標 `[FullGrid]`）
 - 對角線（`LotA,LotA`）要不要排除是**建模決定**，寫成一條 constraint，NEVER 靠「CSV 裡不放那幾列」暗示
-
-**逃生口為什麼在這裡失效**：泛型式 `[OptParam<Set_Lot, Set_Lot>]` 的維度名固定取自積木類名（去 `Set_` 前綴），兩維都會叫 `Lot` 而撞名，取不了角色名。它與字串式 `[OptParam("Item", "Date:DateTime")]` 雖可編譯、既有 code 也不算錯，但 **NEVER 用於新 code**（三種寫法對照見 §1.6）。
 
 ### 2.3 結構常數也是 Parameter（天條）
 
@@ -780,8 +925,6 @@ dotnet run --project <project.csproj>                        # 只讀，不算
 | ------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------ |
 | **`Load(source, name)`** | `set_Item.Load(source, "Set_Item");` | **唯一寫法**，名稱 MUST 顯式帶上                                                           |
 | `LoadFrom`               | `set_Item.LoadFrom(...);`            | 只允許兩處：§2.0 的 import 建構子內攤平 raw；DB query-only 來源（第一引數是 SQL 不是名稱） |
-| `LoadInline`             | —                                    | **NEVER**（正式專案一律落成 CSV）                                                          |
-| `LoadCsv`                | —                                    | **NEVER**（繞過 `IDataSource`，換不了來源）                                                |
 
 - MUST 顯式帶 set 名 —— NEVER 依賴省略時的預設推導 —— Why: 檔名與類別名脫鉤時（改名、複用）省略式會靜默讀錯檔
 - NEVER 用 `LoadFrom(parameter_X.Select(...).Distinct())` 從參數反推 set —— Why: 反推出來的 set 只有「參數表裡出現過」的成員，題目允許但這批資料沒用到的維度會靜默消失，變數少建、約束少建，解出來看起來正常但根本不是原題
@@ -795,7 +938,7 @@ dotnet run --project <project.csproj>                        # 只讀，不算
 /// <summary>import 模式：攤平 Data/raw/ 的不規則來源，或依生成規格產出 instance。rawFile 相對於 Data/、不帶副檔名。</summary>
 public Dataload(string rawFile)
 {
-    var grid = CsvCtrl.ReadMatrixCsv(rawFile);
+    var grid = new CsvDataSource().LoadData(rawFile);
     // 依題目形狀攤平／依規格生成積木；這是全專案唯一允許出現迴圈、Random、日期運算與 LoadFrom 的地方
 }
 
@@ -808,7 +951,7 @@ public void Export()
 }
 ```
 
-**檔名對齊靠人**：`Export()` 寫的每個名稱都要在 `Dataload(IDataSource)` 有同名的 `Load` / `LoadParam`，compiler 不管這件事。少寫一顆時 import 照樣 exit 0，要到下次求解才丟「找不到 CSV」——所以 MUST 補上面那行 log，並在交付 checklist 逐一對數量。
+**檔名對齊靠人**：`Export()` 寫的每個名稱都要在 `Dataload(IDataSource)` 有同名的 `set_X.Load(source, "Set_X")` / `LoadParam`，compiler 不管這件事。少寫一顆時 import 照樣 exit 0，要到下次求解才丟「找不到 CSV」——所以 MUST 補上面那行 log，並在交付 checklist 逐一對數量。
 
 寫出位置是 `FolderDir.Data`（bin 下的輸出目錄），不是專案 `Data/`。要保留成正式 input 就把產物搬回專案 `Data/`（同名覆蓋），下次 build 由 copy 規則帶回 bin；不搬 = 這批資料隨 bin 一起丟掉。
 
@@ -831,8 +974,8 @@ namespace MyProject
 {
     /// <summary>品項是否在該日生產；對應 Model.md 的 Assign_{Item,Date} ∈ {0,1}。</summary>
     [OptVar]
-    [OptDim<Set_Item>("Item")]
-    [OptDim<Set_Date>("Date")]
+    [OptDim<string>("Item")]
+    [OptDim<DateTime>("Date")]
     public sealed partial class VariableB_Assign { }
 }
 ```
@@ -861,7 +1004,7 @@ namespace MyProject
 - **界限一律寫成 constraint**。`BuildVars<T>` 沒有 bounds overload，預設就是 lb = 0、上界無限。Model.md 寫 `Produce_Item ≤ Capacity_Item` 就老實建一條 `Constraint_Capacity` —— Why: 界限本來就是 Model.md 的一條式子，藏進 `BuildCVs(0, 100, ...)` 的參數就無法逐條對回去驗證
 - **NEVER 手寫 `: VariableBase` 並自己宣告 property** —— ALWAYS 用 `[OptVar]` + `[OptDim]` —— Why: 手寫的 property 順序與 `[OptDim]` 沒有單一真相，接錯不報錯
 - 前綴非 `B_`/`X_`/`I_` → compile error `OPTF001`（錯誤訊息會教正確取名）
-- NEVER 在 `[OptVar]` 參數指定型別（該參數已移除）
+- `[OptVar]` 裸寫，型別完全由前綴決定，attribute 不帶任何參數
 
 **MUST 傳入 sets 的順序 = `[OptDim]` 宣告順序** —— Why: 順序錯了不會報錯，只會靜默把索引接錯，最後解出一個「別的題目」的答案。
 
@@ -910,24 +1053,24 @@ engine.AddLHS(1.0, new VariableB_Assign { Item = item, Date = date });
 ```csharp
 /// <summary>是否在該日生產該品項；對應 Assign_{Item,Date} ∈ {0,1}。</summary>
 [OptVar]
-[OptDim<Set_Item>("Item")]
-[OptDim<Set_Date>("Date")]
+[OptDim<string>("Item")]
+[OptDim<DateTime>("Date")]
 public sealed partial class VariableB_Assign { }
 
 /// <summary>是否開設該廠；對應 Open_{Facility} ∈ {0,1}。</summary>
 [OptVar]
-[OptDim<Set_Facility>("Facility")]
+[OptDim<string>("Facility")]
 public sealed partial class VariableB_Open { }
 
 /// <summary>是否由前一批接續到後一批；對應 Sequence_{LotFrom,LotTo} ∈ {0,1}（同一顆 Set 兩個角色）。</summary>
 [OptVar]
-[OptDim<Set_Lot>("LotFrom")]
-[OptDim<Set_Lot>("LotTo")]
+[OptDim<string>("LotFrom")]
+[OptDim<string>("LotTo")]
 public sealed partial class VariableB_Sequence { }
 
 /// <summary>各品項產量；對應 Produce_{Item} ≥ 0（連續）。</summary>
 [OptVar]
-[OptDim<Set_Item>("Item")]
+[OptDim<string>("Item")]
 public sealed partial class VariableX_Produce { }
 
 /// <summary>所有工單的完工時間；對應 Makespan ≥ 0（連續、0 維）。</summary>
@@ -936,8 +1079,8 @@ public sealed partial class VariableX_Makespan { }
 
 /// <summary>各品項在各機台的生產批數；對應 Batch_{Item,Machine} ∈ Z⁺（整數）。</summary>
 [OptVar]
-[OptDim<Set_Item>("Item")]
-[OptDim<Set_Machine>("Machine")]
+[OptDim<string>("Item")]
+[OptDim<string>("Machine")]
 public sealed partial class VariableI_Batch { }
 ```
 
@@ -1010,7 +1153,7 @@ engine.CreateRange(lb, ub, $"{ConstraintName}@{item}"); // lb <= LHS <= ub（只
 
 **天條：Model.md 左邊的項進 `AddLHS`、右邊的項進 `AddRHS`，`>=` 就用 `CreateGreatEqual`。NEVER 自行移項 / 改號 / 翻轉方向 / 合併化簡** —— Why: 轉譯必須能逐條對回 Model.md 驗證，動過手腳就驗不了。
 
-限制式群組與實際建立數量由 `EngineBase` 自動記錄（`engine.Solve()` 求解前會輸出完整 build summary）。`ConstraintBase.ConstraintCount` 已 obsolete —— NEVER 手動 `ConstraintCount++`、NEVER 自己印計數 —— Why: 第二份計數只會與框架的那份對不上。
+限制式群組與實際建立數量由 `EngineBase` 自動記錄（`engine.Solve()` 求解前會輸出完整 build summary，計數在 `EngineBase.ConstraintCount` / `ConstraintBuildCounts`）。`ConstraintBase` 上沒有計數欄位 —— NEVER 手動 `ConstraintCount++`、NEVER 自己印計數 —— Why: 第二份計數只會與框架的那份對不上。
 
 ### 4.2 一條限制式 = 一個檔
 
@@ -1698,8 +1841,7 @@ public abstract class VariableBase : ModelElementBase { protected string Variabl
 public abstract class ParameterBase : ModelElementBase { protected string ParameterName => ElemName; }
 public abstract class ConstraintBase : ModelElementBase
 {
-    protected string ConstraintName => ElemName; // = 類別名，限制式命名前綴
-    [Obsolete] protected int ConstraintCount { get; set; } // ❌ NEVER 使用
+    protected string ConstraintName => GetType().Name; // = 類別名，限制式命名前綴
 }
 ```
 
@@ -1712,10 +1854,12 @@ public abstract class ConstraintBase : ModelElementBase
 **9.2.2 generator attributes（唯一 paved path）**
 
 ```csharp
-[OptSet<T>] // T ∈ string / DateTime / int / long / double / decimal；標在 partial class Set_*
-[OptParam] // 產 ParameterBase + QTY；HasValue = false → 純 key 無 QTY
+[OptSet] // 裸寫；標在 partial class Set_*；MUST 至少一個 [OptDim]。多維即 tuple Set
+[OptParam] // 產 ParameterBase 並自動補 QTY；可零維（scalar）；無值 tuple 改用 [OptSet]
 [OptVar] // 產 VariableBase；型別由類名前綴 VariableB_/X_/I_ 決定
-[OptDim<TSet>("Name")] // 每維一個，可重複；property 名 = 字串，型別取自 TSet 的 [OptSet<T>]
+[OptDim<T>("Name")] // 每維一個，可重複；T 是該維度的資料型別
+                    // T ∈ string / DateTime / int / long / double / decimal —— NEVER 是 Set 積木
+                    // "Name" = property 名 = CSV 欄名 = Set↔Parameter 的連結鍵
 [FullGrid] // opt-in：缺格即報 MissingCell（OptimFoundation.Core）
 ```
 
@@ -1725,12 +1869,12 @@ public abstract class ConstraintBase : ModelElementBase
 | --------- | ------------------------------------------------------------------------- |
 | `OPTF001` | `[OptVar]` 類名前綴不是 `VariableB_` / `VariableX_` / `VariableI_`        |
 | `OPTF002` | `[OptParam]` 類名前綴不是 `Parameter_`                                    |
-| `OPTF004` | `[OptSet<T>]` 的元素型別非法                                              |
-| `OPTF005` | `[OptDim<TSet>]` 引用的類別沒掛 `[OptSet<T>]`                             |
+| `OPTF004` | `[OptDim<T>]` 的 `T` 不是合法元素型別                                    |
 | `OPTF006` | 被 `Dataload : DataContext` 引用的 `Set_*` / `Parameter_*` 漏掛 attribute |
-| `CS0311`  | `[OptDim<TSet>]` 的 `TSet` 不是 Set 積木（不滿足 `where T : ISetBrick`）  |
 
-❌ 逃生口（可編譯但 NEVER 用於新 code）：多參數泛型 `[OptVar<Set_A, Set_B>]`、字串式 `[OptParam("Date:DateTime", "Group")]`、裸 `[OptSet]`、generator 產的位置式建構子。三種宣告寫法的差異與判讀順序見 §1.6。
+★ `[OptDim<T>]` 的泛型參數不受型別約束，填錯不會有 compile error——generator 直接拿它當 property 型別。`T` MUST 是資料型別本身（見 §1.6）。
+
+❌ 禁用：generator 產的位置式建構子（見 §1.5）。
 
 **9.2.3 `SetBase<T>` 積木**
 
@@ -1744,28 +1888,39 @@ public abstract class SetBase<T> : ISetBrick, IReadOnlyList<T>
     public bool Contains(T item);
     public bool ContainsObject(object value); // 型別不符回 false，不丟例外
     public IEnumerable<object> MembersAsObjects(); // 驗證器逐成員比對用
+    public object[] MemberComponents(int index); // 多維 Set：取該成員的各分量
     public void Load(IDataSource source, string name = null); // ✅ 唯一寫法，name MUST 顯式帶
     public void LoadFrom(IEnumerable<T> items); // 只允許 import 建構子與 DB query-only 來源
-    public void LoadInline(params T[] items); // ❌ 禁用（內部即 LoadFrom）
-    public void LoadCsv(string fileName); // ❌ 禁用（繞過 IDataSource）
-    public void LoadDb(DbDataSource source);
+    public void LoadSetRows(IEnumerable<string[]> rows, string name); // 框架內部載入路徑，專案端不呼叫
+
+    // 多維（tuple）Set 專用
+    public int Arity { get; } // 維度數；單維 = 1
+    protected string[] TupleComponentNames { get; } // 各 [OptDim] 的名稱，generator override
+    public Type[] TupleComponentSetTypes { get; }
+    public Type[] ComponentSetTypes { get; }
 }
 ```
 
 四道防呆全丟例外：未載入即用 / 載入後為空 / 二次載入 / 成員重複。`SetBase<T>` 本身就是 `IReadOnlyList<T>`，直接傳進 `BuildVars` 或 `foreach` 即可，NEVER 另外複製成 `List<T>` 視圖。
 
+多維 Set 的元素是具名 tuple（`SetBase<(DateTime Date, string Employee, string Group)>`），所以 `foreach` 出來可直接用分量名：`arc.From` / `arc.To`。
+
 **9.2.4 資料層：`IDataSource` / `DataContext` / `OptData` / 驗證**
+
+> ⚠️ **本節、§2.4 的四類檢查表與 §9.2.3 的 `SetBase<T>` 是對著 `dlls/` 現行 DLL 核實的**（XML + 二進位比對，且專案 build 綠）。資料層是框架目前活躍改動的區域，所以每次依 `dlls/README.md` 回填 `dlls/` 之後，MUST 回來複驗這三處。
 
 ```csharp
 public interface IDataSource
 {
+    IEnumerable<string[]> LoadSet(string name); // 含必填表頭，供 SetBase 驗證與載入
+    DataTable LoadData(string name); // 獨立表格；不認得任何模型積木
     List<TParam> LoadParam<TParam>(string file = null) where TParam : ModelElementBase, new();
 }
 public sealed class CsvDataSource : IDataSource { } // 讀 FolderDir.Data 下的 CSV
 public sealed class InMemoryDataSource : IDataSource { } // 測試用
 public sealed class DbDataSource : IDataSource
 {
-    public List<T> LoadParam<T>(string sql, params (string name, object value)[] parameters); // DB 只能 query
+    public List<T> LoadParam<T>(string sql, params (string name, object value)[] parameters); // DB 的名稱引數為明寫 SELECT
 }
 
 public static class OptData
@@ -1931,7 +2086,7 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig // OptimFoundati
 }
 ```
 
-`EnableSolverLog = false` 只關 Console 的 CPLEX progress，framework log 照寫。`DataId` / `UserId` 是專案 metadata，`CsvCtrl.WriteSolution` 不會自動讀，呼叫端仍要明確傳。❌ 已移除成員：`enableLog`、`exportLP`、`exportMPS`、`exportSol`、`LogToConsole`、`LogFilePath`。
+`EnableSolverLog = false` 只關 Console 的 CPLEX progress，framework log 照寫。`DataId` / `UserId` 是專案 metadata，`CsvCtrl.WriteSolution` 不會自動讀，呼叫端仍要明確傳。
 
 **9.2.8 `OptModel` / `OptProject` / `OptExperiment`**
 
@@ -2019,18 +2174,9 @@ public class Experiment
 ```csharp
 public static class CsvCtrl
 {
-    public static List<int> ReadIntSet(string fileName);
-    public static List<double> ReadDoubleSet(string fileName);
-    public static List<string> ReadStrSet(string fileName);
-    public static List<DateTime> ReadDateSet(string fileName);
-    public static Dictionary<string, double> ReadParameter(string fileName); // key = "@p1@p2"
-    public static List<T> BuildParameter<T>(string fileName = null);
-    public static double[,] ReadMatrixCsv(string fileName); // import 模式攤平不規則來源用
     public static void WriteSet(ISetBrick set, string fileName = null);
     public static void WriteParam<TParameter>(IReadOnlyList<TParameter> rows, string fileName = null);
     public static void WriteSolution<T>(ISolverEngine engine, string dataId, string userId);
-    public static void CreateParamTable<TParameter>(); // 依 [OptDim] 產空 CSV 表頭骨架，只在準備資料時用
-    public static void ClearData(string fileName);
 }
 
 public interface ISolutionSink
@@ -2161,11 +2307,9 @@ public interface ITrajectorySource
 | `BuildBVs<T>` / `BuildCVs<T>` / `BuildIVs<T>` | `BuildVars<T>(sets)`                               | 型別應由前綴單一決定                                                                              |
 | `BuildCVs<T>(lb, ub, sets)` 設界限            | 寫成一條 `Constraint_*`                            | 界限藏進參數就無法逐條驗證                                                                        |
 | `CreateEqual(rhs, name)` 等三個 overload      | `AddRHS(rhs)` + `CreateEqual(name)`                | 該 overload **覆蓋**右側常數，混用會靜默丟資料                                                    |
-| `ConstraintCount++` / 自印計數                | 不寫，`EngineBase` 自動統計                        | 已 obsolete，第二份計數會對不上                                                                   |
+| `ConstraintCount++` / 自印計數                | 不寫，`EngineBase` 自動統計                        | `ConstraintBase` 上沒有這個欄位，第二份計數也會對不上                                            |
 | 手寫 `: VariableBase` / `: ParameterBase`     | `[OptVar]` / `[OptParam]` + `[OptDim]`             | 已廢止，property 順序無單一真相                                                                   |
 | `new Parameter_X(a, b)` 位置式                | `new Parameter_X { A = a, B = b }`                 | 改 `[OptDim]` 順序會靜默接錯                                                                      |
-| `set.LoadCsv("...")`                          | `set.Load(source, "Set_X")`                        | 繞過 `IDataSource`，換不了來源                                                                    |
-| `set.LoadInline(...)`                         | 落成 CSV                                           | 資料藏進 code                                                                                     |
 | `set.Load(source)` 省略名                     | `set.Load(source, "Set_X")`                        | 改名時靜默讀錯檔                                                                                  |
 | `namespace MyProject.Data` 子 namespace       | `namespace MyProject`                              | 全專案單一 namespace                                                                              |
 | file-scoped `namespace X;`                    | block `namespace X { }`                            |                                                                                                   |
@@ -2173,7 +2317,7 @@ public interface ITrajectorySource
 | 假設變數名分隔符是 `\|`                       | 是 `@`                                             |                                                                                                   |
 | 假設 `ProjFolder` 建構子會建資料夾            | MUST 手動 `FolderDir.Solution.CreateFolder()`      |                                                                                                   |
 | `override Build()` / `override Solve()`       | 已非 virtual；改覆寫 `BuildCore()` / `SolveCore()` |                                                                                                   |
-| `ProjectReference` 指向框架 src               | `..\..\dlls\` HintPath                             | 只允許 `$OPT/OptimFoundation/OptimFoundation/Templates/*` 內部 template；AI-Modeling 專案一律禁用 |
+| `ProjectReference` 指向框架 src               | `..\..\dlls\` HintPath                             | 只允許 `$SIB/OptimFoundation/Templates/*` 內部 template；AI-Modeling 專案一律禁用 |
 
 ---
 
@@ -2182,7 +2326,7 @@ public interface ITrajectorySource
 | 症狀                                         | 真正原因                                                                               | 修法                                                                    |
 | -------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `CS0246` 找不到型別                          | csproj `HintPath` 層數錯                                                               | `Projects/` 底下一律 `..\..\dlls\`                                      |
-| generator 沒產碼                             | 類別漏了 `partial`，或 `Set_*` 漏掛 `[OptSet<T>]`                                      | 補上；漏掛且被 Dataload 引用會報 `OPTF006`                              |
+| generator 沒產碼                             | 類別漏了 `partial`，或 `Set_*` 漏掛 `[OptSet]`                                      | 補上；漏掛且被 Dataload 引用會報 `OPTF006`                              |
 | 載入摘要顯示 `Sets（0）` / `Parameters（0）` | `Dataload` 漏了 `partial` 或 `: DataContext` —— generator 掃不到它，**無任何錯誤訊息** | 補齊兩者；這是唯一的偵測訊號，見 §2.4                                   |
 | `OPTF001`                                    | 變數前綴不是 `VariableB_/X_/I_`                                                        | 依前綴表改名                                                            |
 | 找不到 CSV                                   | csproj 漏 `Data\**\*.csv` 的 copy 設定，或 CSV 根本沒放進 `Data/`                      | 補 copy 設定；不規則來源先跑 `dotnet run -- import raw/<file>`          |
@@ -2297,7 +2441,8 @@ Model.md 每條 constraint 都標了一個 pattern tag（§0.0）。轉譯前先
 | Simplex 迭代上限                    | `Param.Simplex.Limits.Iterations`                              | ✅ `simplexIterLimit`               | 整數                                                                                               |
 | Barrier 演算法                      | `Param.Barrier.Algorithm`                                      | ✅ `barrierAlgorithm`               | 0..3                                                                                               |
 | ZeroHalf / Disjunctive 切割         | `Param.MIP.Cuts.ZeroHalfCut` / `.Disjunctive`                  | ❌                                  | —                                                                                                  |
-| Symmetry / 進階 presolve            | `Preprocessing.Symmetry` / `Aggregator` / `NumPass` / `Reduce` | ❌                                  | —                                                                                                  |
+| 對稱性消除 | `Param.Preprocessing.Symmetry` | ✅ `symmetry` | −1 auto / 0 off / 1..5 逐步提高強度 |
+| 進階 presolve | `Preprocessing.Aggregator` / `NumPass` / `Reduce` | ❌ | — |
 | 記憶體 emphasis                     | `Param.Emphasis.MemUsage`                                      | ❌                                  | —                                                                                                  |
 | 分支優先級                          | `Cplex.SetPriority` / order file                               | ❌                                  | 只能間接用 `varSel` 影響                                                                           |
 | MIP start（初始解注入）             | `Cplex.AddMIPStart` / `SetVectors`                             | ❌                                  | 等效手段：`mipEmphasis = 1` + `rinsHeur` + `HeuristicEffort`                                       |

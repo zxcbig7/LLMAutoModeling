@@ -1,6 +1,6 @@
 # AI Modeling — Claude Code 入口（router）
 
-> 本 repo 的操作規範**單一來源**在 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md) → [`.claude/workflows/interactive/`](.claude/workflows/interactive/)。
+> 本 repo 的操作規範**單一來源**在 [`.claude/rules/`](.claude/rules/)：總流程一檔 + 三個 phase 各一檔。
 > 本檔只做導引（router）；**天條與細則一律以 .claude/rules/AGENTS.md 為準，不在此重複**。
 
 `Template/` 與 `Projects/<Project>/` 不建立或保留 `CLAUDE.md`。任何專案的 AI 指引一律從 [`.claude/README.md`](.claude/README.md) 開始，專案實作以 [`.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md) 為唯一開發指導原則。
@@ -11,15 +11,13 @@
 
 **唯一路線是三階段 phase gate**，依序推進、每階段之間有 gate，NEVER 跳階或走免 gate 的全自動路線：
 
-| 階段 | skill | 產物 |
-| --- | --- | --- |
-| Phase 1 Modeling | [`modeling`](.claude/skills/modeling/SKILL.md) | `Model/<Project>_Model.md`，停在使用者確認 |
-| Phase 2 Coding | [`coding`](.claude/skills/coding/SKILL.md) | 八資料夾專案，build 綠 + 解已驗證 |
-| Phase 3 Tuning | [`tuning`](.claude/skills/tuning/SKILL.md) | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
+| 階段 | skill | 唯一規範檔 | 產物 |
+| --- | --- | --- | --- |
+| Phase 1 Modeling | [`modeling`](.claude/skills/modeling/SKILL.md) | [`model-design-guide.md`](.claude/rules/Ph1_Modeling/model-design-guide.md) | `Model/<Project>_Model.md`，停在使用者確認 |
+| Phase 2 Coding | [`coding`](.claude/skills/coding/SKILL.md) | [`optimfoundation-api-guide.md`](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠 + 解已驗證 |
+| Phase 3 Tuning | [`tuning`](.claude/skills/tuning/SKILL.md) | [`solver-tuning-guide.md`](.claude/rules/Ph3_Tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
 
-整體任務、三階段 I/O 契約與 `status.json` schema：[`.claude/rules/MILP DevPipeline/README.md`](.claude/rules/MILP%20DevPipeline/README.md)。流程總綱：[`.claude/workflows/interactive/README.md`](.claude/workflows/interactive/README.md)。
-
-**先讀 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md)**，再依當前 phase 讀對應細則。Phase 2 唯一標準（含 API 簽名權威）：[`.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md)，簽名表在其 §9。
+**先讀 [`.claude/rules/AGENTS.md`](.claude/rules/AGENTS.md)**（天條 + 三階段 I/O 契約 + 交接物 + `status.json` schema），再依當前 phase 讀上表對應的那一份。一階段一檔，讀那一份就夠；Phase 2 的 API 簽名權威在其 §9。文件全圖見 [`.claude/README.md`](.claude/README.md)。
 
 ## 換機器設置（clone 後唯一要做的事）
 
