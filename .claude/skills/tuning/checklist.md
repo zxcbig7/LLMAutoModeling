@@ -1,6 +1,6 @@
 # tuning · 交付前自檢
 
-> 規則本體在 `.claude/rules/Ph3_Tuning/solver-tuning-guide.md` 與 `.claude/rules/AGENTS.md`。
+> 規則本體在同層 `solver-tuning-guide.md` 與上層 `../AGENTS.md`。
 > 本檔只是交付前的勾選面。**沒有實驗證據的項目不准打勾。**
 > ★ = 錯了不會報錯，但結論整批作廢。
 

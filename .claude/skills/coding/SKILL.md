@@ -1,7 +1,6 @@
 ---
 name: coding
 description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械轉譯成 OptimFoundation CPLEX C# 專案，build 後跑解驗證協定。當使用者說「模型確認」「開始實作」「寫 code」「轉成程式」「build 這個專案」「跑跑看」時使用。模型未確認 NEVER 進本階段。
-argument-hint: <Model.md 路徑，或專案名>
 ---
 
 # coding — Phase 2 轉譯調度
@@ -11,8 +10,25 @@ argument-hint: <Model.md 路徑，或專案名>
 你是第二棒：把已經定案的 `Model/<Project>_Model.md` **逐條機械翻譯**成可 build、可求解的專案。你不是在「寫程式解問題」，是在抄一份已經寫好的數學模型——發現模型有歧義就停下回 `modeling`，NEVER 自行補假設。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/coding/SKILL.md`）。
-> 規則單一來源：`.claude/rules/AGENTS.md`（天條 + 三階段契約）+ `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`（**Phase 2 唯一標準**：端到端規範 + §9 API 簽名權威 + 黑名單）。
+> 規則單一來源：`../AGENTS.md`（天條 + 三階段契約）+ `optimfoundation-api-guide.md`（**Phase 2 唯一標準**：端到端規範 + §9 API 簽名權威 + 黑名單）。
 > 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
+
+## 文件遵循 gate（不可跳過）
+
+在讀取 Model.md、規劃、建立、修改或驗證任何專案檔案前，MUST 逐一讀取並遵守完整文件集：`../AGENTS.md`、`optimfoundation-api-guide.md`、`PH2_SOP.md`、`model-to-code-checklist.md`、`checklist.md`、`agent-workflow-prompts.md`。任何檔案缺失、無法讀取、內容相互矛盾，或無法證明交付物符合其中所有適用要求時，MUST 停下並回報檔名與衝突；NEVER 猜測、挑選較方便的規則，或先產出再補讀。
+
+權威順序僅用於判定衝突，不會免除閱讀：`../AGENTS.md` → `optimfoundation-api-guide.md` → `PH2_SOP.md` → `model-to-code-checklist.md` → `checklist.md` → `agent-workflow-prompts.md`。交付前 MUST 完成兩份 checklist 的所有適用項目；不適用項目必須說明原因。multi-agent 工作時，`agent-workflow-prompts.md` 的 context、工單與驗收限制同樣強制適用。
+
+## Review-only 模式
+
+當使用者要求審查、驗收或 review 既有 Phase 2 專案時，**不建立或修改模型與程式**。讀取 Model.md、兩份 checklist 與 API guide §9 後，只報告可由文件或程式碼證明的問題：
+
+- phase gate 與每個程式元素是否能對應 Model.md 宣告；
+- Constraint 是否保留 LHS／運算子／RHS，沒有移項、改號或偷放常數；
+- 命名、維度、變數型別、bounds、Dataload 與資料來源是否一致；
+- API、DLL、Generated 排除、build／run／解驗證證據是否完整。
+
+輸出固定為 `Blocker`、`Major`、`Minor`、`Verified` 四節。每項附檔案路徑、行號（可得時）、違反的 Model.md／規則依據與最小修正建議；沒有證據時明列「未驗證」，NEVER 自行補寫需求或改變數學模型。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -46,10 +62,10 @@ argument-hint: <Model.md 路徑，或專案名>
 
 ## Step 1 · 讀本階段細則
 
-讀 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`——Phase 2 唯一標準。**NEVER 整份讀**，依需要定位章節：
+讀 `optimfoundation-api-guide.md`——Phase 2 唯一標準。先完成文件遵循 gate，再依需要定位章節：
 
 ```powershell
-Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
+Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
 ```
 
 | 要查什麼 | 節 |
@@ -66,7 +82,7 @@ Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pat
 | 常見錯誤與反模式 | §10 |
 | 線性化 pattern 對照 | 附錄 A |
 
-題目大（constraint > 8 條或 Model.md > 300 行）→ 依 `.claude/rules/Ph2_Coding/agent-workflow-prompts.md` 的 C0–C9 / V1–V3 拓樸派工。
+題目大（constraint > 8 條或 Model.md > 300 行）→ 依 `agent-workflow-prompts.md` 的 C0–C9 / V1–V3 拓樸派工。
 
 ## Step 2 · 建專案
 
@@ -133,7 +149,7 @@ Select-String -Path ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md" -Pat
 - NEVER 移項 / 改號 / 翻轉比較方向 / 四捨五入數值
 - NEVER 裸數字進 Constraint / Objective（一律 `Parameter` 的 `QTY`）
 - NEVER 用 helper / local function 隱藏 `Program.cs` 的組裝順序
-- NEVER 呼叫 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §9 沒列的 API，也 NEVER 用它標 ❌ 的 API
+- NEVER 呼叫 `optimfoundation-api-guide.md` §9 沒列的 API，也 NEVER 用它標 ❌ 的 API
 - NEVER 改 OptimFoundation 框架本體或換 DLL 來源
 - NEVER fix loop 超過 5 次
 - NEVER 用絕對路徑

@@ -2,7 +2,7 @@
 
 <system_context>
 Phase 2（轉譯實作）的 **multi-agent 執行層**：把 `optimfoundation-api-guide.md` 的轉譯規則轉成「派誰、給什麼、驗什麼」的可複製 prompt。
-規則單一來源是同層 `optimfoundation-api-guide.md`（**唯一標準**）；`model-to-code-checklist.md` 是它的人工驗收表。本檔 NEVER 重述規則，只規定調度。
+規則單一來源是同層 `optimfoundation-api-guide.md`（**唯一標準**）；`model-to-code-checklist.md` 是 AI 的專案產出一致性契約與機械驗收規格，不是使用者人工驗收表。本檔 NEVER 重述規則，只規定調度。
 **本 phase 是全流程 context 壓力最大的一段**：API guide、Model.md 與十幾支 `.cs` 不應同時塞進單一 agent context，所以一律走工單 fan-out。
 產物：repo 根 `Projects/<Project>/` 的完整可 build 專案。
 </system_context>
@@ -20,7 +20,7 @@ Phase 2（轉譯實作）的 **multi-agent 執行層**：把 `optimfoundation-ap
 
 ## Phase 2 專屬
 
-- MUST 先產**轉譯工單** `_wip/manifest.md` 再開始寫 code —— Why: 工單是 orchestrator 唯一持有的全域視圖；沒有它就只能靠讀 code 掌握進度，那正是爆視窗的路徑
+- MUST 在開始寫 code 前完成**轉譯工單**；它只作 orchestrator 當次的短暫全域視圖，NEVER 落檔或建立中間文件
 - MUST 每個 constraint agent **只拿它那一條的 Model.md 節錄**（行號區間），NEVER 給整份 Model.md —— Why: 給全文它就會「順手參考」別條的寫法，錯誤會跨條擴散
 - NEVER 讓寫 code 的 agent 自己宣告完成 —— ALWAYS 派 V1 checklist-verifier + V2 back-translator
 - MUST V2 反向翻譯（`.cs` → 數學式 → 對照 Model.md）—— Why: 移項 / 改號 / 翻方向是本 phase 最致命且最隱形的錯，正向 review 看 code 覺得合理，反推成數學式才顯形
@@ -34,18 +34,18 @@ Phase 2（轉譯實作）的 **multi-agent 執行層**：把 `optimfoundation-ap
 ```text
 C0 orchestrator（主對話，不寫 code）
  │
- ├─ C1 manifest-builder ──► _wip/manifest.md（Model.md → 工單表，含行號區間）
+ ├─ C1 manifest-builder ──► 回報 manifest（Model.md → 工單表，含行號區間）
  ├─ C2 scaffold ──────────► csproj + 八資料夾 + Program.cs 骨架
  ├─ C3 data-layer ────────► Set/ + Parameter/ + Data/Dataload.cs + 選定來源（CSV / DB / memory）
  ├─ C4 variable ──────────► Variable/Variable[B|C|I]_*.cs
  ├─ C5 constraint × N ────► Constraint/Constraint_*.cs   （fan-out，一條或一群一個）
  ├─ C6 objective ─────────► Objective/ObjectiveFunction.cs
- ├─ C7 program ───────────► Program.cs（材料→模型→環境；依需求加 import / exp 模式）
+ ├─ C7 program ───────────► Program.cs（不可變四段：import → 模型 → 實驗 → 正式跑）
  ├─ C8 solution ──────────► Solution/<Project>Solution.cs
  ├─ C9 builder ───────────► build + fix loop ≤5
- ├─ V1 checklist-verifier ► _wip/v1-checklist.md
- ├─ V2 back-translator ───► _wip/v2-backtranslation.md
- └─ V3 solve-verifier ────► _wip/v3-solve.md（dotnet run 後的四步協定）
+ ├─ V1 checklist-verifier ► 直接回報 checklist 結論
+ ├─ V2 back-translator ───► 直接回報 back-translation 結論
+ └─ V3 solve-verifier ────► 直接回報 solve 驗證結論（dotnet run 後的四步協定）
 ```
 
 依賴順序：C1 → C2 → C3 → C4 →（C5 ∥ C6）→ C7 → C8 → C9 →（V1 ∥ V2）→ `dotnet run` → V3
@@ -70,7 +70,7 @@ C0 orchestrator（主對話，不寫 code）
 權威 guide 是同層 `optimfoundation-api-guide.md`，Phase 2 的唯一標準（同層已無第二份規範，NEVER 去別處找）。**NEVER 硬編行號**——行號會隨改版失效，一律現場搜尋：
 
 ```powershell
-rg -n "^## §|^## 附錄" ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md"
+rg -n "^## §|^## 附錄" ".claude/skills/coding/optimfoundation-api-guide.md"
 ```
 
 | 節 | 內容 | 誰讀 |
@@ -90,22 +90,15 @@ rg -n "^## §|^## 附錄" ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md
 §9 用法示範（NEVER 整節讀）：
 
 ```powershell
-rg -n "BuildVars|AddLHS|CreateLessEqual" ".claude/rules/Ph2_Coding/optimfoundation-api-guide.md"
+rg -n "BuildVars|AddLHS|CreateLessEqual" ".claude/skills/coding/optimfoundation-api-guide.md"
 ```
 
-## 工作區
+## 中間產物
 
-工單與稽核產物一律放 **repo 層** `_wip/<Project>/`，NEVER 放進 `Projects/<Project>/` —— Why: 專案內就是八資料夾，多一個 `_wip/` 直接違反「NEVER 增減」天條，而 V1 checklist 第一件事就是查資料夾清單，等於自己造一個 FAIL 給自己。
+manifest、稽核與反向翻譯只作為當次 agent 回報與 orchestrator 的短暫狀態，NEVER 落檔。正式產物只有專案本身：
 
 ```text
-<repo 根>/
-├── _wip/<Project>/               ← 三 phase 共用交接區（repo 層）
-│   ├── 00-raw.md … 1d-redteam.md ← Phase 1 留下的
-│   ├── manifest.md               ← 轉譯工單（orchestrator 的全域視圖）
-│   ├── v1-checklist.md
-│   ├── v2-backtranslation.md
-│   └── v3-solve.md
-└── Projects/<Project>/           ← 只有八資料夾 + csproj + Program.cs，NEVER 多一個
+Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs，NEVER 多一個
     ├── Model/<Project>_Model.md  ← Phase 1 交付物（唯讀，NEVER 在本 phase 修改）
     └── Set/ Parameter/ Variable/ Objective/ Constraint/ Solution/ Data/
 ```
@@ -130,7 +123,7 @@ rg -n "BuildVars|AddLHS|CreateLessEqual" ".claude/rules/Ph2_Coding/optimfoundati
 4. 標出 scalar parameter（只有一列值的），它們要在 Program.cs 用 .Single().QTY 取出
 5. 發現 Model.md 缺 OBJ 段、缺 pattern tag、有未宣告且無法判定為式子結構的資料值、有預先移項 → 列進「阻塞項」，NEVER 自己補
 
-輸出：寫入 _wip/<Project>/manifest.md：
+輸出：直接回報 manifest：
 | # | 類型 | Model 符號 | C# 類別 | 檔案路徑 | Model.md 行號 | 依賴 |
 | 1 | SET | GLASSTYPE | Set_GlassType | Set/Set_GlassType.cs | 42-45 | — |
 
@@ -150,21 +143,21 @@ rg -n "BuildVars|AddLHS|CreateLessEqual" ".claude/rules/Ph2_Coding/optimfoundati
 ## C2 · scaffold（專案骨架）
 
 ```text
-目標：在 Projects/<Project>/ 建立八資料夾結構、csproj 與 Program.cs 骨架，確保空專案能 build 過。
-動機：先讓骨架 build 綠，後面每支檔案加進來時 build 失敗就一定是那支的問題，二分定位成本最低。
+目標：在 Projects/<Project>/ 建立八資料夾結構、csproj 與**完整四段不可變模板**的 Program.cs 骨架。
+動機：所有最終 Phase 2 成果的 Program.cs 都必須同形；C2 先固定組裝外型，C7 只填入 manifest 對應的實際型別。此時尚未有 model components，不能以假型別或假模型要求空專案 build；完整 build 由 C9 在 C3–C8 完成後驗證。
 
 規範：以 `rg` 定位並讀 API guide 的 §0（心智模型）與 §1（建立專案 / csproj / DLL）兩節
 
 做法：
 1. 建八資料夾：Model/ Set/ Parameter/ Variable/ Objective/ Constraint/ Solution/ Data/，NEVER 增減
 2. csproj：DLL HintPath 一律 ..\..\dlls\、Analyzer 指 ..\..\dlls\OptimFoundation.Generators.dll、Data\**\*.csv copy、<Compile Remove="Generated/**/*.cs" />
-3. Program.cs 骨架：材料／模型／環境三段組裝；只有 Model.md 或 manifest 明定需要時才加入 import / exp CLI 分派
+3. Program.cs 骨架：無條件建立不可變四段 `import → 模型 → 實驗 → 正式跑`，保留四個逐字段落標記與固定控制流；import 與 exp 是固定能力，NEVER 因 Model.md、manifest 或現有 CSV 而省略
 4. 全專案單一 namespace <Project>，block 寫法
 5. NEVER ProjectReference、NEVER NuGet、NEVER CPLEX Studio 絕對路徑
 
 驗收條件：
 1. 八個資料夾存在，無額外資料夾
-2. dotnet build 通過（空專案）
+2. 四段標記與固定控制流齊全；C2 不得為了「空專案 build」加入假的 model components
 3. csproj 無 ProjectReference、無絕對路徑，有 Analyzer 與 Data copy 兩項
 4. Program.cs 的 namespace 是 block 寫法且無子 namespace
 
@@ -177,7 +170,7 @@ rg -n "BuildVars|AddLHS|CreateLessEqual" ".claude/rules/Ph2_Coding/optimfoundati
 目標：依工單建立 Set_*.cs、Parameter_*.cs、Data/Dataload.cs，以及 manifest 指定的資料來源；未指定時才採預設 `CsvDataSource` 與 Data/*.csv。
 動機：資料層是「換資料不改 code」的基礎。instance 決定的 index domain、資料值與可變範圍必須來自 Set 或 Parameter；`1`、`-1` 等 Model.md 明寫的代數結構係數不屬於資料 magic number。
 
-輸入：_wip/<Project>/manifest.md 的 SET 與 PARAM 列 + 各列標示的 Model.md 行號區間（用 Read offset/limit 只讀這些區間）
+輸入：orchestrator 提供的 manifest SET 與 PARAM 列 + 各列標示的 Model.md 行號區間（用 Read offset/limit 只讀這些區間）
 規範：以 `rg` 定位並讀 API guide §2 全節（宣告、CSV、Load<T>、輸出與實際驗證範圍）
 
 做法：
@@ -269,7 +262,7 @@ Model.md 節錄：只讀 Projects/<Project>/Model/<Project>_Model.md 的第 {{�
 同 C5 格式，差異只在讀的節與驗收條件：
 
 - **C6 objective**：讀 §4；驗收＝「是 Model.md OBJ 段的逐項轉譯、方向正確、無未宣告的資料 magic number；Model.md 無 OBJ 段則停止退回 Phase 1」
-- **C7 program**：讀 §5 + manifest **全表**（它需要全域視圖才組裝得起來）；驗收＝「平坦三段、AddObjective 先於 AddConstraints、manifest 每個 unit 都被註冊；只有 manifest 要求時才加入 import / exp 模式」
+- **C7 program**：讀 §5 + manifest **全表**（它需要全域視圖才組裝得起來）；驗收＝「不可變四段 `import → 模型 → 實驗 → 正式跑` 均存在且順序正確、AddObjective 先於 AddConstraints、manifest 每個 unit 都被註冊；import / exp 永遠保留」
 - **C8 solution**：讀 §6；驗收＝「ValidateRules 逐條把解代回 Model.md 每條 constraint、透過 `ISolutionSink` 或 `CsvCtrl.WriteSolution` 輸出；CSV 寫入端會自行建立 `Solution/`」
 
 C7 是唯一拿到 manifest 全表的 coding agent——它的工作本質就是組裝，給它局部視圖反而做不出來。
@@ -297,14 +290,14 @@ NEVER 修改 Model.md。
 ## V1 · checklist-verifier
 
 ```text
-目標：依 model-to-code-checklist.md 逐條稽核專案，回報 PASS/FAIL。
-動機：你是 fresh context 的稽核者。寫 code 的 agent 對自己的產出必然樂觀，而這份 checklist 的每一條都對應一個曾經真的出過的錯。
+目標：依 model-to-code-checklist.md 的 AI 專案產出一致性契約逐條稽核專案，回報 PASS/FAIL；先保證所有專案的 canonical 架構一致，再驗證轉譯正確性。
+動機：你是 fresh context 的稽核者。寫 code 的 agent 對自己的產出必然樂觀；此 contract 的每一條都要能機械阻止專案結構、命名或 API 寫法漂移。
 
 輸入：Projects/<Project>/
 規範：同層 model-to-code-checklist.md（全讀並逐條執行）
 
-先做：checklist §I「最終靜態掃描」的 PowerShell 指令**照跑一遍**，命中時逐筆判定是否為舊 API 或反模式。
-再做：0 與 A 到 H 各段逐條核對。
+先做：contract §0「Canonical 專案架構」與 §10「AI 最終靜態掃描」的 PowerShell 指令**照跑一遍**；任何未列出的手寫資料夾、缺少固定資料夾或錯名路徑均為 FAIL。命中靜態掃描時逐筆判定是否為舊 API 或反模式。
+再做：§1 到 §9 各段逐條核對。
 
 回報格式：
 | 段 | 條目 | 判定 | 證據（檔案:行號） |
@@ -377,7 +370,7 @@ Phase 2 完成 = 下列**全部**成立：
 2. V1 checklist 無 FAIL
 3. V2 反向翻譯結論為「轉譯忠實」，無高嚴重度發現
 4. V3 四步全 PASS
-5. 交付時附 `model-to-code-checklist.md` 路徑，請使用者人工覆核
+5. V1 已確認 canonical 專案架構與 AI 產出一致性契約全數通過；不把本檔當成人工覆核清單交付
 
 任一 FAIL → 退回對應 agent 並附原驗收條件；同一 unit 重試 2 輪仍 FAIL → 停下問使用者。
 

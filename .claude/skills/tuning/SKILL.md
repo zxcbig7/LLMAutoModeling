@@ -1,7 +1,6 @@
 ---
 name: tuning
 description: Phase 3 調校 orchestrator——模型與資料凍結、正確性已驗的前提下，只調 CplexConfig solver 旋鈕。啟動後連續自動執行到停損：環境定版 → R0 校準 → 策略輪迭代 → hold-out → promotion，全程落檔 TuningHistory.md。當使用者說「太慢」「timeout」「跑不完」「gap 下不去」「找不到可行解」「調參數」「tuning」「效能」時使用。使用者提出才做，NEVER 主動建議。
-argument-hint: <專案名> [調校方向或症狀]
 ---
 
 # tuning — Phase 3 調校調度
@@ -11,7 +10,13 @@ argument-hint: <專案名> [調校方向或症狀]
 你是第三棒，而且是**選配的一棒**：使用者提出效能問題才啟動，NEVER 主動建議調校。核心信念是**先驗正確，再調效能——調快一個錯模型沒有價值**；以及**先證明量得準，再開始比**。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/tuning/SKILL.md`）。
-> 規則單一來源：`.claude/rules/AGENTS.md`（天條）+ `.claude/rules/Ph3_Tuning/solver-tuning-guide.md`（**Phase 3 唯一規範**）。
+> 規則單一來源：`../AGENTS.md`（天條）+ `solver-tuning-guide.md`（**Phase 3 唯一規範**）。
+
+## 文件遵循 gate（不可跳過）
+
+在讀取專案、規劃實驗、修改 baseline 或宣告結果前，MUST 逐一讀取並遵守完整文件集：`../AGENTS.md`、`solver-tuning-guide.md`、`ph3_tuning.md`、`checklist.md`、`Test-TuningRoundArchive.ps1`。任何檔案缺失、無法讀取、內容相互矛盾，或無法證明交付物符合其中所有適用要求時，MUST 停下並回報檔名與衝突；NEVER 猜測、挑選較方便的規則，或先實驗再補讀。
+
+權威順序僅用於判定衝突，不會免除閱讀：`../AGENTS.md` → `solver-tuning-guide.md` → `ph3_tuning.md` → `checklist.md` → `Test-TuningRoundArchive.ps1`。交付前 MUST 完成 `checklist.md` 的所有適用項目；每輪建立 archive 時 MUST 執行 `Test-TuningRoundArchive.ps1` 並將失敗視為不可 promotion。
 > 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀規範檔，不憑記憶。
 
 ## 執行模式：一鍵啟動，連續跑到停損
@@ -24,13 +29,12 @@ argument-hint: <專案名> [調校方向或症狀]
 
 ## 可寫區域白名單（規範 §0.1）
 
-**只有這五處可寫，其餘一律唯讀**：
+**只有四處可寫，其餘一律唯讀**：
 
 1. `Program.cs` 的具名 production baseline `CplexConfig`（欄位值 + 上方 provenance 註解）
 2. `Program.cs` **exp 分支內**的 variant 定義（一律 `baseline.Clone()` 起手）
 3. 專案根 `TuningHistory.md`（追加，NEVER 改寫歷史節）
 4. `status.json` 的 Phase 3 欄位
-5. repo 根 `_wip/<Project>/t<N>-*.md`
 
 **白名單外全部唯讀**：model 組裝 chain、`Dataload`、`Set/` `Parameter/` `Variable/` `Constraint/` `Objective/` `Solution/`、`Data/*.csv`、`Model.md`、`ProjectConfig`、csproj、`dlls/`。
 

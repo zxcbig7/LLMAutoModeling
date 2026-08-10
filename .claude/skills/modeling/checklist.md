@@ -1,6 +1,6 @@
 # modeling · 交付前自檢
 
-> 規則本體在 `.claude/rules/Ph1_Modeling/model-design-guide.md` §7（自驗清單）與 `.claude/rules/AGENTS.md`（天條）。
+> 規則本體在同層 `model-design-guide.md` §7（自驗清單）與上層 `../AGENTS.md`（天條）。
 > 本檔只是交付前的勾選面——每項都要**實際回去檔案裡看過**才打勾，不憑印象。
 
 ## 1a 去故事化 + 單位

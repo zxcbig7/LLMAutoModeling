@@ -29,10 +29,9 @@
 
 **輸入**：一段自然語言的最佳化題目，可能夾帶表格、原始報表或生成規格。
 
-**落檔規則**：題目原文**原封**寫進 `_wip/<Project>/00-raw.md`，一次性。之後對話中 NEVER 再重述原文——要引用就引路徑。
+**正式文件規則**：題目原文只作本次建模輸入，不建立原文、副本、草稿或交接文件；可確認的結論直接寫進唯一的 Model.md。
 
 - `<Project>` 由題目語意取 PascalCase 名（醫院排班 → `HospitalRostering`），第一次回報時把取的名字講出來讓使用者當場否決。
-- `_wip/` 放在 **repo 根**而不是專案內 —— Why: 專案內結構受天條「八資料夾 NEVER 增減」管轄，塞 `_wip/` 進去等於自己製造一個 Phase 2 驗收 FAIL。
 
 ### 0.1 輸出契約 — Model.md 八段
 
@@ -66,10 +65,10 @@ Role ∈ `{parameter, variable, derived, constraint, objective, irrelevant}`。
 
 | 階段 | 做什麼 | 產物 | 只做這件事 |
 | --- | --- | --- | --- |
-| **1a** | 去故事化 + 單位正規化 | `_wip/<Project>/1a-normalized.md` | 純自然語言，NEVER 引入任何數學符號 |
-| **1b** | 語義判別 + Terminology Table | `_wip/<Project>/1b-terminology.md` | 每個子句強制歸類 role，無關的明標 `irrelevant` |
-| **1c** | 結構抽取 → Model.md 各段 | `_wip/<Project>/1c-draft.md` + `1c-constraints/` | SET/PARAM/VAR/CONSTRAINT/OBJ，每條 constraint 標 pattern tag |
-| **1d** | 建模自驗 gate | `_wip/<Project>/1d-audit.md` + `1d-redteam.md` | 逐條對照 §7 清單，全過才交付 |
+| **1a** | 去故事化 + 單位正規化 | 當次工作內的暫時推理 | 純自然語言，NEVER 引入任何數學符號 |
+| **1b** | 語義判別 + Terminology Table | 直接寫入 Model.md | 每個子句強制歸類 role，無關的明標 `irrelevant` |
+| **1c** | 結構抽取 → Model.md 各段 | 直接更新 Model.md | SET/PARAM/VAR/CONSTRAINT/OBJ，每條 constraint 標 pattern tag |
+| **1d** | 建模自驗 gate | 直接回報 PASS / FAIL | 逐條對照 §7 清單，全過才交付 |
 
 Why 要拆四步：資料沒清乾淨、子句沒歸類就符號化，等於在雜訊上建模。而且錯誤在建模階段是最便宜的——模型錯了，Phase 2 的 code 全部重寫。
 
@@ -159,7 +158,7 @@ Why: 推導值是**建模決定**，不是資料整理。真的需要 derived �
 | MachineCapacity | 機器產能 | parameter | hour | No | "each machine ... up to 40 hours" | S001 |
 | Produce | 生產量 | variable | unit | No | "how many should be produced" | S004 |
 
-**表二 · 子句歸類覆蓋表**（這張表只在 `_wip/`，是給 auditor 驗漏句用的）
+**表二 · 子句歸類覆蓋表**（直接內嵌於 Model.md 的 Terminology Mapping Table，供 auditor 驗漏句）
 
 | S-id | Role | 對應 Term | 備註 |
 | --- | --- | --- | --- |
@@ -433,7 +432,7 @@ Why: 驗收時使用者要能一眼分出「哪些是我說的、哪些是 AI �
 做法（照順序，先做完 1 再看 2）：
 
 1. **只讀 Model.md**，用自然語言寫出你理解的問題敘述（決策什麼、受什麼限制、追求什麼）。此時 NEVER 開啟原題目。
-2. **再讀 `_wip/<Project>/00-raw.md` 與 `1a-normalized.md`**，逐項對照你的反推版本與原題目。
+2. **再讀使用者提供的題目原文與 Model.md 的問題描述**，逐項對照你的反推版本與原題目。
 
 找這五類問題：
 
@@ -485,8 +484,8 @@ Why: 驗收時使用者要能一眼分出「哪些是我說的、哪些是 AI �
 
 ### 8.1 Context 鐵則
 
-- NEVER 把題目原文 / Model.md 全文 / 中間產物貼進 orchestrator 對話 —— ALWAYS 落檔到 `_wip/<Project>/`，agent 之間**只傳路徑**
-  Why: orchestrator 的 context 一旦被原始材料灌滿，後面的 gate 判斷就開始漏規則，而漏的正是你派它去把關的那些
+- NEVER 建立題目原文、副本或中間產物的工作文件；agent 只回傳必要的結構化摘要，正式內容直接合併至 Model.md
+  Why: context 與文件副本同時膨脹都會造成規則遺漏與版本漂移
 - MUST 單一 agent 的輸入預算 ≤ 800 行（規範 + 材料合計）；超過 → 再拆一層 fan-out，NEVER 靠「請精簡閱讀」自律
 - MUST 回報上限：執行類 agent ≤ 15 行、稽核類 ≤ 30 行；證據引用 ≤ 5 行原文
 - MUST orchestrator 的 context 只裝四種東西：**工單表、狀態表、PASS/FAIL 表、檔案路徑**
@@ -497,13 +496,13 @@ Why: 驗收時使用者要能一眼分出「哪些是我說的、哪些是 AI �
 ```text
 M0 orchestrator（主對話，不下場做事）
  │
- ├─ M1 normalizer ──────► _wip/<Project>/1a-normalized.md      （§1）
- ├─ M2 classifier ──────► _wip/<Project>/1b-terminology.md     （§2）
- ├─ M3 structurer ──────► _wip/<Project>/1c-draft.md           （§3 + §5）
- ├─ M4 constraint-writer × N ─► _wip/<Project>/1c-constraints/<Name>.md  （§4，fan-out）
+ ├─ M1 normalizer ──────► 直接回報結構化摘要                  （§1）
+ ├─ M2 classifier ──────► 直接更新 Model.md 的術語表           （§2）
+ ├─ M3 structurer ──────► 直接更新 Model.md                    （§3 + §5）
+ ├─ M4 constraint-writer × N ─► 直接回報 constraint 條目       （§4，fan-out）
  │        └─ 合併 ─────► Projects/<Project>/Model/<Project>_Model.md
- ├─ M5 model-auditor ───► _wip/<Project>/1d-audit.md           （§7.1，fresh context）
- └─ M6 adversary ───────► _wip/<Project>/1d-redteam.md         （§7.2，反向翻譯）
+ ├─ M5 model-auditor ───► 直接回報 audit 結論                   （§7.1，fresh context）
+ └─ M6 adversary ───────► 直接回報 red-team 結論                （§7.2，反向翻譯）
         │
         └─► 全 PASS → orchestrator 交付 + 停在 §7.4 gate
 ```
@@ -512,12 +511,12 @@ M5 / M6 可平行；其餘依序，每棒收到回報才派下一棒。
 
 | Agent | subagent_type | model | 輸入 | 讀本檔哪節 |
 | --- | --- | --- | --- | --- |
-| M1 normalizer | `general-purpose` | `sonnet` | `00-raw.md` | §1 |
-| M2 classifier | `general-purpose` | `opus` | `1a` | §2 |
-| M3 structurer | `general-purpose` | `opus` | `1a` + `1b` | §3 + §5 |
-| M4 constraint-writer | `general-purpose` | `opus` | `1a` + `1b` + `1c-draft` 的 SET/PARAM/VAR 段 + 指派的 S-id | §4 + 附錄 A |
-| M5 model-auditor | `verifier` | （定義內建） | Model.md + `1a` + `1b` | §7.1 |
-| M6 adversary | `second-opinion` | （定義內建） | Model.md + `00-raw` + `1a` | §7.2 |
+| M1 normalizer | `general-purpose` | `sonnet` | 使用者題目原文 | §1 |
+| M2 classifier | `general-purpose` | `opus` | M1 回報 | §2 |
+| M3 structurer | `general-purpose` | `opus` | M1 + M2 回報 | §3 + §5 |
+| M4 constraint-writer | `general-purpose` | `opus` | 使用者題目摘要 + Model.md 已有 SET/PARAM/VAR + 指派 S-id | §4 + 附錄 A |
+| M5 model-auditor | `verifier` | （定義內建） | Model.md + 使用者題目 | §7.1 |
+| M6 adversary | `second-opinion` | （定義內建） | Model.md + 使用者題目 | §7.2 |
 
 M2 / M3 / M4 給 `opus`：語義判別與 linearization 選型是「約束互相牽制 + 一次性高後果」——建模錯了下游 code 全部重寫。
 
@@ -525,20 +524,12 @@ M2 / M3 / M4 給 `opus`：語義判別與 linearization 選型是「約束互相
 
 ```text
 <repo 根>/
-├── _wip/<Project>/               ← 三 phase 共用交接區（repo 層，不受八資料夾天條管）
-│   ├── 00-raw.md                 ← 題目原文（orchestrator 唯一一次落檔）
-│   ├── 1a-normalized.md
-│   ├── 1b-terminology.md
-│   ├── 1c-draft.md
-│   ├── 1c-constraints/<Name>.md
-│   ├── 1d-audit.md
-│   └── 1d-redteam.md
-└── Projects/<Project>/
+Projects/<Project>/
     ├── Model/<Project>_Model.md  ← 唯一交付物；Model/ 內不放別的
     └── status.json
 ```
 
-`_wip/<Project>/` 是**交接介質**：每個 agent 讀前一棒的檔、寫自己那棒的檔。跨 session resume 時看它有什麼就知道走到哪，不依賴對話記憶。
+不建立交接介質或中間文件：agent 回傳結構化摘要，正式模型內容直接寫入 Model.md；跨 session 只讀正式 Model.md 與 status.json。
 
 ### 8.4 派工 prompt（可直接複製，`{{}}` 處替換）
 
@@ -546,7 +537,7 @@ M2 / M3 / M4 給 `opus`：語義判別與 linearization 選型是「約束互相
 
 #### M0 · orchestrator（主對話自己執行，不派工）
 
-1. 把使用者題目原文**原封**寫進 `_wip/<Project>/00-raw.md`（一次性，之後 NEVER 在對話中重述題目內容）
+1. 將使用者題目原文作為當次輸入，不建立副本或中間文件
 2. 讀本檔 §0（心智模型，最短）
 3. 依 §8.2 順序派工，每棒收到回報才派下一棒
 4. 任一 agent 回報 FAIL → 退回對應 agent 並附原過關條件，NEVER 自己下場改產物
@@ -558,12 +549,12 @@ M2 / M3 / M4 給 `opus`：語義判別與 linearization 選型是「約束互相
 目標：把最佳化題目原文轉成乾淨、self-contained、逐句編號的問題敘述。
 動機：這是建模第一次降維。資料沒清乾淨就符號化，等於在雜訊上建模；編號是為了讓下游 auditor 能機械驗證「沒有子句被靜默略過」。
 
-輸入：_wip/{{Project}}/00-raw.md（題目原文，先讀它）
-規範：讀 .claude/rules/Ph1_Modeling/model-design-guide.md 的 §1（只讀這節）
+輸入：使用者題目原文（先讀它）
+規範：讀 .claude/skills/modeling/model-design-guide.md 的 §1（只讀這節）
 
 做法與過關條件見該節。
 
-輸出：寫入 _wip/{{Project}}/1a-normalized.md，格式為 §1.3 的表。
+輸出：直接回報 §1.3 的正規化表；不落檔。
 
 回報格式：句數、換算了哪幾項（≤3 條）、你判定為背景故事而捨棄的內容（列出來讓我覆核是否誤刪）。總長 ≤15 行，NEVER 貼產物全文。
 ```
@@ -574,10 +565,10 @@ M2 / M3 / M4 給 `opus`：語義判別與 linearization 選型是「約束互相
 目標：把 1a 的每個編號子句歸類成 parameter / variable / derived / constraint / objective / irrelevant，並產出 Terminology Mapping Table。
 動機：這步是防漏句與防亂設變數的關卡。子句沒歸類就進結構抽取，會出現「題目講了但模型沒有」的靜默漏洞——那種錯到求解出結果都看不出來。
 
-輸入：_wip/{{Project}}/1a-normalized.md
-規範：讀 .claude/rules/Ph1_Modeling/model-design-guide.md 的 §2（只讀這節）
+輸入：M1 的正規化回報。
+規範：讀 .claude/skills/modeling/model-design-guide.md 的 §2（只讀這節）
 
-輸出：寫入 _wip/{{Project}}/1b-terminology.md，含 §2.2 的表一與表二。
+輸出：直接寫入 Model.md 的 Terminology Mapping Table，含 §2.2 的表一與表二。
 
 回報格式：各 role 的數量統計、irrelevant 的 S-id 清單、待追問術語清單。總長 ≤15 行。
 ```
@@ -588,10 +579,10 @@ M2 / M3 / M4 給 `opus`：語義判別與 linearization 選型是「約束互相
 目標：依 1b 的分類產出 Model.md 的 SET、PARAM、VAR、OBJ 四段。CONSTRAINT 段由後續 agent 分工，你留空佔位、不要寫。
 動機：這四段是下游 Phase 2 決定 C# 類別的依據，每個 metadata 欄位缺一項，Coding 階段就得靠猜。
 
-輸入：_wip/{{Project}}/1a-normalized.md、_wip/{{Project}}/1b-terminology.md
-規範：讀 .claude/rules/Ph1_Modeling/model-design-guide.md 的 §3、§5、§6.1（三節）
+輸入：M1 正規化回報與 Model.md 的 Terminology Mapping Table。
+規範：讀 .claude/skills/modeling/model-design-guide.md 的 §3、§5、§6.1（三節）
 
-輸出：寫入 _wip/{{Project}}/1c-draft.md，段落順序：
+輸出：直接更新 Model.md，段落順序：
 問題描述 → Terminology Mapping Table（從 1b 搬入）→ SET → PARAM → VAR →（CONSTRAINT 留空佔位）→ OBJ → 已套用假設
 
 回報格式：SET/PARAM/VAR 各幾個、OBJ 一行、已套用假設條數、追問項。總長 ≤15 行。
@@ -608,15 +599,14 @@ orchestrator 先把 1b 中 role=constraint 的 S-id **依語意分組**（「產
 你負責的子句：{{S-id 清單}}
 群組名稱：{{例：Capacity}}
 
-輸入：_wip/{{Project}}/1a-normalized.md、_wip/{{Project}}/1b-terminology.md、
-      _wip/{{Project}}/1c-draft.md 的 SET/PARAM/VAR 段（符號只能用這裡已宣告的）
-規範：讀 .claude/rules/Ph1_Modeling/model-design-guide.md 的 §4 與附錄 A（兩段，全讀）
+輸入：M1 正規化回報、Model.md 的 Terminology Mapping Table 與已寫入的 SET/PARAM/VAR 段（符號只能用這裡已宣告的）
+規範：讀 .claude/skills/modeling/model-design-guide.md 的 §4 與附錄 A（兩段，全讀）
 
 額外規則：
 - 只用 1c-draft 已宣告的符號；需要新符號（輔助變數、Big-M）→ 停下回報，NEVER 自己補宣告
 - 一律 Hard constraint，NEVER 討論 soft / penalty
 
-輸出：寫入 _wip/{{Project}}/1c-constraints/{{群組名稱}}.md
+輸出：直接回報 constraint 條目，由 orchestrator 原文合併至 Model.md。
 
 回報格式：條數、各條的 pattern tag 一覽（名稱 | tag）、新增的符號需求（如 Big-M PARAM）、
 需要新符號而卡住的項目。總長 ≤15 行，NEVER 貼 LaTeX 全文。
@@ -631,8 +621,8 @@ orchestrator 先把 1b 中 role=constraint 的 S-id **依語意分組**（「產
 動機：你是 fresh context 的稽核者，沒有參與建模，所以看得到產出者看不到的問題。你不修東西，只判定。
 
 輸入：Projects/{{Project}}/Model/{{Project}}_Model.md、
-      _wip/{{Project}}/1a-normalized.md、_wip/{{Project}}/1b-terminology.md
-規範：讀 .claude/rules/Ph1_Modeling/model-design-guide.md 的 §7.1（清單）與 §9（反模式）
+      使用者題目原文與 Model.md 的 Terminology Mapping Table
+規範：讀 .claude/skills/modeling/model-design-guide.md 的 §7.1（清單）與 §9（反模式）
 
 逐條驗 §7.1 的每一項（每條給 PASS / FAIL + 證據）。
 第 2 項（每個 S-id 都有 role）MUST 逐一比對，不要抽樣。
@@ -648,12 +638,12 @@ FAIL 項另附「該怎麼修」一句。總長 ≤30 行。NEVER 自己動手�
 目標：只看 Model.md，用自然語言反推「這個模型在描述什麼問題」，再與原題目對照，找出語意走樣。
 動機：auditor 驗的是「規則有沒有被違反」，你驗的是「模型有沒有在解另一道題」。後者規則檢查抓不到——一個完全合規的模型也可能漏掉題目的一整個限制。
 
-規範：讀 .claude/rules/Ph1_Modeling/model-design-guide.md 的 §7.2（只讀這節）
+規範：讀 .claude/skills/modeling/model-design-guide.md 的 §7.2（只讀這節）
 
 步驟（照順序，先做完 1 再看 2）：
 1. 先只讀 Projects/{{Project}}/Model/{{Project}}_Model.md，寫出你理解的問題敘述。
    此時 NEVER 開啟原題目。
-2. 再讀 _wip/{{Project}}/00-raw.md 與 1a-normalized.md，逐項對照。
+2. 再讀使用者題目原文與 Model.md 的問題描述，逐項對照。
 
 回報格式：
 - 你的反推敘述（≤8 行）

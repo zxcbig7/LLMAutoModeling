@@ -121,4 +121,4 @@
 | 6 | S2.5：`.lp` 丟 CPLEX Interactive Optimizer 跑 `tune`（零成本，不改程式） | 候選來源 |
 | 7 | R1：掃 cuts 類 + `Emphasis = 3` | — |
 
-> 流程與判準見 `_wip/TuningSOP-design.md`（設計稿，尚未併入規範）。
+> 流程與判準以 `.claude/skills/tuning/solver-tuning-guide.md` 為準。

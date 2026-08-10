@@ -1,6 +1,6 @@
 # coding · 交付前自檢
 
-> 規則本體在 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md`（API 在 §9）；交付後的人工驗收用 `.claude/rules/Ph2_Coding/model-to-code-checklist.md`。
+> 規則本體在同層 `optimfoundation-api-guide.md`（API 在 §9）；交付前的專案一致性驗收用同層 `model-to-code-checklist.md`。
 > 本檔只是交付前的勾選面。**逐條對照回 Model.md**，不是掃一眼 code 就打勾。
 
 ## 入口 gate
@@ -48,7 +48,7 @@
 
 ## API
 
-- [ ] 用到的每個 API 都在 `.claude/rules/Ph2_Coding/optimfoundation-api-guide.md` §9 查得到，且沒有被標 ❌
+- [ ] 用到的每個 API 都在 `optimfoundation-api-guide.md` §9 查得到，且沒有被標 ❌
 - [ ] 沒有用 `GetVarSol` / `GetSetVarSol` / `CsvCtrl.SaveToCSV`（不存在）
 - [ ] 一般變數使用 `BuildVars<T>`；若直接使用 `BuildBVs` / `BuildCVs` / `BuildIVs`，前綴一致且有自訂 bounds 或維護需求
 - [ ] 新限制式使用 `CreateXxx(this, dims...)`；未混用會覆蓋 RHS 常數的 overload

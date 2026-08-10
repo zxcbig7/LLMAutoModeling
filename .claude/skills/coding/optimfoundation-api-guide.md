@@ -18,7 +18,7 @@
 
 ---
 
-## Set / Param row-data 契約（2026-08-08）
+## Set / Param row-data 契約
 
 `Set_*` 與 `Parameter_*` 都是 generator 產生的 **row class**。Set 不是積木或
 集合物件；載入後的資料列一律保存為 `List<T>`，並使用同一個 reader：
@@ -733,7 +733,7 @@ public sealed partial class Parameter_Capacity { }
 零維 scalar Parameter 沒有 `[OptDim]`，CSV 只有 `QTY` 欄且 MUST 恰好一筆。它仍然是 `List<Parameter_X>`（`Load` 一律回 List），所以取值要自己收斂成一個數：
 
 ```csharp
-// Program.cs 材料段 —— ✅ Good
+// 模型段的材料宣告片段（不是 Program.cs 範例）—— ✅ Good
 double shortagePenalty = data.parameter_ShortagePenalty.Single().QTY;
 // 再逐項注入
 .AddObjective(engine => new ObjectiveFunction(data.set_Item, shortagePenalty).Build(engine));
@@ -1370,7 +1370,11 @@ Why: 具名符號寫死成數字，「改一個係數」就變成全專案搜尋
 
 ## §5 Program.cs — 唯一組裝點 + 三態 CLI
 
-所有層級關係直接寫在這一個檔，平坦分成三段：**材料 → 模型 → 環境**。每種變數、目標式與每條限制式各占一個 fluent call。
+所有層級關係直接寫在這一個檔。**Phase 2 的每一個交付專案與本文件的每一個 `Program.cs` 範例，都 MUST 使用同一個、不可刪減或重排的四段模板：`import → 模型 → 實驗 → 正式跑`。**
+
+這不是「題目有需要才加入」的選項：即使 canonical CSV 已存在，仍 MUST 保留 import 段與 `Dataload(string rawFile)`；即使尚未開始 tuning，仍 MUST 保留 experiment 段與至少一組由 `productionBaseline.Clone()` 取得的 config。未來只准替換各段的專案型別、Set / Parameter、模型組成及 solver 值；不得省略段落、另造 CLI、以 helper 包裝段落，或把段落合併／改序。這使所有 Phase 2 成果可以機械比對。
+
+四段均平坦寫在 `Main` 內，且保留以下**逐字段落標記**；材料宣告屬於「模型段落」的前置材料，模型 chain 仍是唯一組裝點。每種變數、目標式與每條限制式各占一個 fluent call。
 
 ```csharp
 using OptimFoundation.Core;
@@ -1382,6 +1386,7 @@ namespace MyProject
     {
         private static int Main(string[] args)
         {
+            // 1. import 段落（固定保留；只在 import 模式執行）
             // 模式 1：import —— 攤平或生成，產出標準 CSV（CSV 還不存在時才需要）
             if (args.Length >= 2 && args[0] == "import")
             {
@@ -1390,12 +1395,13 @@ namespace MyProject
                 return 0;
             }
 
+            // 2. 模型段落（固定保留：材料 + canonical OptModel 組裝）
             // exp 的 log 檔名 MUST 在第一次寫入前設定，整次執行才收在同一包
             bool isExperiment = args.Any(arg => string.Equals(arg, "exp", StringComparison.OrdinalIgnoreCase));
             if (isExperiment)
                 Logging.SetLogFileName("MyProject_exp");
 
-            // ── 1. 材料 ────────────────────────────────────────────
+            // ── 材料 ───────────────────────────────────────────────
             var data = OptData.Load(() => new Dataload());
             double shortagePenalty = data.parameter_ShortagePenalty.Single().QTY;
 
@@ -1416,7 +1422,7 @@ namespace MyProject
                 Threads = 8,
             };
 
-            // ── 2. 模型 ────────────────────────────────────────────
+            // ── 模型 ───────────────────────────────────────────────
             var model = new OptModel("Canonical")
                 .AddVariables(engine => engine.BuildVars<VariableB_Assign>(data.set_Item, data.set_Date))
                 .AddVariables(engine => engine.BuildVars<VariableC_Shortage>(data.set_Item))
@@ -1424,7 +1430,7 @@ namespace MyProject
                 .AddConstraints(engine => new Constraint_MaxDays(data.set_Item, data.set_Date, data.parameter_MaxDays).Build(engine))
                 .AddConstraints(engine => new Constraint_Coverage(data.set_Item, data.set_Date, data.parameter_Demand).Build(engine));
 
-            // ── 3. 環境 ────────────────────────────────────────────
+            // 3. 實驗段落（固定保留；只在 exp 模式執行）
             // 模式 2：exp —— 掃 solver 設定，不做正式求解
             if (isExperiment)
             {
@@ -1443,6 +1449,7 @@ namespace MyProject
                 return 0;
             }
 
+            // 4. 正式跑段落（固定保留；無參數時執行）
             // 模式 3（預設）：正式求解
             using var project = new OptProject(model)
                 .UseConfig(() => projectConfig)
@@ -1456,20 +1463,34 @@ namespace MyProject
 }
 ```
 
-**三段的內容邊界（MUST 照這個分，NEVER 互相跨界）**
+**四段模板不變性（Phase 2 result gate）**
 
-三段都在 `Main` 內、都平坦寫，順序固定，前面只有三態分派：
+| 固定段落 | `Program.cs` 必備元件 | 唯一允許的專案差異 |
+| --- | --- | --- |
+| 1. import | `args.Length >= 2 && args[0] == "import"`；`OptData.Load(() => new Dataload(rawFile)).Export()`；立即 `return 0` | raw 來源格式與 `Dataload(string rawFile)` 內的攤平／生成細節 |
+| 2. 模型 | `isExperiment` 判斷與 log 設定；唯一一次 canonical `OptData.Load`；具名 `ProjectConfig`、`productionBaseline`；唯一 `OptModel("Canonical")` chain | Set / Parameter / scalar、變數、Objective、Constraint、config 值 |
+| 3. 實驗 | `if (isExperiment)`；由 `productionBaseline.Clone()` 建 config；`OptExperiment` + `.AddModel(model)` + `.AddConfig(...)` + `.Run()`；立即 `return 0` | round 名稱、說明、experiment config 與比較旋鈕 |
+| 4. 正式跑 | `using var project = new OptProject(model)`；兩個 `.UseConfig`；`.OnSolved`；`Execute()` 與 0/1 exit code | Solution 類別與輸出內容 |
 
-| 段         | 只能放                                                                                                                                              | NEVER 放                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| **1 材料** | `OptData.Load(() => new Dataload())` **一次**；scalar 用 `.Single().QTY` 取出；具名的 `ProjectConfig`；具名的 `productionBaseline`（`CplexConfig`） | 任何運算、篩選、排序、轉換（那是 Model.md 或 import 階段的事）；`new OptEngine(...)`；建變數 |
-| **2 模型** | 一條 `new OptModel("Canonical")` fluent chain：每種變數一行 `.AddVariables`、目標式一行 `.AddObjective`、每條限制式一行 `.AddConstraints`           | 讀資料；建 config；`AddLHS` / `AddRHS`（數學式留在各 Constraint / Objective 類別內）         |
-| **3 環境** | `OptProject`（production）或 `OptExperiment`（exp），掛 `.UseConfig` / `.OnSolved`，執行並回傳 exit code                                            | 改模型；改資料；再 `OptData.Load` 第二次                                                     |
+- 四個標記 `// 1. import 段落`、`// 2. 模型段落`、`// 3. 實驗段落`、`// 4. 正式跑段落` MUST 各出現一次，順序固定；缺任一個即 Phase 2 FAIL。
+- import、experiment 是**固定能力**，不是每次都要執行的工作。三態 CLI 仍互斥：import 命中立即結束，`exp` 命中在模型建立後執行實驗並結束，無參數才正式跑。
+- `OptExperiment` 的結果是 Phase 3 的輸入；Phase 2 固定保留一個最小可執行比較，不得因「尚未 tuning」而刪掉。Phase 3 只擴充其 round snapshot / archive，不得變更這個四段骨架。
 
-- MUST 材料段的 `OptData.Load` **整個程式只呼叫一次**，production 與 experiment 共用同一份 `data` —— Why: 兩份資料會在中途漂移，實驗結果就不能拿來回答 production 的問題
-- MUST 每個 config 都在材料段具名宣告，內容直接看得到 —— NEVER 用 factory helper 把設定藏起來
-- MUST scalar 在材料段取成區域變數再逐項傳進第 2 段 —— NEVER 在 fluent chain 裡才 `.Single().QTY`
-- 材料段之前只准有三態分派與 `Logging.SetLogFileName`（exp 模式限定，且 MUST 在 `OptData.Load` 之前）
+**四段的內容邊界（MUST 照這個分，NEVER 互相跨界）**
+
+四段都在 `Main` 內、都平坦寫，順序固定：
+
+| 段 | 只能放 | NEVER 放 |
+| --- | --- | --- |
+| **1 import** | `new Dataload(rawFile)`、`OptData.Load(...).Export()`、立即 `return 0` | canonical model、實驗或正式求解 |
+| **2 模型** | `isExperiment` 與 log 設定；唯一一次 canonical `OptData.Load`；scalar、具名 `ProjectConfig` / `productionBaseline`；唯一 `OptModel("Canonical")` chain | 資料轉換；`new OptEngine(...)`；`AddLHS` / `AddRHS`（數學式留在各 Constraint / Objective 類別） |
+| **3 實驗** | clone baseline、`OptExperiment`、`AddModel`、`AddConfig`、`Run`、立即 `return 0` | 改模型、改資料、正式 `OptProject` |
+| **4 正式跑** | `OptProject`、兩個 `UseConfig`、`OnSolved`、`Execute`、0/1 exit code | 改模型、改資料、第二次 `OptData.Load` |
+
+- MUST 模型段的 canonical `OptData.Load` **整個程式只呼叫一次**，production 與 experiment 共用同一份 `data` —— Why: 兩份資料會在中途漂移，實驗結果就不能拿來回答 production 的問題
+- MUST 每個 config 都在模型段具名宣告，內容直接看得到 —— NEVER 用 factory helper 把設定藏起來
+- MUST scalar 在模型段取成區域變數再逐項傳進 model chain —— NEVER 在 fluent chain 裡才 `.Single().QTY`
+- 模型段之前只准有 import 分派，以及 exp 的 `Logging.SetLogFileName`（限定且 MUST 在 canonical `OptData.Load` 之前）
 
 **兩層 config 怎麼填**
 
@@ -1793,33 +1814,9 @@ production 驗證：dotnet build 結果、ValidateRules 結果
 
 ### 9.1 這條流程用得到的呼叫
 
+`Program.cs` 的範例只能引用 §5 的**完整四段模板**；本節不再提供可被誤抄成 `Program.cs` 的半段組裝碼。以下僅是各責任類別可用的 API 片段，不能獨立編譯，也不得取代 import → 模型 → 實驗 → 正式跑。
+
 ```csharp
-// 材料（Program.cs §1 段）
-var data = OptData.Load(() => new Dataload());
-double penalty = data.parameter_ShortagePenalty.Single().QTY;
-
-var projectConfig = new ProjectConfig
-{
-    ProjectName = "MyProject",
-    EnableSolverLog = true,
-    ExportLP = true,
-};
-var solverConfig = new CplexConfig { MipGap = 0.0, TimeLimit = 60, Threads = 4 };
-
-// 模型（Program.cs §2 段）
-var model = new OptModel("Canonical")
-    .AddVariables(engine => engine.BuildVars<VariableB_Assign>(data.set_Item, data.set_Date))
-    .AddVariables(engine => engine.BuildVars<VariableC_Shortage>(data.set_Item))
-    .AddObjective(engine => new ObjectiveFunction(data.set_Item, penalty).Build(engine))
-    .AddConstraints(engine => new Constraint_Capacity(data.set_Item, data.parameter_Capacity).Build(engine));
-
-// 環境（Program.cs §3 段）
-using var project = new OptProject(model)
-    .UseConfig(() => projectConfig)
-    .UseConfig(() => solverConfig)
-    .OnSolved(engine => MyProjectSolution.ReadAndValidate(engine, data).Print());
-bool ok = project.Execute();
-
 // Objective / Constraint 的 Build(engine) 內
 engine.AddLHS(coef, new VariableC_Produce { Item = item });
 engine.AddLHS(constant);

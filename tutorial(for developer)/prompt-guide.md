@@ -12,8 +12,7 @@
 先讀 .claude/rules/AGENTS.md 與
 .claude/rules/Ph1_Modeling/model-design-guide.md。
 
-只建立或更新 Projects/<Project>/Model/<Project>_Model.md 與 repo 根
-_wip/<Project>/ 的建模交接檔。不要建立任何 C# 檔案。
+只建立或更新 Projects/<Project>/Model/<Project>_Model.md。不要建立任何中間文件或 C# 檔案。
 
 請依規範完成問題描述、Terminology Mapping Table、SET、PARAM、VAR、
 CONSTRAINT、OBJ、已套用假設。遇到會改變模型的歧義時，列為問題並停止，
@@ -33,7 +32,7 @@ CONSTRAINT、OBJ、已套用假設。遇到會改變模型的歧義時，列為�
 .claude/rules/Ph2_Coding/optimfoundation-api-guide.md，並以
 Projects/<Project>/Model/<Project>_Model.md 為唯一模型輸入。
 
-先建立 _wip/<Project>/manifest.md，再依相依順序完成專案。資料層採 row-data：
+先在當次工作中完成 manifest，再依相依順序完成專案；manifest 不落檔。資料層採 row-data：
 Set 與 Parameter 都以 primitive OptDim 宣告；Set CSV 為 Dim 欄，Parameter
 CSV 為 Dim 欄加 QTY；Dataload 只用 source.Load<T>() 讀成 List<T>；輸出使用
 CsvCtrl.WriteRows(rows)。變數使用 BuildVars<T>。
@@ -60,7 +59,7 @@ Data/*.csv。維持既有 Model.md、Variable/、Objective/、Constraint/ 不變
 
 檢查 Model.md 到 C# 的對應、Set/Parameter 的 Dim 與 CSV 欄名、Dataload 的
 Load<T>() 型別、變數展開順序、每條限制式的 LHS/RHS 與比較方向，以及求解後的
-四步解驗證。將發現寫入 _wip/<Project>/，每項附檔案路徑與行號；不要自行改寫
+四步解驗證。直接回報發現，每項附檔案路徑與行號；不要自行改寫
 有歧義的 Model.md。
 ```
 

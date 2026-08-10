@@ -20,11 +20,11 @@
 
 | 階段 | 唯一規範檔（讀這一份就夠） | 產物 | 出口 gate |
 | --- | --- | --- | --- |
-| **Phase 1 · Modeling** | [`Ph1_Modeling/model-design-guide.md`](Ph1_Modeling/model-design-guide.md) | `Model/<Project>_Model.md` | 使用者明說「模型確認」/「開始實作」 |
-| **Phase 2 · Coding** | [`Ph2_Coding/optimfoundation-api-guide.md`](Ph2_Coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠、解已驗證 | 解驗證協定四步全過 |
-| **Phase 3 · Tuning** | [`Ph3_Tuning/solver-tuning-guide.md`](Ph3_Tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md` | champion promotion 後 production 重跑通過 |
+| **Phase 1 · Modeling** | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) | `Model/<Project>_Model.md` | 使用者明說「模型確認」/「開始實作」 |
+| **Phase 2 · Coding** | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠、解已驗證 | 解驗證協定四步全過 |
+| **Phase 3 · Tuning** | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md` | champion promotion 後 production 重跑通過 |
 
-執行入口是三個 skill：[`modeling`](../skills/modeling/SKILL.md) → [`coding`](../skills/coding/SKILL.md) → [`tuning`](../skills/tuning/SKILL.md)。
+執行入口是三個 skill：[`modeling`](modeling/SKILL.md) → [`coding`](coding/SKILL.md) → [`tuning`](tuning/SKILL.md)。
 
 **沒有第二條路線，也 NEVER 另建免 gate 的量產路線。** 這條 pipeline 的全部驗證能力來自「每一步都能反向對回上一步」；跳過 gate 等於同時放棄模型確認、解驗證協定、promotion 驗證三道關卡。
 
@@ -61,11 +61,11 @@
 - 一個型別一個 `.cs`，檔名 = 類別名 —— NEVER 集中檔（`Sets.cs`）
 - 模型組裝只在 `Program.cs`（唯一知道 `Dataload` 的地方），平坦三段：材料 → 模型 → 環境 —— NEVER 用 helper / local function 包裝組裝順序
 - `OptEngine` 只從 `Build(OptEngine engine)` 進來 —— NEVER 進建構子
-- 流程暫存檔一律放 repo 根 `_wip/<Project>/`，NEVER 進專案資料夾
+- NEVER 建立流程暫存、草稿、交接或工作文件；可稽核內容直接寫入該 phase 的正式交付物。
 
 ### API 與框架
 
-- NEVER 呼叫 [`Ph2_Coding/optimfoundation-api-guide.md`](Ph2_Coding/optimfoundation-api-guide.md) §9 沒列的 API，也 NEVER 用它標 ❌ 的 API（憑記憶發明 API）
+- NEVER 呼叫 [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) §9 沒列的 API，也 NEVER 用它標 ❌ 的 API（憑記憶發明 API）
 - NEVER 手寫 `: VariableBase` / `: ParameterBase`，NEVER 用 generator 產的位置式 ctor —— 只用裸 `[OptSet]` / `[OptParam]` / `[OptVar]` + 每維一個 `[OptDim<資料型別>("Name")]`（`T` 是 `string` / `DateTime` / `int`…）
 - NEVER 改 OptimFoundation 框架本體（唯讀）——擴充在專案端寫 helper
 
@@ -154,24 +154,23 @@ Why 把 `Feasible` 放進 gate：撞時限但有 incumbent **正是 Phase 3 最�
 
 出口 gate = champion 寫回 baseline → 重新 build → 跑無參數 production → `ValidateRules` 通過。只產出 experiment 報表而 production 仍跑舊 config，**不算完成**。沒有可靠勝者時，「retain + 證據」也是合法交付。
 
-## 交接物
+## 正式交付物
 
-階段之間**只靠檔案交接，不靠對話記憶**——換 session、換 agent、context 重置都能從檔案續跑。
+階段之間只以正式交付物續跑，不建立草稿區或中間交接文件。
 
-### `_wip/<Project>/`（repo 根，三階段共用草稿區）
+### 不建立中間工作文件
 
-放在 repo 層而不是專案內，因為專案內受「八資料夾 NEVER 增減」天條管轄，塞 `_wip/` 進去等於自己製造一個驗收 FAIL。
+Phase 1 直接完成 `Model/<Project>_Model.md`；Phase 2 只交付完整專案與 `status.json`；Phase 3 直接在 `TuningHistory.md` 追加計畫、事實、分析與裁決，並在 `Experiments/` 保存原始證據。
 
 ```text
-_wip/<Project>/
-├── 00-raw.md              題目原文（orchestrator 唯一一次落檔）
-├── 1a-normalized.md … 1d-redteam.md    Phase 1 各棒產物
-├── manifest.md            Phase 2 轉譯工單（含 Model.md 行號區間）
-├── v1-checklist.md / v2-backtranslation.md / v3-solve.md
-└── t<N>-triage.md … t<N>-prodverify.md  Phase 3 每輪產物
+Projects/<Project>/
+├── Model/<Project>_Model.md             Phase 1 唯一正式模型
+├── status.json                           phase gate 狀態
+├── TuningHistory.md                      Phase 3 計畫、分析與裁決
+└── Experiments/<Project>-tuning-r<N>.*   Phase 3 原始證據
 ```
 
-用途是**交接介質**：每個 agent 讀前一棒的檔、寫自己那棒的檔。跨 session resume 時看它有什麼就知道走到哪。內容一律落檔傳路徑，NEVER 貼回主對話。
+跨 session resume 時只讀上述正式檔案；短暫的 agent 工單、稽核結果與分析草稿不落檔。
 
 ### `Projects/<Project>/status.json`
 
@@ -182,7 +181,6 @@ _wip/<Project>/
 | `phase` | string | 全部 | 全部 | `modeling` / `coding` / `tuning` |
 | `updated` | date | 全部 | 全部 | `YYYY-MM-DD` |
 | `modelConfirmed` | bool | P1 | P2 gate | 使用者確認過模型，非 AI 自評 |
-| `wipStage` | string | P1 | P1 resume | `1a` / `1b` / `1c` / `1d` |
 | `auditPass` | bool | P1 | P1 gate | 自驗清單全 PASS |
 | `redteamHigh` | int | P1 | P1 gate | 反向紅隊高嚴重度發現數，須為 0 |
 | `manifestUnits` | int | P2 | P2 進度 | 轉譯工單 unit 數 |
@@ -228,19 +226,19 @@ _wip/<Project>/
 
 | Phase | multi-agent 節 |
 | --- | --- |
-| 1 | [`Ph1_Modeling/model-design-guide.md`](Ph1_Modeling/model-design-guide.md) §8（M0–M6） |
-| 2 | [`Ph2_Coding/agent-workflow-prompts.md`](Ph2_Coding/agent-workflow-prompts.md)（C0–C9 / V1–V3） |
-| 3 | [`Ph3_Tuning/solver-tuning-guide.md`](Ph3_Tuning/solver-tuning-guide.md) §8（T0–T7） |
+| 1 | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) §8（M0–M6） |
+| 2 | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md)（C0–C9 / V1–V3） |
+| 3 | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) §8（T0–T7） |
 
 ## repo 內資源
 
 | 資源 | 路徑 | 用途 |
 | --- | --- | --- |
-| Phase 1 唯一規範 | [`Ph1_Modeling/model-design-guide.md`](Ph1_Modeling/model-design-guide.md) | 四階段降維、Model.md 契約、線性化 pattern、multi-agent |
-| Phase 2 唯一標準 | [`Ph2_Coding/optimfoundation-api-guide.md`](Ph2_Coding/optimfoundation-api-guide.md) | 端到端轉譯規範；§9 = 框架簽名 + 黑名單，§8 = Experiment API |
-| Phase 2 人工驗收表 | [`Ph2_Coding/model-to-code-checklist.md`](Ph2_Coding/model-to-code-checklist.md) | 交付後逐條核對 |
-| Phase 2 multi-agent | [`Ph2_Coding/agent-workflow-prompts.md`](Ph2_Coding/agent-workflow-prompts.md) | C0–C9 / V1–V3 拓樸與派工 prompt |
-| Phase 3 唯一規範 | [`Ph3_Tuning/solver-tuning-guide.md`](Ph3_Tuning/solver-tuning-guide.md) | 進場 gate、旋鈕全表、promotion 閉環、multi-agent |
+| Phase 1 唯一規範 | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) | 四階段降維、Model.md 契約、線性化 pattern、multi-agent |
+| Phase 2 唯一標準 | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) | 端到端轉譯規範；§9 = 框架簽名 + 黑名單，§8 = Experiment API |
+| Phase 2 人工驗收表 | [`coding/model-to-code-checklist.md`](coding/model-to-code-checklist.md) | 交付後逐條核對 |
+| Phase 2 multi-agent | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md) | C0–C9 / V1–V3 拓樸與派工 prompt |
+| Phase 3 唯一規範 | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) | 進場 gate、旋鈕全表、promotion 閉環、multi-agent |
 | 專案輸出 | [`../../Projects/`](../../Projects/) | 新專案建這裡：`Projects/<Project>/` |
 | DLL 唯一來源 | [`../../dlls/`](../../dlls/) | csproj HintPath 一律指這裡 |
 | 專案模板 | [`../../Template/`](../../Template/) | 新專案的資料夾結構與程式範本 |

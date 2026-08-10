@@ -1,7 +1,6 @@
 ---
 name: modeling
 description: Phase 1 建模 orchestrator——把自然語言最佳化題目降維成 Model.md 數學模型，停在使用者確認 gate。當使用者說「幫我建模」「新題目 / 新最佳化問題」「把這個問題寫成數學模型」「LP / IP / MILP 模型」「這題怎麼建模」時使用。NEVER 在本階段產任何 .cs。
-argument-hint: <問題敘述，或題目檔路徑>
 ---
 
 # modeling — Phase 1 建模調度
@@ -11,8 +10,14 @@ argument-hint: <問題敘述，或題目檔路徑>
 你是第一棒：把自然語言題目變成完整、無歧義、程式好轉譯的 `Model/<Project>_Model.md`，然後**停下來等使用者確認**。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/modeling/SKILL.md`）。
-> 規則單一來源：`.claude/rules/AGENTS.md`（天條 + 三階段契約）+ `.claude/rules/Ph1_Modeling/model-design-guide.md`（**Phase 1 唯一規範**：四階段降維、Model.md 契約、線性化 pattern、multi-agent 調度）。
+> 規則單一來源：`../AGENTS.md`（天條 + 三階段契約）+ `model-design-guide.md`（**Phase 1 唯一規範**：四階段降維、Model.md 契約、線性化 pattern、multi-agent 調度）。
 > 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
+
+## 文件遵循 gate（不可跳過）
+
+在分析題目、建立或修改任何交付物前，MUST 逐一讀取並遵守本 skill 的完整文件集：`../AGENTS.md`、`model-design-guide.md`、`checklist.md`、`ph1_modeling.md`。任何檔案缺失、無法讀取、內容相互矛盾，或無法證明交付物符合其中所有適用要求時，MUST 停下並回報檔名與衝突；NEVER 猜測、挑選較方便的規則，或先產出再補讀。
+
+權威順序僅用於判定衝突，不會免除閱讀：`../AGENTS.md` → `model-design-guide.md` → `checklist.md` → `ph1_modeling.md`。交付前 MUST 實際完成 `checklist.md` 的所有適用項目；不適用項目必須說明原因。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -28,7 +33,7 @@ argument-hint: <問題敘述，或題目檔路徑>
 
 ## Step 0 · 定位
 
-1. 讀 `.claude/rules/AGENTS.md`（天條 + 三階段契約）
+1. 讀 `../AGENTS.md`（天條 + 三階段契約）
 2. 決定 `<Project>` 名（PascalCase，無空白）；專案位置固定 `Projects/<Project>/`
 3. 讀 `Projects/<Project>/status.json`（不存在 = 全新題目）判斷是否已有進度：
 
@@ -42,7 +47,7 @@ argument-hint: <問題敘述，或題目檔路徑>
 
 ## Step 1 · 讀本階段細則
 
-讀 `.claude/rules/Ph1_Modeling/model-design-guide.md`——Phase 1 唯一規範，讀這一份就夠：
+讀 `model-design-guide.md`——Phase 1 唯一規範；完整文件遵循 gate 仍適用：
 
 | 要查什麼 | 節 |
 | --- | --- |
