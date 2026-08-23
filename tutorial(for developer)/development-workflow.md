@@ -46,4 +46,4 @@ CsvCtrl.WriteRows(costs);
 - 目標值、單位與量級符合題目。
 - 變數展開的維度順序與宣告順序一致。
 
-實際下指令的模板見 [prompt-guide.md](prompt-guide.md)。詳細規範請讀 [`.claude/rules/AGENTS.md`](../.claude/rules/AGENTS.md) 與 Phase 2 API guide。
+實際下指令的模板見 [prompt-guide.md](prompt-guide.md)。詳細規範請讀 [`.claude/skills/AGENTS.md`](../.claude/skills/AGENTS.md) 與 Phase 2 API guide。

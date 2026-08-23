@@ -1,9 +1,9 @@
 # AI Modeling — Codex 入口（router）
 
-> 本 repo 的操作規範**單一來源**在 [`.Codex/rules/`](.Codex/rules/)：總流程一檔 + 三個 phase 各一檔。
-> 本檔只做導引（router）；**天條與細則一律以 .Codex/rules/AGENTS.md 為準，不在此重複**。
+> 本 repo 的操作規範**單一來源**在 [`.claude/skills/`](.claude/skills/)：總流程一檔 + 三個 phase 各一檔。
+> 本檔只做導引（router）；**天條與細則一律以 .claude/skills/AGENTS.md 為準，不在此重複**。
 
-`Template/` 與 `Projects/<Project>/` 不建立或保留 `AGENTS.md`。任何專案的 AI 指引一律從 [`.Codex/README.md`](.Codex/README.md) 開始，專案實作以 [`.Codex/rules/Ph2_Coding/optimfoundation-api-guide.md`](.Codex/rules/Ph2_Coding/optimfoundation-api-guide.md) 為唯一開發指導原則。
+`Template/` 與 `Projects/<Project>/` 不建立或保留 `AGENTS.md`。任何專案的 AI 指引一律從 [`.claude/README.md`](.claude/README.md) 開始，專案實作以 [`.claude/skills/coding/optimfoundation-api-guide.md`](.claude/skills/coding/optimfoundation-api-guide.md) 為唯一開發指導原則。
 
 ## 這是什麼
 
@@ -13,11 +13,11 @@
 
 | 階段 | skill | 唯一規範檔 | 產物 |
 | --- | --- | --- | --- |
-| Phase 1 Modeling | [`modeling`](.Codex/skills/modeling/SKILL.md) | [`model-design-guide.md`](.Codex/rules/Ph1_Modeling/model-design-guide.md) | `Model/<Project>_Model.md`，停在使用者確認 |
-| Phase 2 Coding | [`coding`](.Codex/skills/coding/SKILL.md) | [`optimfoundation-api-guide.md`](.Codex/rules/Ph2_Coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠 + 解已驗證 |
-| Phase 3 Tuning | [`tuning`](.Codex/skills/tuning/SKILL.md) | [`solver-tuning-guide.md`](.Codex/rules/Ph3_Tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
+| Phase 1 Modeling | [`modeling`](.claude/skills/modeling/SKILL.md) | [`model-design-guide.md`](.claude/skills/modeling/model-design-guide.md) | `Model/<Project>_Model.md`，停在使用者確認 |
+| Phase 2 Coding | [`coding`](.claude/skills/coding/SKILL.md) | [`optimfoundation-api-guide.md`](.claude/skills/coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠 + 解已驗證 |
+| Phase 3 Tuning | [`tuning`](.claude/skills/tuning/SKILL.md) | [`solver-tuning-guide.md`](.claude/skills/tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
 
-**先讀 [`.Codex/rules/AGENTS.md`](.Codex/rules/AGENTS.md)**（天條 + 三階段 I/O 契約 + 交接物 + `status.json` schema），再依當前 phase 讀上表對應的那一份。一階段一檔，讀那一份就夠；Phase 2 的 API 簽名權威在其 §9。文件全圖見 [`.Codex/README.md`](.Codex/README.md)。
+**先讀 [`.claude/skills/AGENTS.md`](.claude/skills/AGENTS.md)**（天條 + 三階段 I/O 契約 + 交接物 + `status.json` schema），再依當前 phase 讀上表對應的那一份。一階段一檔，讀那一份就夠；Phase 2 的 API 簽名權威在其 §9。文件全圖見 [`.claude/README.md`](.claude/README.md)。
 
 ## 換機器設置（clone 後唯一要做的事）
 
@@ -25,4 +25,4 @@ DLL 不進版控（商用 CPLEX + 建置產物）。clone 後照 [`dlls/README.m
 
 ## 天條
 
-全部天條（含數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用規則）唯一權威在 [`.Codex/rules/AGENTS.md`](.Codex/rules/AGENTS.md#天條全流程通用唯一權威在本檔其他文件只引用不重複)。動手前先讀。
+全部天條（含數值保真、API 白名單、框架唯讀、相對路徑、DLL 引用規則）唯一權威在 [`.claude/skills/AGENTS.md`](.claude/skills/AGENTS.md#天條全流程通用唯一權威在本檔其他文件只引用不重複)。動手前先讀。

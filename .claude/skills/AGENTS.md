@@ -250,7 +250,7 @@ Projects/<Project>/
 | --- | --- | --- |
 | Phase 1 唯一規範 | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) | 四階段降維、Model.md 契約、線性化 pattern、multi-agent |
 | Phase 2 唯一標準 | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) | 端到端轉譯規範；§9 = 框架簽名 + 黑名單，§8 = Experiment API |
-| Phase 2 人工驗收表 | [`coding/model-to-code-checklist.md`](coding/model-to-code-checklist.md) | 交付後逐條核對 |
+| Phase 2 產出一致性契約 | [`coding/checklist.md`](coding/checklist.md) | AI 交付前機械驗收，逐條核對 |
 | Phase 2 multi-agent | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md) | C0–C9 / V1–V3 拓樸與派工 prompt |
 | Phase 3 唯一規範 | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) | 進場 gate、旋鈕全表、promotion 閉環、multi-agent |
 | 專案輸出 | [`../../Projects/`](../../Projects/) | 新專案建這裡：`Projects/<Project>/` |

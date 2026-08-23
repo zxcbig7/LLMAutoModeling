@@ -53,8 +53,8 @@ AI Modeling 是一套用於建立混合整數線性規劃（MILP）應用的開�
 
 ## 延伸文件
 
-- [總流程：天條與三階段契約](.claude/rules/AGENTS.md)
-- [Phase 1 建模規範](.claude/rules/Ph1_Modeling/model-design-guide.md)
-- [Phase 2 OptimFoundation API 指引](.claude/rules/Ph2_Coding/optimfoundation-api-guide.md)
-- [Phase 3 調校規範](.claude/rules/Ph3_Tuning/solver-tuning-guide.md)
+- [總流程：天條與三階段契約](.claude/skills/AGENTS.md)
+- [Phase 1 建模規範](.claude/skills/modeling/model-design-guide.md)
+- [Phase 2 OptimFoundation API 指引](.claude/skills/coding/optimfoundation-api-guide.md)
+- [Phase 3 調校規範](.claude/skills/tuning/solver-tuning-guide.md)
 - [開發者教材](tutorial%28for%20developer%29/)

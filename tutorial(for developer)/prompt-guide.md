@@ -9,8 +9,8 @@
 ```text
 請為 <Project> 執行 Phase 1 Modeling。
 
-先讀 .claude/rules/AGENTS.md 與
-.claude/rules/Ph1_Modeling/model-design-guide.md。
+先讀 .claude/skills/AGENTS.md 與
+.claude/skills/modeling/model-design-guide.md。
 
 只建立或更新 Projects/<Project>/Model/<Project>_Model.md。不要建立任何中間文件或 C# 檔案。
 
@@ -28,8 +28,8 @@ CONSTRAINT、OBJ、已套用假設。遇到會改變模型的歧義時，列為�
 ```text
 模型已確認，請為 <Project> 執行 Phase 2 Coding。
 
-先讀 .claude/rules/AGENTS.md、
-.claude/rules/Ph2_Coding/optimfoundation-api-guide.md，並以
+先讀 .claude/skills/AGENTS.md、
+.claude/skills/coding/optimfoundation-api-guide.md，並以
 Projects/<Project>/Model/<Project>_Model.md 為唯一模型輸入。
 
 先在當次工作中完成 manifest，再依相依順序完成專案；manifest 不落檔。資料層採 row-data：
@@ -70,8 +70,8 @@ Load<T>() 型別、變數展開順序、每條限制式的 LHS/RHS 與比較方�
 ```text
 <Project> 已通過資料驗證與解驗證，請執行 Phase 3 Tuning。
 
-先讀 .claude/rules/AGENTS.md 與
-.claude/rules/Ph3_Tuning/solver-tuning-guide.md。
+先讀 .claude/skills/AGENTS.md 與
+.claude/skills/tuning/solver-tuning-guide.md。
 
 模型、CSV、Dataload、Variable、Objective、Constraint 均保持不動。只在
 Program.cs 的具名 CplexConfig baseline 建立可比較的實驗，記錄每個 trial，選出

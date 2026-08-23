@@ -2,7 +2,7 @@
 
 <system_context>
 Phase 2（轉譯實作）的 **multi-agent 執行層**：把 `optimfoundation-api-guide.md` 的轉譯規則轉成「派誰、給什麼、驗什麼」的可複製 prompt。
-規則單一來源是同層 `optimfoundation-api-guide.md`（**唯一標準**）；`model-to-code-checklist.md` 是 AI 的專案產出一致性契約與機械驗收規格，不是使用者人工驗收表。本檔 NEVER 重述規則，只規定調度。
+規則單一來源是同層 `optimfoundation-api-guide.md`（**唯一標準**）；`checklist.md` 是 AI 的專案產出一致性契約與機械驗收規格，不是使用者人工驗收表。本檔 NEVER 重述規則，只規定調度。
 **本 phase 是全流程 context 壓力最大的一段**：API guide、Model.md 與十幾支 `.cs` 不應同時塞進單一 agent context，所以一律走工單 fan-out。
 產物：repo 根 `Projects/<Project>/` 的完整可 build 專案。
 </system_context>
@@ -146,14 +146,11 @@ Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs�
 目標：在 Projects/<Project>/ 建立八資料夾結構、csproj 與**完整四段不可變模板**的 Program.cs 骨架。
 動機：所有最終 Phase 2 成果的 Program.cs 都必須同形；C2 先固定組裝外型，C7 只填入 manifest 對應的實際型別。此時尚未有 model components，不能以假型別或假模型要求空專案 build；完整 build 由 C9 在 C3–C8 完成後驗證。
 
-規範：以 `rg` 定位並讀 API guide 的 §0（心智模型）與 §1（建立專案 / csproj / DLL）兩節
+規範：以 `rg` 定位並讀 API guide 的 §0（心智模型）、§1（建立專案 / csproj / DLL）與 §5（Program.cs 四段模板）
 
-做法：
-1. 建八資料夾：Model/ Set/ Parameter/ Variable/ Objective/ Constraint/ Solution/ Data/，NEVER 增減
-2. csproj：DLL HintPath 一律 ..\..\dlls\、Analyzer 指 ..\..\dlls\OptimFoundation.Generators.dll、Data\**\*.csv copy、<Compile Remove="Generated/**/*.cs" />
-3. Program.cs 骨架：無條件建立不可變四段 `import → 模型 → 實驗 → 正式跑`，保留四個逐字段落標記與固定控制流；import 與 exp 是固定能力，NEVER 因 Model.md、manifest 或現有 CSV 而省略
-4. 全專案單一 namespace <Project>，block 寫法
-5. NEVER ProjectReference、NEVER NuGet、NEVER CPLEX Studio 絕對路徑
+做法：照 §1 建結構與 csproj、照 §5 建 Program.cs 骨架，規則不在本檔重述。本 agent 專屬邊界：
+1. Program.cs 骨架無條件建立不可變四段 `import → 模型 → 實驗 → 正式跑`，保留四個逐字段落標記與固定控制流；import 與 exp 是固定能力，NEVER 因 Model.md、manifest 或現有 CSV 而省略
+2. 此時尚未有 model components，NEVER 為了讓空專案 build 過而加入假型別或假模型
 
 驗收條件：
 1. 八個資料夾存在，無額外資料夾
@@ -173,16 +170,10 @@ Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs�
 輸入：orchestrator 提供的 manifest SET 與 PARAM 列 + 各列標示的 Model.md 行號區間（用 Read offset/limit 只讀這些區間）
 規範：以 `rg` 定位並讀 API guide §2 全節（宣告、CSV、Load<T>、輸出與實際驗證範圍）
 
-做法：
-1. 一個型別一個檔，sealed，帶 <summary> 標明對應 Model.md 符號
-2. Set 與 Parameter 同一套宣告法：裸 [OptSet] / [OptParam] + 每維一個 [OptDim<資料型別>("Name")]
-   （T 是 string / DateTime / int…；Set 至少一維，Parameter 可零維且一律含 QTY）
-   Parameter 只用 object initializer 建構
-3. Dataload : DataContext，Dataload(IDataSource) 對 Set 與 Parameter 一律使用 source.Load<T>(sourceName)；CSV 檔名不必等於 class 名稱，DB 的 sourceName 是完整 SQL
-   NEVER 在此 ctor 內出現迴圈、if、Random、日期運算、補值
-4. 使用 CsvDataSource 時，Data/*.csv 依 Model.md 的值逐筆填；使用 DbDataSource 時寫完整 SELECT，必要時以 AS 對齊 property，NEVER 為通過檢查而建立假的 CSV
-   Template 日期固定 yyyy-MM-dd；目前 mapper 額外可解析的格式只是容忍度，不是可依賴的資料契約。數值與題目完全一致，NEVER 四捨五入或填佔位值
-5. Dataload 欄位命名：set_Item / parameter_Demand（小寫元件 + PascalCase 語意）
+做法：照 §2 全節逐項做，規則不在本檔重述。本 agent 專屬邊界：
+1. 資料來源由 manifest 指定；未指定才用預設 CsvDataSource + Data/*.csv，NEVER 為通過檢查而建立假的 CSV
+2. CSV / SQL 取得的值與 Model.md 逐筆一致，NEVER 四捨五入或填佔位值
+3. 需要「算」出來的資料一律不進 Dataload(IDataSource) —— 該由 import 階段先產 CSV；Model.md 缺值就停止回報
 
 驗收條件：
 1. manifest 的每個 SET / PARAM 列都有對應 .cs 檔，檔名 = 類別名
@@ -203,11 +194,9 @@ Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs�
 輸入：manifest.md 的 VAR 列 + 對應 Model.md 行號區間
 規範：以 `rg` 定位並讀 API guide §3
 
-做法：
-1. Model.md 標 Binary → VariableB_、Continuous → VariableC_、Integer → VariableI_
-2. [OptVar] 裸寫 + 每維一個 [OptDim<資料型別>("Name")]；型別完全由類名前綴決定
-3. sealed + <summary> 標明對應 Model.md 符號
-4. Model.md 的 LB/UB 若非預設值 → **不要寫進變數宣告**，記進回報，交給 C5 寫成一條 constraint
+做法：照 §3 逐項做，規則不在本檔重述。本 agent 專屬邊界：
+1. 前綴由 Model.md 型別欄決定（Binary → VariableB_、Continuous → VariableC_、Integer → VariableI_）；前綴是 load-bearing，取錯是型別錯不是命名錯
+2. Model.md 的 LB/UB 若非預設值 → **不要寫進變數宣告**，記進回報，交給 C5 寫成一條 constraint
 
 驗收條件：
 1. manifest 每個 VAR 列都有對應檔，前綴與 Model.md 型別欄一致
@@ -231,16 +220,10 @@ Model.md 節錄：只讀 Projects/<Project>/Model/<Project>_Model.md 的第 {{�
 1. 以 `rg` 定位並讀 API guide §4（Objective、pool、owner overload、保留 overload）與附錄 A
 2. 用到的每個 API 簽名不確定 → 搜尋 §9 該 API 名，讀命中處 ±20 行
 
-做法：
-1. sealed class Constraint_<Name> : ConstraintBase；建構子逐項列出實際依賴（Set_*, List<Parameter_*>, scalar），NEVER 收整包 Dataload
-2. OptEngine 只從 Build(OptEngine engine) 進來，NEVER 進建構子
-3. 係數先用 LINQ 存局部變數，再傳 AddLHS / AddRHS，NEVER 內嵌 LINQ
-4. 比較方向逐字對應：>= → CreateGreatEqual、<= → CreateLessEqual、= → CreateEqual
-5. 新 code 使用 owner overload：CreateEqual(this, dims...) / CreateLessEqual(this, dims...) / CreateGreatEqual(this, dims...)；右側常數一律走 AddRHS(常數)
-   NEVER 用 CreateXxx(rhs, name)——那組是覆蓋 RHS 常數，不是累加，會把先前 AddRHS 的常數取代
-6. 資料值與可變迴圈邊界 MUST 來自 Set / Parameter；只有 Model.md 明寫的式子結構係數（如 1、-1）可直接寫 literal
-7. 把足以唯一識別限制式的原始維度值傳入 owner overload；NEVER 手工串 `ConstraintName`、`@` 或格式化日期
-8. 發現 Model.md 該條有歧義（缺符號宣告、pattern tag 對不上式子、預先移項）→ 立即停止並回報，NEVER 自行詮釋
+做法：照 §4 與附錄 A 逐項做，規則不在本檔重述。本 agent 專屬邊界：
+1. 一條式子一個檔：左邊項 → AddLHS、右邊項 → AddRHS、比較符號 → CreateXxx，逐項對得回 Model.md
+2. 建構子只收這條式子實際用到的 Set / Parameter / scalar；OptEngine 只從 Build(engine) 進來
+3. 發現 Model.md 該條有歧義（缺符號宣告、pattern tag 對不上式子、預先移項）→ 立即停止並回報，NEVER 自行詮釋
 
 驗收條件：
 1. 指派的每條式子都有對應 code，且 LHS 項 ↔ AddLHS、RHS 項 ↔ AddRHS 逐項對得上
@@ -290,14 +273,14 @@ NEVER 修改 Model.md。
 ## V1 · checklist-verifier
 
 ```text
-目標：依 model-to-code-checklist.md 的 AI 專案產出一致性契約逐條稽核專案，回報 PASS/FAIL；先保證所有專案的 canonical 架構一致，再驗證轉譯正確性。
+目標：依 checklist.md 的 AI 專案產出一致性契約逐條稽核專案，回報 PASS/FAIL；先保證所有專案的 canonical 架構一致，再驗證轉譯正確性。
 動機：你是 fresh context 的稽核者。寫 code 的 agent 對自己的產出必然樂觀；此 contract 的每一條都要能機械阻止專案結構、命名或 API 寫法漂移。
 
 輸入：Projects/<Project>/
-規範：同層 model-to-code-checklist.md（全讀並逐條執行）
+規範：同層 checklist.md（全讀並逐條執行）
 
-先做：contract §0「Canonical 專案架構」與 §10「AI 最終靜態掃描」的 PowerShell 指令**照跑一遍**；任何未列出的手寫資料夾、缺少固定資料夾或錯名路徑均為 FAIL。命中靜態掃描時逐筆判定是否為舊 API 或反模式。
-再做：§1 到 §9 各段逐條核對。
+先做：checklist §0「Canonical 專案架構」與 §15「AI 最終靜態掃描」的 PowerShell 指令**照跑一遍**；任何未列出的手寫資料夾、缺少固定資料夾或錯名路徑均為 FAIL。命中靜態掃描時逐筆判定是否為舊 API 或反模式。
+再做：§1 到 §14 各段逐條核對。
 
 回報格式：
 | 段 | 條目 | 判定 | 證據（檔案:行號） |

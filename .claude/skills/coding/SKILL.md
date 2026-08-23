@@ -10,25 +10,19 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 你是第二棒：把已經定案的 `Model/<Project>_Model.md` **逐條機械翻譯**成可 build、可求解的專案。你不是在「寫程式解問題」，是在抄一份已經寫好的數學模型——發現模型有歧義就停下回 `modeling`，NEVER 自行補假設。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/coding/SKILL.md`）。
-> 規則單一來源：`../AGENTS.md`（天條 + 三階段契約）+ `optimfoundation-api-guide.md`（**Phase 2 唯一標準**：端到端規範 + §9 API 簽名權威 + 黑名單）。
-> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
 
-## 文件遵循 gate（不可跳過）
+## 規則在哪（本 skill 只有調度，規則一條都不複製）
 
-在讀取 Model.md、規劃、建立、修改或驗證任何專案檔案前，MUST 逐一讀取並遵守完整文件集：`../AGENTS.md`、`optimfoundation-api-guide.md`、`PH2_SOP.md`、`model-to-code-checklist.md`、`checklist.md`、`agent-workflow-prompts.md`。任何檔案缺失、無法讀取、內容相互矛盾，或無法證明交付物符合其中所有適用要求時，MUST 停下並回報檔名與衝突；NEVER 猜測、挑選較方便的規則，或先產出再補讀。
+| 文件 | 管什麼 | 何時讀 |
+| --- | --- | --- |
+| [`../AGENTS.md`](../AGENTS.md) | 天條、三階段契約、`status.json` schema | 動手前 |
+| [`optimfoundation-api-guide.md`](optimfoundation-api-guide.md) | **Phase 2 唯一標準**：端到端轉譯規範，§9 = API 簽名權威 + 黑名單 | 每個 Step 依下表定位該節 |
+| [`checklist.md`](checklist.md) | 交付前的機械驗收契約 | 宣告完成前逐條跑 |
+| [`agent-workflow-prompts.md`](agent-workflow-prompts.md) | C0–C9 / V1–V3 派工拓樸 | 走 multi-agent 時 |
 
-權威順序僅用於判定衝突，不會免除閱讀：`../AGENTS.md` → `optimfoundation-api-guide.md` → `PH2_SOP.md` → `model-to-code-checklist.md` → `checklist.md` → `agent-workflow-prompts.md`。交付前 MUST 完成兩份 checklist 的所有適用項目；不適用項目必須說明原因。multi-agent 工作時，`agent-workflow-prompts.md` 的 context、工單與驗收限制同樣強制適用。
+衝突順序：`../AGENTS.md` → api-guide → checklist。**兩份規則互相矛盾 → 停下回報檔名與衝突**，NEVER 挑方便的那條、NEVER 先產出再補讀。憑記憶寫 API 一律視為違規。
 
-## Review-only 模式
-
-當使用者要求審查、驗收或 review 既有 Phase 2 專案時，**不建立或修改模型與程式**。讀取 Model.md、兩份 checklist 與 API guide §9 後，只報告可由文件或程式碼證明的問題：
-
-- phase gate 與每個程式元素是否能對應 Model.md 宣告；
-- Constraint 是否保留 LHS／運算子／RHS，沒有移項、改號或偷放常數；
-- 命名、維度、變數型別、bounds、Dataload 與資料來源是否一致；
-- API、DLL、Generated 排除、build／run／解驗證證據是否完整。
-
-輸出固定為 `Blocker`、`Major`、`Minor`、`Verified` 四節。每項附檔案路徑、行號（可得時）、違反的 Model.md／規則依據與最小修正建議；沒有證據時明列「未驗證」，NEVER 自行補寫需求或改變數學模型。
+審查既有 Phase 2 專案 → 用 `/review`（[`../../commands/Ph2_Coding/review.md`](../../commands/Ph2_Coding/review.md)），不在本 skill 重述審查規則。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -60,9 +54,9 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 | `buildOk: true`、`solveVerified: false` | Step 5 解驗證 |
 | 兩者皆 true | 本 skill 已完成；要調校改用 `tuning` |
 
-## Step 1 · 讀本階段細則
+## Step 1 · 定位本階段細則
 
-讀 `optimfoundation-api-guide.md`——Phase 2 唯一標準。先完成文件遵循 gate，再依需要定位章節：
+api-guide 是 Phase 2 唯一標準，**NEVER 整份讀**——現場搜章節行號再讀那一段：
 
 ```powershell
 Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
@@ -78,6 +72,7 @@ Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Patter
 | `Program.cs` 組裝 + 三態 CLI | §5 |
 | Solution 取解與輸出 | §6 |
 | 解驗證協定四步 | §7 |
+| exp 分支交棒契約 | §8.4 |
 | **API 簽名與黑名單** | §9（**NEVER 憑記憶發明 API**） |
 | 常見錯誤與反模式 | §10 |
 | 線性化 pattern 對照 | 附錄 A |
@@ -86,24 +81,23 @@ Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Patter
 
 ## Step 2 · 建專案
 
-- 唯一 scaffold 是 `Template/`，生成到 `Projects/<Project>/`
-- DLL 一律 `<Reference>` + HintPath `..\..\dlls\`；generator 用 `<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />`
-- csproj MUST `<Compile Remove="Generated/**/*.cs" />`
-- NEVER 從 sibling `OptimFoundation/OptimFoundation/Templates/` 複製結構（那是相容性範例，不是 scaffold）
+唯一 scaffold 是 repo 根的 `Template/`，生成到 `Projects/<Project>/`。csproj 的 DLL `<Reference>`、`<Analyzer>` 與 `Generated/` 排除寫法照 **api-guide §1.4 照抄**；八資料夾結構見 §1.1。
+
+**NEVER 從 sibling `OptimFoundation/OptimFoundation/Templates/` 複製結構**（那是相容性範例，不是 scaffold）。
 
 ## Step 3 · 轉譯順序（依序，一項一檔）
 
-| 順序 | 產出 | 錨點 |
-| --- | --- | --- |
-| 1 | `Set/Set_*.cs` | Model.md 的 SET 段 |
-| 2 | `Parameter/Parameter_*.cs` | PARAM 段，同下標的係數併一個類 |
-| 3 | `Data/Dataload.cs` + `Data/*.csv` | 顯式載入，數值保真 |
-| 4 | `Variable/Variable{B,C,I}_*.cs` | VAR 段，型別由前綴決定 |
-| 5 | `Constraint/Constraint_*.cs` | 每條 `[Cn]` 一檔，`///` 註記寫回條號 |
-| 6 | `Objective/ObjectiveFunction.cs` | OBJ 段逐項 |
-| 7 | `Program.cs` | 材料 → OptModel → runner，順序照 `[C1][C2]…` |
+| 順序 | 產出 | 錨點 | 規範 |
+| --- | --- | --- | --- |
+| 1 | `Set/Set_*.cs` | Model.md 的 SET 段 | §2.1 |
+| 2 | `Parameter/Parameter_*.cs` | PARAM 段，同下標的係數併一個類 | §2.2 |
+| 3 | `Data/Dataload.cs` + `Data/*.csv` | 顯式載入，數值保真 | §2.0、§2.4 |
+| 4 | `Variable/Variable{B,C,I}_*.cs` | VAR 段，型別由前綴決定 | §3 |
+| 5 | `Constraint/Constraint_*.cs` | 每條 `[Cn]` 一檔，`///` 註記寫回條號 | §4.2、附錄 A |
+| 6 | `Objective/ObjectiveFunction.cs` | OBJ 段逐項 | §4.3 |
+| 7 | `Program.cs` | 材料 → OptModel → runner，順序照 `[C1][C2]…` | §5 |
 
-轉譯鐵律（細則見 api-guide §4）：左式項 → `AddLHS`、右式項 → `AddRHS`、比較符號 → `Create{Less/Great}Equal`；係數先存局部變數再傳入；Objective MUST 先於所有 Constraint。
+轉譯鐵律（移項禁令、`AddLHS`/`AddRHS`/`CreateXxx` 對應、係數來源、Objective 必須先於 Constraint）全在 **api-guide §4 與 `../AGENTS.md` 的數學一致性天條**，動手前讀那兩處。
 
 **中途發現 Model.md 歧義 → 立即停止，回 `modeling` 補模型**，NEVER 自己選一種解釋繼續。
 
@@ -115,32 +109,13 @@ Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Patter
 
 ## Step 5 · 解驗證協定（四步全過才算完成）
 
-1. **Status 五態診斷**（依框架 `SolveStatus`，NEVER 只認 `Optimal`）：
+判定表與四步定義在 **api-guide §7**（`SolveStatus` 分流、每一步怎麼驗、`TimeLimit` 無解時怎麼換小 instance）。
 
-   | 狀態 | 意義 | 動作 |
-   | --- | --- | --- |
-   | `Optimal` | 證明最佳 | 往下做 2–4 |
-   | `Feasible` | 有解未證明最佳（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | **照樣往下做 2–4**，對 incumbent 驗；記下 `MipGap` 與 `BestBound`。**「太慢」不是本階段能修的事**，那是 Phase 3 |
-   | `TimeLimit` | 中止且**無任何可用解**（名字誤導，非時間專屬；`ObjectiveValue` / `MipGap` 皆 `NaN`） | 沒有解可驗 → 縮小 `Data/*.csv` 成小 instance 求到 `Optimal`，用它完成 2–4，並記 `verifiedOn: "small-instance:<說明>"` |
-   | `Infeasible` | 無可行解 | 走 IIS（`bin/Debug/net8.0/IISs/*.ilp`），回 `modeling` |
-   | `Unbounded` | 目標式無界 | 查漏掉的界限 constraint |
+本 skill 只管一件事：**四步沒全過就不准宣告完成**。看到 `Optimal` 就宣稱正確不合格；看到非 `Optimal` 就宣稱失敗同樣不合格——`Feasible` 照樣往下驗，只有 `Infeasible` / `Unbounded` 是真的擋（退回 `modeling`）。
 
-2. **可行性代回**：把解代回每條 constraint，確認 LHS op RHS 成立
-3. **單位一致**：目標值與關鍵變數的單位、量級對得上題目
-4. **LP bound sanity**：max 的整數解 ≤ LP bound；min 反之（`Feasible` 時比 `BestBound`）
+## Step 5.5 · exp 分支交棒定形
 
-看到 `Optimal` 就宣稱正確**不合格**；看到非 `Optimal` 就宣稱失敗**同樣不合格**——只有 `Infeasible` / `Unbounded` 是真的擋。
-
-## Step 5.5 · exp 分支交棒定形（規範 §8.4）
-
-**Phase 2 的交付 MUST 讓 Phase 3 一行 code 都不用改就跑得出 R0。** 四條機械可驗：
-
-1. experiment 名 = `<Project>-tuning-r0`
-2. 每個 config label 帶 `r0-` 前綴
-3. exp 分支開頭有 marker 註解 `// R0 — <Project>-tuning-r0`
-4. r0 內容 = **baseline × 5 個固定 seed**，NEVER 混掃旋鈕（R0 是校準輪，只量 baseline 自己的雜訊）
-
-外加 `productionBaseline` MUST 明設 `ParallelMode = 1` + 固定 `Seed` + 實測定版的 `Threads`——這三顆就是 Phase 3 的環境契約，同機直接沿用。
+**Phase 2 的交付 MUST 讓 Phase 3 一行 code 都不用改就跑得出 R0。** 形狀契約（experiment 名、`r0-` label、marker、baseline × 5 seeds、`productionBaseline` 的三顆環境旋鈕）逐條定義在 **api-guide §8.4**，驗收項在 `checklist.md` §13。
 
 MUST 實跑一次 `-- exp` 確認管線可執行；bin 產物**不 archive**（archive 是 Phase 3 每輪的責任）。
 
@@ -148,25 +123,20 @@ MUST 實跑一次 `-- exp` 確認管線可執行；bin 產物**不 archive**（a
 
 ## Step 6 · 交付 + 更新 status.json
 
-交付內容：build 結果、目標值、解摘要、輸出檔位置（`Solution/`、`Models/`）、與 Model.md 小例的對照結果、exp 分支的 R0-ready 四條確認結果。
-附上同資料夾 `checklist.md` 提醒使用者逐項人工核對。
+交付內容：build 結果、目標值、解摘要、輸出檔位置（`Solution/`、`Models/`）、與 Model.md 小例的對照結果、exp 分支的 R0-ready 確認結果。
+交付前 MUST 逐條跑完 `checklist.md`；不適用項目要說明原因。
 
-`Projects/<Project>/status.json` **只更新下列欄位**（完整 schema 見 `modeling` skill，NEVER 整檔覆寫掉其他欄位）：
+`Projects/<Project>/status.json` **只更新下列欄位**（完整 schema 在 `../AGENTS.md`，NEVER 整檔覆寫掉其他欄位）：
 
 ```json
 { "phase": "coding", "buildOk": true, "solveVerified": true, "solveStatus": "Optimal", "verifiedOn": "production", "updated": "YYYY-MM-DD" }
 ```
 
-## Fatal
+## Fatal（本階段特有；通用天條全在 `../AGENTS.md`，一樣適用）
 
 - NEVER 模型未確認就產 `.cs`
 - NEVER 自行詮釋 Model.md（歧義一律回 `modeling`）
-- NEVER 移項 / 改號 / 翻轉比較方向 / 四捨五入數值
-- NEVER 裸數字進 Constraint / Objective（一律 `Parameter` 的 `QTY`）
-- NEVER 用 helper / local function 隱藏 `Program.cs` 的組裝順序
-- NEVER 呼叫 `optimfoundation-api-guide.md` §9 沒列的 API，也 NEVER 用它標 ❌ 的 API
-- NEVER 改 OptimFoundation 框架本體或換 DLL 來源
 - NEVER fix loop 超過 5 次
-- NEVER 交出「Phase 3 得先重寫才能跑」的 exp 分支（名稱 / label / marker / baseline × 5 seeds 缺一即 FAIL）
+- NEVER 用 `Optimal` 以外的 Status 當作「失敗」而退回 `modeling`
+- NEVER 交出「Phase 3 得先重寫才能跑」的 exp 分支（§8.4 四條缺一即 FAIL）
 - NEVER 在 exp 分支混掃多顆旋鈕充當 r0
-- NEVER 用絕對路徑

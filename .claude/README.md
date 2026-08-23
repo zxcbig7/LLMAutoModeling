@@ -13,16 +13,14 @@
 | **Phase 2 轉譯**：專案結構、資料/變數/模型層、`Program.cs`、解驗證、API 簽名 | [`skills/coding/optimfoundation-api-guide.md`](skills/coding/optimfoundation-api-guide.md) |
 | **Phase 3 調校**：進場 gate、旋鈕全表、promotion 閉環、multi-agent | [`skills/tuning/solver-tuning-guide.md`](skills/tuning/solver-tuning-guide.md) |
 
-**一階段一份權威 guide。** Phase 2 另有兩份非權威輔助檔：交付後人工驗收用 [`skills/coding/model-to-code-checklist.md`](skills/coding/model-to-code-checklist.md)、派工用 [`skills/coding/agent-workflow-prompts.md`](skills/coding/agent-workflow-prompts.md)。
+**一階段一份權威 guide。** Phase 2 另有兩份非權威輔助檔：交付前機械驗收用 [`skills/coding/checklist.md`](skills/coding/checklist.md)、派工用 [`skills/coding/agent-workflow-prompts.md`](skills/coding/agent-workflow-prompts.md)。
 
 ## 資料夾責任
 
 | 資料夾 | 內容 | 維護原則 |
 | --- | --- | --- |
-| `skills/` | **唯一的規則與執行來源**：總流程 1 檔 + 三個 phase skills | 同一條硬規則只在權威文件定義，其餘文件以連結引用；NEVER 新增第二份談同一階段的規則檔 |
-| `skills/` | 三個 phase 的 orchestrator 入口 + 交付前 checklist | `SKILL.md` 必須保留 YAML front matter；只做調度與 gate，NEVER 複製規則 |
+| `skills/` | **唯一的規則與執行來源**：總流程 1 檔 + 三個 phase skills；三個 phase 的 orchestrator 入口 + 交付前 checklist | 同一條硬規則只在權威文件定義，其餘文件以連結引用；NEVER 新增第二份談同一階段的規則檔；`SKILL.md` 必須保留 YAML front matter，只做調度與 gate，NEVER 複製規則 |
 | `commands/` | 可由使用者觸發的審查指令 | 每個 phase 提供一致的 `review` 交付格式 |
-| `agents/` | 可委派的角色定義 | 僅放角色、輸入／輸出與邊界；不重複流程規則 |
 | `reference/` | CodeMap 等架構資料 | 不在此放可執行流程規則 |
 | `hooks/` | 工具事件 hook | 腳本與文件規則分離 |
 

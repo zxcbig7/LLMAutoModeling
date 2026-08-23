@@ -10,14 +10,18 @@ description: Phase 1 建模 orchestrator——把自然語言最佳化題目降�
 你是第一棒：把自然語言題目變成完整、無歧義、程式好轉譯的 `Model/<Project>_Model.md`，然後**停下來等使用者確認**。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/modeling/SKILL.md`）。
-> 規則單一來源：`../AGENTS.md`（天條 + 三階段契約）+ `model-design-guide.md`（**Phase 1 唯一規範**：四階段降維、Model.md 契約、線性化 pattern、multi-agent 調度）。
-> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
 
-## 文件遵循 gate（不可跳過）
+## 規則在哪（本 skill 只有調度，規則一條都不複製）
 
-在分析題目、建立或修改任何交付物前，MUST 逐一讀取並遵守本 skill 的完整文件集：`../AGENTS.md`、`model-design-guide.md`、`checklist.md`、`ph1_modeling.md`。任何檔案缺失、無法讀取、內容相互矛盾，或無法證明交付物符合其中所有適用要求時，MUST 停下並回報檔名與衝突；NEVER 猜測、挑選較方便的規則，或先產出再補讀。
+| 文件 | 管什麼 | 何時讀 |
+| --- | --- | --- |
+| [`../AGENTS.md`](../AGENTS.md) | 天條、三階段契約、`status.json` schema | 動手前 |
+| [`model-design-guide.md`](model-design-guide.md) | **Phase 1 唯一規範**：四階段降維、Model.md 契約、線性化 pattern、multi-agent | 每個 Step 依下表定位該節 |
+| [`checklist.md`](checklist.md) | 交付前自檢 | 宣告完成前逐條跑 |
 
-權威順序僅用於判定衝突，不會免除閱讀：`../AGENTS.md` → `model-design-guide.md` → `checklist.md` → `ph1_modeling.md`。交付前 MUST 實際完成 `checklist.md` 的所有適用項目；不適用項目必須說明原因。
+衝突順序：`../AGENTS.md` → model-design-guide → checklist。**兩份規則互相矛盾 → 停下回報檔名與衝突**，NEVER 挑方便的那條、NEVER 先產出再補讀。
+
+審查既有模型 → 用 `/review`（[`../../commands/Ph1_Modeling/review.md`](../../commands/Ph1_Modeling/review.md)）。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -45,9 +49,9 @@ description: Phase 1 建模 orchestrator——把自然語言最佳化題目降�
 
 4. 一句話回報：「Phase 1（原因），接下來做 X」
 
-## Step 1 · 讀本階段細則
+## Step 1 · 定位本階段細則
 
-讀 `model-design-guide.md`——Phase 1 唯一規範；完整文件遵循 gate 仍適用：
+`model-design-guide.md` 是 Phase 1 唯一規範，**NEVER 整份讀**——依需要定位章節：
 
 | 要查什麼 | 節 |
 | --- | --- |
@@ -65,15 +69,14 @@ description: Phase 1 建模 orchestrator——把自然語言最佳化題目降�
 
 ## Step 2 · 4 階段降維（依序，NEVER 跳步）
 
-| 階段 | 產物 | 只做這件事 |
-| --- | --- | --- |
-| 1a 去故事化 + 單位正規化 | 乾淨的問題敘述 | 純自然語言，NEVER 引入符號 |
-| 1b 語義判別 + Terminology Table | Terminology Mapping Table | 每個子句強制歸類 role，無關的標 `irrelevant` |
-| 1c 結構抽取 | Model.md 五段 | SET / PARAM / VAR / CONSTRAINT / OBJ，每條 constraint 標 pattern tag |
-| 1d 建模自驗 | 已套用假設清單 | 對照 `checklist.md` 逐條驗，全過才進 Step 4 |
+| 階段 | 產物 | 只做這件事 | 規範 |
+| --- | --- | --- | --- |
+| 1a 去故事化 + 單位正規化 | 乾淨的問題敘述 | 純自然語言，NEVER 引入符號 | §1 |
+| 1b 語義判別 + Terminology Table | Terminology Mapping Table | 每個子句強制歸類 role，無關的標 `irrelevant` | §2 |
+| 1c 結構抽取 | Model.md 五段 | SET / PARAM / VAR / CONSTRAINT / OBJ，每條 constraint 標 pattern tag | §3–§5、附錄 A |
+| 1d 建模自驗 | 已套用假設清單 | 對照 `checklist.md` 逐條驗，全過才進 Step 4 | §7 |
 
-Model.md 固定順序：問題描述 → Terminology Mapping Table → SET → PARAM → VAR → CONSTRAINT → OBJ → 已套用假設。
-術語表**內嵌 Model.md**，NEVER 另建 `Glossary.md`。
+Model.md 的八段固定順序與各段必填欄由 **`../AGENTS.md` 的 Phase 1 出口契約**定義，寫法細則在 guide §3–§5。
 
 ## Step 3 · 歧義處理協定
 
@@ -86,11 +89,14 @@ Model.md 固定順序：問題描述 → Terminology Mapping Table → SET → P
 ## Step 4 · 交付並停在 gate
 
 交付內容：Model.md 路徑 + 模型摘要（幾個 set / param / var / constraint）+ **已套用假設清單** + 待確認歧義（若有）。
+交付前 MUST 逐條跑完 `checklist.md`；不適用項目要說明原因。
 
 **出口 gate**：使用者明說「模型確認」/「開始實作」/「可以寫 code 了」才算通過。
 通過後把 `modelConfirmed` 設 true 並提示改用 `coding`，**本 skill 不寫任何 `.cs`**。
 
-## Step 5 · 更新 status.json（`Projects/<Project>/status.json`）
+## Step 5 · 更新 status.json
+
+`Projects/<Project>/status.json` 的全新專案初始值（完整 schema 在 `../AGENTS.md`，NEVER 整檔覆寫）：
 
 ```json
 {
@@ -103,15 +109,8 @@ Model.md 固定順序：問題描述 → Terminology Mapping Table → SET → P
 }
 ```
 
-## 交付前
-
-逐條對照同資料夾的 `checklist.md`，全過才交付。
-
-## Fatal
+## Fatal（本階段特有；通用天條全在 `../AGENTS.md`，一樣適用）
 
 - NEVER 本階段產生任何 `.cs`（使用者明說「模型我確認過了直接寫」才視同通過 gate，且該由 `coding` 接手）
-- NEVER 用單一字母符號（`i`/`j`/`x`/`y`/`t`）命名模型元素
-- NEVER 自行詮釋不清楚的術語或自動推導 derived 值
-- NEVER 在 Model.md 預先移項 / 化簡 / 翻轉比較方向
-- NEVER 在本階段討論 soft constraint / penalty（屬 Phase 3）
-- NEVER 用絕對路徑
+- NEVER 自行詮釋不清楚的術語或自動推導 derived 值——照 Step 3 的協定走
+- NEVER 把 `modelConfirmed` 當成 AI 自評的結果

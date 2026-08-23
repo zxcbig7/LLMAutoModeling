@@ -80,7 +80,7 @@ Projects/<Project>/
 | --- | --- |
 | `.claude/skills/AGENTS.md` | phase gates 與治理 |
 | `.claude/skills/coding/optimfoundation-api-guide.md` | Phase 2 API 權威 |
-| `.claude/skills/coding/model-to-code-checklist.md` | 驗收 |
+| `.claude/skills/coding/checklist.md` | 驗收 |
 | `tutorial(for developer)/` | 人類向教學與 prompt |
 | `Template/` | consumer scaffold |
 | `Projects/HospitalRostering_Generator/` | 可運作 generator 專案；部分資料建立方式是既有示例，不作 IO scaffold |

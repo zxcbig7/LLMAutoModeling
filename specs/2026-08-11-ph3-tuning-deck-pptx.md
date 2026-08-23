@@ -181,6 +181,6 @@ approve 時（2026-08-11）使用者回覆「都可」，兩題皆採用規格�
 ## References
 
 - 來源文件：[AI-CPLEX-Tuning-20min.md](../../ppt/auto%20tuning/AI-CPLEX-Tuning-20min.md)
-- PH3 規範：[solver-tuning-guide.md](../.claude/rules/Ph3_Tuning/solver-tuning-guide.md)
+- PH3 規範：[solver-tuning-guide.md](../.claude/skills/tuning/solver-tuning-guide.md)
 - 既有簡報產物參考：`ppt/deliverables/`、`ppt/ClaudeModelFramework.pptx`
 - 受影響的既有規格：無（`specs/` 原為空）

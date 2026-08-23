@@ -10,17 +10,20 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 你是第三棒，而且是**選配的一棒**：使用者提出效能問題才啟動，NEVER 主動建議調校。核心信念是**先驗正確，再調效能——調快一個錯模型沒有價值**；以及**先證明量得準，再開始比**。
 
 > 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/tuning/SKILL.md`）。
-> 規則單一來源：`../AGENTS.md`（天條）+ `solver-tuning-guide.md`（**Phase 3 唯一規範**）。
 
-## 文件遵循 gate（不可跳過）
+## 規則在哪（本 skill 只有調度，規則一條都不複製）
 
-在讀取專案、規劃實驗、修改 baseline 或宣告結果前，MUST 逐一讀取並遵守完整文件集：`../AGENTS.md`、`solver-tuning-guide.md`、`ph3_tuning.md`、`checklist.md`、`Test-TuningRoundArchive.ps1`。任何檔案缺失、無法讀取、內容相互矛盾，或無法證明交付物符合其中所有適用要求時，MUST 停下並回報檔名與衝突；NEVER 猜測、挑選較方便的規則，或先實驗再補讀。
+| 文件 | 管什麼 | 何時讀 |
+| --- | --- | --- |
+| [`../AGENTS.md`](../AGENTS.md) | 天條、三階段契約、`status.json` schema | 動手前 |
+| [`solver-tuning-guide.md`](solver-tuning-guide.md) | **Phase 3 唯一規範**：進場情境、可寫白名單、旋鈕分類、實驗設計、champion 判定、promotion、停損 | 每個 S 步驟依標註的節次讀那一節 |
+| [`checklist.md`](checklist.md) | 交付前自檢 | 宣告完成前逐條跑 |
+| [`cplex-parameter-reference.md`](cplex-parameter-reference.md) | 旋鈕查表（欄位名、型別、值域、預設） | **查表用，不必通讀**；要寫欄位名或設值時 grep 它，NEVER 憑記憶寫 |
+| [`Test-TuningRoundArchive.ps1`](Test-TuningRoundArchive.ps1) | 每輪 archive 的機械驗證 | 每輪建 archive 後執行；失敗視為不可 promotion |
 
-同資料夾的 `cplex-parameter-reference.md` 是**查表用，不必通讀**——要寫欄位名或設值時 grep 它，NEVER 憑記憶寫欄位名。
+衝突順序：`../AGENTS.md` → solver-tuning-guide → checklist。**兩份規則互相矛盾 → 停下回報檔名與衝突**，NEVER 挑方便的那條、NEVER 先實驗再補讀。
 
-權威順序僅用於判定衝突，不會免除閱讀：`../AGENTS.md` → `solver-tuning-guide.md` → `ph3_tuning.md` → `checklist.md` → `Test-TuningRoundArchive.ps1`。交付前 MUST 完成 `checklist.md` 的所有適用項目；每輪建立 archive 時 MUST 執行 `Test-TuningRoundArchive.ps1` 並將失敗視為不可 promotion。
-
-> 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每一步都標了規範章節，執行時實際去讀那一節，不憑記憶。
+審查既有調校工作 → 用 `/review`（[`../../commands/Ph3_Tuning/review.md`](../../commands/Ph3_Tuning/review.md)）。
 
 ## 執行模式：一鍵啟動，連續跑到停損
 
@@ -30,17 +33,9 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 
 發現契約可能訂錯（例 `MipGap` 太鬆）→ **記成 finding 繼續跑**，NEVER 中斷、NEVER 自行變更契約。
 
-## 可寫區域白名單（規範 §0.1）
+## 可寫區域
 
-**只有五處可寫，其餘一律唯讀**：
-
-1. `Program.cs` 的具名 production baseline `CplexConfig`（欄位值 + 上方 provenance 註解）
-2. `Program.cs` **exp 分支內**的 variant 定義與各輪 config snapshot（一律 `baseline.Clone()` 起手）
-3. 專案根 `TuningHistory.md`（追加，NEVER 改寫歷史節）
-4. 專案根 `Experiments/`（每輪 `.csv` / `.json` / `-trajectory.csv` 三件，納入版控，NEVER 手改）
-5. `status.json` 的 Phase 3 欄位
-
-**白名單外全部唯讀**：model 組裝 chain、`Dataload`、`Set/` `Parameter/` `Variable/` `Constraint/` `Objective/` `Solution/`、`Data/*.csv`、`Model.md`、`ProjectConfig`、csproj、`dlls/`。
+**白名單五處以外全部唯讀**，逐項定義在規範 **§0.1**（`Program.cs` 的 production baseline、`Program.cs` exp 分支、`TuningHistory.md`、`Experiments/`、`status.json` 的 P3 欄位）。動任何檔案前先確認它在名單上；model 組裝 chain、`Dataload`、`Set/`…`Solution/`、`Data/*.csv`、`Model.md`、`ProjectConfig`、csproj、`dlls/` 一律不准碰。
 
 ## 輸入（`$ARGUMENTS`）
 
@@ -57,48 +52,31 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 
 ## S0 · 進場 gate + 契約凍結
 
-**S0-1 正確性 gate**（任一不成立即停止，回報並退回 `coding`）：`dotnet build` 通過 → Status 落在可進場的三態（規範 §0.0.1，**NEVER 要求 `Optimal`**）→ `coding` 的解驗證協定四步已過。
-
-`status.json` 的 `solveVerified: true` 是必要條件但不充分，**MUST 實跑一次確認**。專案若無 `Solution/` 與 `ValidateRules`，回報此缺口並改用規範 §0.1.1 的不變式作為唯一自動驗證手段。
-
-**S0-1b 定進場情境**（規範 §0.0.1）——**這一步決定後面每一輪的主指標，選錯整輪實驗白跑**：
-
-| `solveStatus` | 情境 | 主指標 |
+| 步驟 | 做什麼 | 規範 |
 | --- | --- | --- |
-| `Optimal` | **A** | runtime `sgm` |
-| `Feasible` | **B**（最典型） | endGap |
-| `TimeLimit` | **C** | 找到解的 seed 數 → `t_feas` |
-| `Infeasible` / `Unbounded` / `Error` | — | 前提破裂，退回對應 phase |
+| S0-1 | 正確性 gate：`dotnet build` → Status 落在可進場的三態 → `coding` 解驗證協定四步已過。`status.json` 的 `solveVerified: true` 是必要不充分，**MUST 實跑一次確認** | §0.0 |
+| S0-1b | **定進場情境 A / B / C，並依情境選定主指標** | §0.0.1 |
+| S0-2 | 範圍界線：判定是否真的是 tuning；要動資料 / 結構 / soft constraint → 停止並退回對應 phase | §1（`Infeasible` 先取 IIS 證據，§1.1） |
+| S0-3 | 記錄 Phase 2 結果基線（`phase2Status` / `phase2Objective` / `phase2Bound` / `phase2Gap` / `verifiedOn`）寫進契約區塊 | §0.1.1 |
+| S0-4 | 契約凍結：停止契約用現行值；量測契約（export 全關、`ParallelMode = 1`、每輪確認無 dynamic search 停用 warning）寫進契約區塊 | §2.0、§6.1 |
+| S0-5 | 估算並記錄總預算 | §7.2 |
 
-判準細節、情境 C 的 `verifiedOn` 附加前提、為什麼情境 B/C 不能用 runtime —— 一律讀 §0.0.1，NEVER 憑本表推斷。
-
-**S0-2 範圍界線**（規範 §1）：判定是否真的是 tuning。要動資料 / 結構 / soft constraint → 停止並退回對應 phase。`Infeasible` 先取 IIS 證據再退回。
-
-**S0-3 記錄 Phase 2 結果基線**（規範 §0.1.1）：實跑一次記下 `phase2Status` / `phase2Objective` / `phase2Bound` / `phase2Gap` / `verifiedOn`，寫進 `TuningHistory.md` 契約區塊。不變式依情境分兩套，照 §0.1.1 套用。
-
-**S0-4 契約凍結**（規範 §2.0、§6.1）：停止契約用現行值；量測契約（experiment 期間 export 全關、`ParallelMode = 1`、每輪確認無 dynamic search 停用 warning）寫進契約區塊。
-
-**S0-5 總預算**（規範 §7.2）：估算並記錄，供停止條件 F 使用。
+★ **S0-1b 選錯，整輪實驗白跑**——三個情境的主指標不同，判準與情境 C 的附加前提一律讀 §0.0.1，NEVER 憑印象推斷。
+★ 專案若無 `Solution/` 與 `ValidateRules`，回報此缺口並改用 §0.1.1 的不變式作為唯一自動驗證手段。
 
 ## S1 · 環境定版 sizing（規範 §2.3）
 
-★ **同一台實機接手時這一步只是抄值。** Phase 2 已明設 `Threads` / `ParallelMode = 1` / `Seed`（coding guide §8.4），直接抄進契約區塊、不重跑掃描。
+★ **同一台實機接手時這一步只是抄值。** Phase 2 已明設 `Threads` / `ParallelMode` / `Seed`（api-guide §8.4），直接抄進契約區塊、不重跑掃描。
 
-只有換機器、換 CPLEX 版本、或 Phase 2 未明設（= 交付缺陷，記 finding）才實掃：`Threads` 三候選（實體核心數 / −1 / −2），各 3 seeds，`ParallelMode = 1`。差距 < 10% → **取最低者**。定版後寫進契約區塊並凍結。**不計入輪次。**
+只有換機器、換 CPLEX 版本、或 Phase 2 未明設（= 交付缺陷，記 finding）才實掃，掃法與判準見 §2.3。定版後寫進契約區塊並凍結。**不計入輪次。**
 
 ## S2 · R0 校準（規範 §3.0，硬 gate）
 
-**exp 分支的形狀由 Phase 2 交付**（coding guide §8.4）：名稱、`r0-` label、marker、5 個 seed 都已就位。**NEVER 重寫 code**，直接 `dotnet run --project <project.csproj> -- exp`。形狀不符 → 記 finding 並就地補正（在白名單內），不退回 Phase 2。
+**exp 分支的形狀由 Phase 2 交付**（api-guide §8.4）：名稱、`r0-` label、marker、5 個 seed 都已就位。**NEVER 重寫 code**，直接 `dotnet run --project <project.csproj> -- exp`。形狀不符 → 記 finding 並就地補正（在白名單內），不退回 Phase 2。
 
 ★ 執行前 MUST 先刪 `bin/.../Experiments/<Project>-tuning-r0.*` —— Phase 2 驗證管線時跑過一次，同名 experiment 是 **append 不是覆寫**，不刪會把驗證 trial 混進 R0。
 
-baseline × 5 seeds（另指定 3 個 holdout seeds 全程不參與）。三個產出，每個的算法照 §3.0：
-
-- **主指標 + θ**（雜訊地板）= 後續所有輪次的勝出門檻
-- **瓶頸剖面**（從 `-trajectory.csv` 判，§2.1 六類）= 後續候選的唯一來源
-- **契約健檢探針**（`MipGap = 0`）= finding，不進排名、不中斷流程
-
-**R0 沒跑完不准進 S3。** 剖面 = Variability-dominated → 停止條件 A，直接收尾。
+三個產出（主指標 + θ、瓶頸剖面、契約健檢探針）的算法一律照 §3.0。**R0 沒跑完不准進 S3。** 剖面 = Variability-dominated → 停止條件 A，直接收尾。
 
 ★ 情境 C 的 R0「5 個 seed 全部沒找到解」**不是**早停條件——那正是本輪要打的目標，baseline 得 0 分，照常進 S3。
 
@@ -112,18 +90,18 @@ baseline × 5 seeds（另指定 3 個 holdout seeds 全程不參與）。三個�
 
 每輪固定形狀（規範 §3、§4）：
 
-1. **寫假設與預測**（規範 §6.2）—— **MUST 在跑實驗之前寫死**，防事後合理化
-2. 候選**只從剖面對應那一類取**（規範 §2.2；可動的全池見 §2.2.1，**§2.2.2 有兩顆會丟例外的旋鈕不可掃**），**一輪一顆**
+1. **寫假設與預測**（§6.2）—— **MUST 在跑實驗之前寫死**，防事後合理化
+2. 候選**只從剖面對應那一類取**（§2.2；全池見 §2.2.1，**§2.2.2 兩顆會丟例外的旋鈕不可掃**），**一輪一顆**
 3. 改 `Program.cs` exp 分支的 variant 定義（`baseline.Clone()`），build，跑 `-- exp`
 4. 每個 variant × 同一組 5 個 tuning seeds；seed 是共同因子不是 variant
-5. archive 三件到專案根 `Experiments/`，產 `TUNING-FACTS` block，跑 `Test-TuningRoundArchive.ps1`（規範 §3.3.1、§6.2.2）
+5. archive 三件到專案根 `Experiments/`，產 `TUNING-FACTS` block，跑 `Test-TuningRoundArchive.ps1`（§3.3.1、§6.2.2）
 6. 抽數：**NEVER 整份 JSON / log 讀進 context**，grep 抽欄位（§8.1）
-7. 裁決（規範 §4 五個 Step）
+7. 裁決（§4 五個 Step）
 8. 寫實測、分析報告與裁決，更新**已否證清單**（跨輪累積）
 
-**每輪結束依規範 §7.1 檢查停止條件 A–I，命中即進 S4/S5 收尾；否則自動進下一輪。**
+**每輪結束依 §7.1 檢查停止條件 A–I，命中即進 S4/S5 收尾；否則自動進下一輪。**
 
-★ 情境 B / C **每輪重判剖面**——找到 incumbent 之後瓶頸會換一種。情境 C 首度產出 incumbent 即**升級為情境 B**（規範 §5.3）。
+★ 情境 B / C **每輪重判剖面**——找到 incumbent 之後瓶頸會換一種。情境 C 首度產出 incumbent 即**升級為情境 B**（§5.3）。
 
 ## S4 · Hold-out（規範 §4.6）
 
@@ -131,8 +109,8 @@ champion 用 3 個未參與調參的 seed 重跑。改善消失 → over-tuning�
 
 ## S5 · Promotion 閉環（規範 §5）
 
-1. champion 完整設定寫回 `Program.cs` baseline + provenance 註解
-2. **先寫 `TuningHistory.md`，再驗證**
+1. champion 完整設定寫回 `Program.cs` baseline + provenance 註解（§5.1）
+2. **先寫 `TuningHistory.md`，再驗證**（§5.2）
 3. 重新 build + 跑無參數 production（export 開回來）
 4. 依情境套 §5.3 的 PASS 條件驗收；有 `ValidateRules` 就一併驗
 5. FAIL → 撤銷 promotion，記 `rejected`
@@ -145,33 +123,24 @@ champion 用 3 個未參與調參的 seed 重跑。改善消失 → over-tuning�
 
 **回報**：進場情境與主指標、跑了幾輪、每輪一行（假設 → 裁決）、θ 與剖面、champion 或 retain + 理由、停止原因（§7.1 哪一條）、production 驗證結果、`TuningHistory.md` 路徑。
 
-`status.json` **只更新下列欄位**（NEVER 整檔覆寫）：
+`status.json` **只更新下列欄位**（完整 schema 在 `../AGENTS.md`，NEVER 整檔覆寫）：
 
 ```json
 { "phase": "tuning", "tuningRound": 0, "productionBaseline": "initial", "baselineSourceExperiment": "", "baselineSourceTrial": "", "promotionVerified": false, "updated": "YYYY-MM-DD" }
 ```
 
-交付前逐條對照同資料夾的 `checklist.md`。
+交付前逐條對照 `checklist.md`。
 
-## Fatal
+## Fatal（本階段特有；通用天條全在 `../AGENTS.md`，一樣適用）
 
+- NEVER 主動發起 tuning
 - NEVER 未過進場 gate 就調效能
 - NEVER 因為「Status 不是 `Optimal`」就把專案退回 `coding` —— `Feasible` / `TimeLimit` 是情境 B / C 的進場條件，不是 FAIL
-- NEVER 在情境 B / C 用 runtime 當主指標（全部跑滿時限，θ = 0，結論零資訊）
-- NEVER 在情境 C 把「無可行解」當 eligibility 淘汰理由（會連 baseline 一起淘汰光）
-- NEVER 把 `NaN` 的 objective / MipGap 當 0 參與彙總
-- NEVER 為了「讓它變 Optimal」而放寬 `MipGap` 或加大 `TimeLimit` —— 那是動停止契約，要使用者拍板
+- NEVER 用錯情境的主指標（B / C 用 runtime 會全部平手、θ = 0，結論零資訊）
+- NEVER 為了「讓它變 `Optimal`」而放寬 `MipGap` 或加大 `TimeLimit` —— 那是動停止契約，要使用者拍板
 - NEVER 跳過 S1 / S2 直接掃 variants（沒有 θ 就沒有判定門檻）
-- NEVER 動白名單以外的任何檔案或 `Program.cs` 的其他部分
-- NEVER 讓違反 §0.1.1 結果不變式的 trial 勝出，更 NEVER promotion
-- NEVER 把停止條件（`MipGap` / `TimeLimit` …）、執行資源（`Threads` …）或 `Seed` 放進 variant 池
-- NEVER 掃 `BendersStrategy = 1/2/3` 或 `OptimalityTarget = 2`（純 MILP 上會丟例外中斷整輪，見 §2.2.2）
-- NEVER 憑 `NodeCount` / `IterationCount` 判斷瓶頸（框架不填）
-- NEVER 一輪同時改多個旋鈕
-- NEVER 跑完實驗才補寫「預測」
-- NEVER 用 soft constraint / penalty 繞過 infeasible
-- NEVER 不留 Experiment 紀錄就宣稱改善
+- NEVER 動白名單（§0.1）以外的任何檔案或 `Program.cs` 的其他部分
+- NEVER 一輪同時改多個旋鈕，NEVER 跑完實驗才補寫「預測」
 - NEVER 重寫 Phase 2 交付的 exp 分支形狀（只補正不合契約處，並記成 finding）
 - NEVER 沒刪 bin 同名檔就跑 R0（append 會混進 Phase 2 的驗證 trial）
-- NEVER 主動發起 tuning
-- NEVER 用絕對路徑
+- NEVER 不留 Experiment 紀錄就宣稱改善

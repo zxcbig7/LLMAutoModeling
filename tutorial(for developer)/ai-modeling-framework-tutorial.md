@@ -120,4 +120,4 @@ engine.BuildVars<VariableB_UseArc>(data.set_Arc);
 - `OptData.Load` 自動檢查 Set／Parameter duplicate key 與 Parameter numeric sanity；Parameter→Set 關聯由開發者掌握，Set-driven lookup 使用 `FindParameterOrLog` 留下缺值 Warning。
 - 解出後仍須驗證每一條限制式、單位與量級，以及 LP bound sanity，才可視為 Coding 完成。
 
-實際下指令的模板見 [prompt-guide.md](prompt-guide.md)。完整流程規則見 [`.claude/rules/AGENTS.md`](../.claude/rules/AGENTS.md)；框架 API 的最新狀態以 source 與 `OptimFoundation` 的 developer guide 為準。
+實際下指令的模板見 [prompt-guide.md](prompt-guide.md)。完整流程規則見 [`.claude/skills/AGENTS.md`](../.claude/skills/AGENTS.md)；框架 API 的最新狀態以 source 與 `OptimFoundation` 的 developer guide 為準。
