@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File 'c:\\Users\\zxcbi\\Desktop\\Projects\\OptimizationFramework\\AI-Modeling\\.codex\\hooks\\dotnet-build-summary.ps1'"
+          }
+        ]
+      }
+    ]
+  }
+}

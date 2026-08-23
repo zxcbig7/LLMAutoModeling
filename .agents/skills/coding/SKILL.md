@@ -9,7 +9,7 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 
 你是第二棒：把已經定案的 `Model/<Project>_Model.md` **逐條機械翻譯**成可 build、可求解的專案。你不是在「寫程式解問題」，是在抄一份已經寫好的數學模型——發現模型有歧義就停下回 `modeling`，NEVER 自行補假設。
 
-> 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.claude/skills/coding/SKILL.md`）。
+> 路徑基準：以下所有路徑相對 **repo 根**（本檔位於 `.Codex/skills/coding/SKILL.md`）。
 > 規則單一來源：`../AGENTS.md`（天條 + 三階段契約）+ `optimfoundation-api-guide.md`（**Phase 2 唯一標準**：端到端規範 + §9 API 簽名權威 + 黑名單）。
 > 本 skill 只做調度與 gate 把關，**NEVER 在此複製規則**——每次執行都實際讀那兩份檔，不憑記憶。
 
@@ -65,7 +65,7 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 讀 `optimfoundation-api-guide.md`——Phase 2 唯一標準。先完成文件遵循 gate，再依需要定位章節：
 
 ```powershell
-Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
+Select-String -Path ".Codex/skills/coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
 ```
 
 | 要查什麼 | 節 |
@@ -111,7 +111,7 @@ Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Patter
 
 `dotnet build` → 有錯就修 → 重 build。**第 5 次仍失敗就停下回報**，附最後一次的錯誤摘要與你已試過的修法，不要無限迴圈。
 
-（`.claude/hooks/dotnet-build-summary.ps1` 會自動摘要 error/warning 行。）
+（`.Codex/hooks/dotnet-build-summary.ps1` 會自動摘要 error/warning 行。）
 
 ## Step 5 · 解驗證協定（四步全過才算完成）
 
@@ -131,24 +131,9 @@ Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Patter
 
 看到 `Optimal` 就宣稱正確**不合格**；看到非 `Optimal` 就宣稱失敗**同樣不合格**——只有 `Infeasible` / `Unbounded` 是真的擋。
 
-## Step 5.5 · exp 分支交棒定形（規範 §8.4）
-
-**Phase 2 的交付 MUST 讓 Phase 3 一行 code 都不用改就跑得出 R0。** 四條機械可驗：
-
-1. experiment 名 = `<Project>-tuning-r0`
-2. 每個 config label 帶 `r0-` 前綴
-3. exp 分支開頭有 marker 註解 `// R0 — <Project>-tuning-r0`
-4. r0 內容 = **baseline × 5 個固定 seed**，NEVER 混掃旋鈕（R0 是校準輪，只量 baseline 自己的雜訊）
-
-外加 `productionBaseline` MUST 明設 `ParallelMode = 1` + 固定 `Seed` + 實測定版的 `Threads`——這三顆就是 Phase 3 的環境契約，同機直接沿用。
-
-MUST 實跑一次 `-- exp` 確認管線可執行；bin 產物**不 archive**（archive 是 Phase 3 每輪的責任）。
-
-**不做**：sizing 比較、算 θ、判瓶頸剖面、指定 holdout seeds —— 那些是解讀，屬 Phase 3。
-
 ## Step 6 · 交付 + 更新 status.json
 
-交付內容：build 結果、目標值、解摘要、輸出檔位置（`Solution/`、`Models/`）、與 Model.md 小例的對照結果、exp 分支的 R0-ready 四條確認結果。
+交付內容：build 結果、目標值、解摘要、輸出檔位置（`Solution/`、`Models/`）、與 Model.md 小例的對照結果。
 附上同資料夾 `checklist.md` 提醒使用者逐項人工核對。
 
 `Projects/<Project>/status.json` **只更新下列欄位**（完整 schema 見 `modeling` skill，NEVER 整檔覆寫掉其他欄位）：
@@ -167,6 +152,4 @@ MUST 實跑一次 `-- exp` 確認管線可執行；bin 產物**不 archive**（a
 - NEVER 呼叫 `optimfoundation-api-guide.md` §9 沒列的 API，也 NEVER 用它標 ❌ 的 API
 - NEVER 改 OptimFoundation 框架本體或換 DLL 來源
 - NEVER fix loop 超過 5 次
-- NEVER 交出「Phase 3 得先重寫才能跑」的 exp 分支（名稱 / label / marker / baseline × 5 seeds 缺一即 FAIL）
-- NEVER 在 exp 分支混掃多顆旋鈕充當 r0
 - NEVER 用絕對路徑

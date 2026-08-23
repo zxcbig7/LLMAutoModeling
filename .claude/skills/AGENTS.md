@@ -88,11 +88,11 @@
 
 | | Phase 1 · Modeling | Phase 2 · Coding | Phase 3 · Tuning |
 | --- | --- | --- | --- |
-| **Input** | 題目原文（文字或檔案路徑） | 已確認的 `Model/<Project>_Model.md` | 已 `solveVerified` 的專案 + 效能症狀 |
+| **Input** | 題目原文（文字或檔案路徑） | 已確認的 `Model/<Project>_Model.md` | 已 `solveVerified`、**exp 分支 R0-ready** 的專案 + 效能症狀 |
 | **本質** | 降維：自然語言 → 數學 | 翻譯：數學 → C#，零詮釋 | 實驗：只動 solver 旋鈕 |
-| **Output** | `Model/<Project>_Model.md` | 八資料夾專案，build 綠、解已驗證 | 更新後的 `productionBaseline` + `TuningHistory.md` |
+| **Output** | `Model/<Project>_Model.md` | 八資料夾專案，build 綠、解已驗證、**exp 分支 R0-ready** | 更新後的 `productionBaseline` + `TuningHistory.md` |
 | **啟動條件** | 使用者給題目 | 上一階段 gate 通過 | **使用者主動提出**（NEVER 自己建議） |
-| **可寫範圍** | 只有 `Model/*.md` | 整個 `Projects/<Project>/`（`Model/` 除外，唯讀） | 只有 `Program.cs` 的 `productionBaseline` + `TuningHistory.md` |
+| **可寫範圍** | 只有 `Model/*.md` | 整個 `Projects/<Project>/`（`Model/` 除外，唯讀） | 白名單五處：`Program.cs` 的 `productionBaseline`、`Program.cs` exp 分支、`TuningHistory.md`、`Experiments/`、`status.json` 的 P3 欄位 |
 | **退場** | 術語不明 → 追問 | Model.md 有歧義 → 退回 Phase 1 | 前提破裂 → 退回 Phase 1 / 2 |
 
 ### Phase 1 出口契約
@@ -146,11 +146,25 @@ Projects/<Project>/
 
 Why 把 `Feasible` 放進 gate：撞時限但有 incumbent **正是 Phase 3 最典型的進場情境**。要求 `Optimal` 才准出 Phase 2 會讓這類專案卡死在 Phase 2——而 Phase 2 手上沒有任何合法工具能修「太慢」，那顆旋鈕在 Phase 3。轉譯忠實與否用 incumbent 就驗得出來，跟有沒有證明最佳無關。
 
+**出口 gate 之外另有一條交棒契約：exp 分支 MUST 已是 R0-ready 形狀**（`coding/optimfoundation-api-guide.md` §8.4）——experiment 名 `<Project>-tuning-r0`、config label 帶 `r0-` 前綴、`// R0 —` marker 就位、內容是 baseline × 5 seeds、`productionBaseline` 已明設 `ParallelMode = 1` / `Seed` / 實測定版的 `Threads`。Phase 3 進場時**一行 code 都不用改**就跑得出 R0。
+
+Why: exp 分支雖在 Phase 3 的白名單內，但「每次接棒都先重寫一次」等於把 Phase 2 沒做完的事推給下游，重寫期間的 build 失敗還會污染調校紀錄。Phase 2 只交形狀、不跑 R0——sizing、θ、瓶頸剖面都是**解讀**，屬 Phase 3。
+
 ### Phase 3 出口契約
 
 凍結範圍：`Model.md`、`Data/*.csv`、`Dataload`、`Constraint_*`、`Objective` 全部唯讀。本階段只動 `Program.cs` 裡那顆 `CplexConfig productionBaseline`。
 
-`git diff` 只准出現 `Program.cs` 與 `TuningHistory.md`。多出任何其他改動就是越界。
+`git diff` 只准出現下列五類（權威定義在 `tuning/solver-tuning-guide.md` §0.1.2，本處與其一致）：
+
+```text
+Projects/<Project>/Program.cs
+Projects/<Project>/TuningHistory.md
+Projects/<Project>/Experiments/<Project>-tuning-r<N>.csv
+Projects/<Project>/Experiments/<Project>-tuning-r<N>.json
+Projects/<Project>/Experiments/<Project>-tuning-r<N>-trajectory.csv
+```
+
+（`status.json` 若已納管則可額外出現。）多出任何其他改動就是越界。`Experiments/` 是本階段唯一允許的專案結構擴充，每輪三件缺一不可，且 MUST 通過 `Test-TuningRoundArchive.ps1`。
 
 出口 gate = champion 寫回 baseline → 重新 build → 跑無參數 production → `ValidateRules` 通過。只產出 experiment 報表而 production 仍跑舊 config，**不算完成**。沒有可靠勝者時，「retain + 證據」也是合法交付。
 

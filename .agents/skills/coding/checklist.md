@@ -63,16 +63,6 @@
 - [ ] LP bound sanity 檢查過（max：整數解 ≤ LP bound；`Feasible` 時比 `BestBound`）
 - [ ] 與 Model.md 的小例 / 已知解對照過
 
-## Phase 3 交棒（exp 分支 R0-ready，guide §8.4）
-
-- [ ] `productionBaseline` 已明設 `ParallelMode = 1` + 固定 `Seed` + 實測定版的 `Threads`
-- [ ] experiment 名 = `<Project>-tuning-r0`
-- [ ] 每個 config label 帶 `r0-` 前綴
-- [ ] exp 分支開頭有 marker 註解 `// R0 — <Project>-tuning-r0`
-- [ ] ★ r0 內容 = **baseline × 5 個固定 seed**，沒有混掃旋鈕
-- [ ] 已實跑一次 `-- exp` 確認管線可執行（build 綠不等於跑得動）
-- [ ] 沒有把 bin 產物 archive 到專案根（那是 Phase 3 每輪的責任）
-
 ## 交付
 
 - [ ] 回報含 build 結果、目標值、解摘要、輸出檔位置

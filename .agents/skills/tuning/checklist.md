@@ -14,7 +14,6 @@
 - [ ] 情境 C 時，`status.json` 的 `verifiedOn` 是 `small-instance:*`（模型至少被某個 instance 驗過）
 - [ ] `coding` 的解驗證協定四步已**實跑**確認過（不只是看 `status.json`）
 - [ ] ★ 已記錄 Phase 2 結果基線 `phase2Status` / `phase2Objective` / `phase2Bound` / `phase2Gap` / `verifiedOn`
-- [ ] exp 分支已是 Phase 2 交付的 R0-ready 形狀（名稱 / `r0-` label / marker / baseline × 5 seeds），**未重寫**；不符處已記成 finding 並就地補正
 
 ## 範圍界線
 
@@ -26,8 +25,8 @@
 ## 契約與環境（S0 / S1）
 
 - [ ] 契約區塊已寫進 `TuningHistory.md` 開頭：停止契約 / 環境契約 / 量測契約 / Phase 2 基線
-- [ ] ★ **停止條件**（`MipGap` `TimeLimit` `NodeLimit` `IntegerSolutionLimit` 容差，共 27 顆）整期固定，**未進 variant 池**
-- [ ] ★ **執行資源**（`Threads` `ParallelMode` `MemoryLimitMb` `NodeFileStrategy`，共 9 顆）已定版並凍結——同一台實機**沿用 Phase 2 的值**，只有換機 / 換 CPLEX 版本 / Phase 2 未明設才重跑 S1 sizing
+- [ ] ★ **契約旋鈕**（`MipGap` `TimeLimit` `NodeLimit` `IntegerSolutionLimit` 容差）整期固定，**未進 variant 池**
+- [ ] ★ **環境旋鈕**（`Threads` `ParallelMode` `MemoryLimitMb` `NodeFileStrategy`）已由 S1 sizing 定版並凍結
 - [ ] `ParallelMode = 1` 已明設（不依賴 CPLEX 預設）
 - [ ] experiment 期間 LP / MPS / Sol export 全關（計時不含檔案 I/O）
 - [ ] ★ 每輪確認 solver log **無 dynamic search 停用 warning**
@@ -35,7 +34,6 @@
 
 ## R0 校準（S2，硬 gate）
 
-- [ ] ★ 執行 R0 前已刪 `bin/.../Experiments/<Project>-tuning-r0.*`（Phase 2 驗證管線時跑過，同名是 append 不是覆寫）
 - [ ] ★ **R0 已完成，θ 已算出確切值**並記錄（非「≥ 某值」的下限），**單位與主指標一致**（A / C 是比值，B 是絕對百分點）
 - [ ] 瓶頸剖面已從 `-trajectory.csv` 分類（No-incumbent / Dual-bound / Primal-search / Node-cost / 數值不穩 / Variability-dominated）
 - [ ] R0 的 K 個 seed 通過 §0.1.1 對應那一套不變式（A 嚴格相等；B / C 不退步 + bound 不越線）

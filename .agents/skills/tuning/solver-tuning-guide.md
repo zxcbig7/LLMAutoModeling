@@ -2,9 +2,9 @@
 
 > **這份文件是什麼**：模型與資料已凍結、正確性已驗的專案跑太慢或收斂不了時，怎麼系統性地調 CPLEX solver 旋鈕，從「進場判斷」到「champion 寫回 production baseline 並驗證」的完整標準流程。
 > **給誰看**：要替一個既有 OptimFoundation 專案調效能的人，以及要執行這件事的 AI。
-> **怎麼用**：從 §0 的進場 gate 開始，**gate 沒過就不要往下讀**。gate 的第一件事是分 §0.0.1 的三個進場情境——**情境決定主指標，主指標選錯整輪實驗白跑**。旋鈕名稱與可設值查 [`cplex-parameter-reference.md`](cplex-parameter-reference.md)，NEVER 憑記憶寫欄位名。
+> **怎麼用**：從 §0 的進場 gate 開始，**gate 沒過就不要往下讀**。gate 的第一件事是分 §0.0.1 的三個進場情境——**情境決定主指標，主指標選錯整輪實驗白跑**。旋鈕名稱與可設值查附錄 A，NEVER 憑記憶寫欄位名。
 > **前置**：專案已通過 Phase 2 的解驗證協定四步（`status.json` 的 `solveVerified: true`），且**使用者主動提出**效能問題。求解**沒有**收斂到 `Optimal`（撞時限停在 `Feasible`，甚至沒找到任何解）**不是進場的阻礙，而是最典型的進場理由**——見 §0.0.1。
-> **本檔自足**：讀這一份就能從症狀走到 promotion 完成，流程判斷不需要開其他文件。天條全文在 [`../AGENTS.md`](../AGENTS.md)；Experiment / Config 的 **API 簽名、runner 行為、exp 分支的 R0-ready 形狀契約**在 [`../coding/optimfoundation-api-guide.md`](../coding/optimfoundation-api-guide.md) §8–§9，本檔 NEVER 複製那一份的內容。
+> **本檔自足**：讀這一份就能從症狀走到 promotion 完成，不需要開任何其他文件。天條全文在 [`../AGENTS.md`](../AGENTS.md)，Experiment / Config 的 API 簽名在 [`../coding/optimfoundation-api-guide.md`](../coding/optimfoundation-api-guide.md) §8–§9。
 
 ### Canonical 邊界（AI MUST 先判斷）
 
@@ -16,7 +16,7 @@
 
 ## 術語與符號表
 
-本表是本檔所有 tuning 專有名詞、符號與縮寫的**唯一集中定義**。`CplexConfig` 的個別 property 名稱、CPLEX 原始參數與可設值以 [`cplex-parameter-reference.md`](cplex-parameter-reference.md) 為準；未列於本表的新專有名詞，MUST 在首次出現處先定義，再使用。
+本表是本檔所有 tuning 專有名詞、符號與縮寫的**唯一集中定義**。`CplexConfig` 的個別 property 名稱、CPLEX 原始參數與可設值以附錄 A 為準；未列於本表的新專有名詞，MUST 在首次出現處先定義，再使用。
 
 ### 流程與證據
 
@@ -24,10 +24,10 @@
 | --- | --- |
 | **tuning 週期** | 在同一模型、資料、停止契約與環境契約下，從 R0 校準開始，到 promotion 或 retain 收尾為止的一段可比較實驗序列。任一契約／環境變更即結束舊週期，必須重跑 R0。 |
 | **round／R<N>** | 一輪正式策略實驗與其分析、裁決、History 紀錄；`N` 為遞增整數。R0 是校準輪，不計入正式 round。 |
-| **R0 校準輪** | 不改任何搜尋策略旋鈕，只重跑 baseline 的多 seed 量測；產出主指標、雜訊地板 θ 與收斂剖面，是進入 R1 的硬 gate。 |
+| **R0 校準輪** | 不改任何策略旋鈕，只重跑 baseline 的多 seed 量測；產出主指標、雜訊地板 θ 與收斂剖面，是進入 R1 的硬 gate。 |
 | **baseline** | 當前 production `CplexConfig` 的完整設定，也是每輪比較的對照組與 variant 的起點。 |
 | **production baseline** | `Program.cs` 中正式 solve 路徑實際使用的具名 `CplexConfig`。只有 promotion 通過後才能寫回它。 |
-| **variant** | 從 baseline 複製、在一輪中只改一個搜尋策略旋鈕的 candidate config；不是另一份平行 baseline。 |
+| **variant** | 從 baseline 複製、在一輪中只改一個策略旋鈕的 candidate config；不是另一份平行 baseline。 |
 | **config snapshot** | 某個 baseline 或 variant 在執行時真正生效的完整 `CplexConfig` 值。它必須 materialize，不能只記「從當時 baseline Clone」。 |
 | **exp 分支／round config archive** | `Program.cs` 中只供 `-- exp` 執行的實驗設定區塊；每個已跑 round 的 config snapshot 都保留在此，供重跑與稽核。 |
 | **experiment** | 一次具名的 `OptExperiment` 執行，名稱固定為 `<Project>-tuning-r<N>`；會保存 Trial、config、metrics 與 convergence 證據。 |
@@ -46,8 +46,8 @@
 | --- | --- |
 | **停止契約** | 定義何時停止求解的共同條件，例如 `MipGap`、`TimeLimit`、各種 limit 與數值容差；同一週期內固定，不可當 variant 掃描。 |
 | **環境契約** | 定義量測基準的共同執行環境，例如 `Threads`、`ParallelMode`、記憶體與 node-file 設定；先 sizing 定版，之後固定。 |
-| **搜尋策略**（舊稱策略旋鈕） | 改變 solver 搜尋路徑、但不改停止／量測共同基準的 `CplexConfig` 欄位；是 variant 的唯一候選池，共 109 顆（§2.2.1）。 |
-| **重複量測**（舊稱量測器材） | 用於可重現或抽樣的設定，例如 `Seed`、`ClockType`；不是可拿來競賽排名的 variant。 |
+| **策略旋鈕** | 改變 solver 搜尋路徑、但不改停止／量測共同基準的 `CplexConfig` 欄位；是 variant 的唯一候選池。 |
+| **量測器材** | 用於可重現或抽樣的設定，例如 `Seed`、`ClockType`；不是可拿來競賽排名的策略 variant。 |
 | **seed** | 控制 solver 隨機性的一次重複量測條件。所有 variant 使用同一組 tuning seeds；它不是「比較誰較好」的候選設定。 |
 | **holdout seed** | 完全不參與 variant 選擇的保留 seed，只在 champion 選出後用來估計泛化效果，不能反過來挑 champion。 |
 | **warm-up** | 同一批實驗中首次求解可能承受的冷啟動成本；此筆會標記並排除，不進排名。 |
@@ -60,7 +60,7 @@
 | **`t_feas`** | 首個可行 incumbent 出現的時間；情境 C 中在「找到解的 seed 數」之後的次要比較指標。 |
 | **`Δbound`** | 求解過程中 dual bound 從首個觀測點到末個觀測點的淨變化；用於診斷與 tie-break，不是取代主指標的排名尺度。 |
 | **`t_stall`** | dual bound 最後一次改善後開始停滯的時間；用於辨識 Dual-bound 剖面與 tie-break。 |
-| **收斂剖面／瓶頸** | 從 trajectory 的 incumbent、bound 與時間軌跡判出的求解障礙類型（如 Primal-search、Dual-bound、Node-cost）；它決定可掃的搜尋策略類別。 |
+| **收斂剖面／瓶頸** | 從 trajectory 的 incumbent、bound 與時間軌跡判出的求解障礙類型（如 Primal-search、Dual-bound、Node-cost）；它決定可掃的策略旋鈕類別。 |
 | **eligibility gate** | 排名前的合格檢查：先淘汰錯誤、品質不達標、越界或違反不變式的 Trial，剩下者才能比較。 |
 | **lexicographic 比較** | 固定優先序的比較方式：先正確性／品質，再主指標，再指定 tie-break；不把不同層級的數字混成單一分數。 |
 
@@ -71,7 +71,7 @@
 | **incumbent** | solver 目前找到的最佳可行整數解；在 min 問題是目前最小 objective，在 max 問題是目前最大 objective。 |
 | **objective** | 模型目標式在 incumbent 上的值；它不是 runtime，也不能在不同停止契約下任意混比。 |
 | **BestBound／dual bound** | 對最佳可能 objective 的證明界；min 問題是下界、max 問題是上界，不能越過已知 incumbent。 |
-| **`MipGap`** | incumbent 與 BestBound 的相對差距，也是常見停止契約；它不是搜尋策略旋鈕。 |
+| **`MipGap`** | incumbent 與 BestBound 的相對差距，也是常見停止契約；它不是一般策略旋鈕。 |
 | **Optimal** | solver 已證明 incumbent 為全域最佳解的狀態。 |
 | **Feasible** | solver 有可行 incumbent、但尚未完成最佳性證明，通常因停止契約而停止的狀態。 |
 | **TimeLimit** | 到達時限而停止；本規範中特指沒有可用 incumbent 的情境 C，與帶 incumbent 的 `Feasible` 必須分開判讀。 |
@@ -270,34 +270,26 @@ Infeasible 幾乎都是模型或資料的錯，不是 solver 的錯。在這裡�
 
 先分類旋鈕，再從**收斂軌跡**量化瓶頸，最後才對應候選。**不是盲搜，也不是憑印象讀 log。**
 
-### 2.0 旋鈕分類（本階段的地基）
+### 2.0 旋鈕四分類（本階段的地基）
 
 任何旋鈕動手前先歸類。**歸錯類，後面所有比較都無效。**
 
-`CplexConfig` 接線了 **182 顆**旋鈕（= IBM CPLEX 22.1.1 的 .NET API 全部可設參數）。
-其中**只有 109 顆能拿來做實驗**，其餘 73 顆一律凍結。分五類，用「這顆在管什麼」命名：
+| 類別 | 成員 | 實驗中的角色 |
+| --- | --- | --- |
+| **契約旋鈕**<br>定義「什麼叫解出來了」 | `MipGap` `AbsoluteMipGap` `TimeLimit` `DeterministicTimeLimit` `NodeLimit` `IntegerSolutionLimit`；容差 `IntegralityTolerance` `OptimalityTol` `FeasibilityTol` | 整個 tuning 週期**固定共用**，NEVER 進 variant 池。變更 = 週期重啟（§2.0.1） |
+| **環境旋鈕**<br>改變執行環境與量測基準 | `Threads` `ParallelMode` `MemoryLimitMb` `TreeMemoryLimitMb` `NodeFileStrategy` | **R0 之前先單獨定版**（§2.3），之後整期凍結。NEVER 與策略旋鈕同輪比較 |
+| **策略旋鈕**<br>改求解路徑，終點不變 | `Emphasis` `VariableSelect` `NodeSelect` `BranchDirection` `DiveType` `MipSearch` `Probe` `RinsHeuristicFrequency` `HeuristicEffort` 各 cuts `CutsFactor` `CutPasses` `RootAlgorithm` `NodeAlgorithm` `Symmetry` `Presolve` `NumericalEmphasis` | **唯一的 variant 池** |
+| **量測器材**<br>不是 candidate | `Seed` `ClockType` | `ClockType` 整期固定；`Seed` 是 §3.0 的**自變數**，NEVER 當 champion |
 
-| 類別 | 在管什麼 | 顆數 | 實驗中的角色 |
-| --- | --- | --- | --- |
-| **停止條件** | 什麼時候算解完 | 27 | 整個 tuning 週期**固定共用**，NEVER 進 variant 池。變更 = 週期重啟（§2.0.1） |
-| **執行資源** | 用多少機器、怎麼平行、怎麼計時 | 9 | **R0 之前先單獨定版**（§2.3），之後整期凍結。NEVER 與搜尋策略同輪比較 |
-| **重複量測** | 同一個設定再量一次用的 | 2 | `ClockType` 整期固定；`Seed` 是 §3.0 的**自變數**，NEVER 當 champion |
-| **搜尋策略** | CPLEX 用什麼路線找答案 | **109** | **唯一的 variant 池**（全清單見 §2.2.1） |
-| **非 tuning** | 輸出、顯示、讀檔上限、診斷、solution pool、內建 tune | 35 | 不改求解路線，NEVER 拿來掃描 |
+兩句判準：
 
-> 這五個名稱在 2026-08 從「契約／環境／器材／策略」改過來，語意不變，只是改成看名字就知道在管什麼。
-> `CplexConfig` 每顆 property 的 XML 註解都標了它屬於哪一類。
-
-三句判準：
-
-- **改了之後，兩次求解還算不算在做同一件事？** 不算 → 停止條件
-- **改了之後，量測的尺還算不算同一把？** 不算 → 執行資源
-- **改了之後，答案的終點一樣、只是走法不同？** 是 → 搜尋策略，可以掃
+- **這顆旋鈕改了之後，兩次求解還算不算在做同一件事？** 不算 → 契約類
+- **改了之後 θ 還算不算同一把尺？** 不算 → 環境類
 
 ❌ 最常見的兩個歸類錯誤：
 
 - 把 `MipGap` 當速度旋鈕掃 —— 它是停止條件。兩個不同 `MipGap` 的 trial 比 runtime，等於兩個跑者跑不同長度的賽道比秒數
-- 把 `Seed` 當 candidate 排名 —— 它不是搜尋策略，是同一個策略的第二次抽樣。它「贏」只證明變異大，不證明它比較好
+- 把 `Seed` 當 candidate 排名 —— 它不是策略，是同一個策略的第二次抽樣。它「贏」只證明變異大，不證明它比較好
 
 #### 2.0.1 契約變更協定
 
@@ -361,9 +353,9 @@ tuning 過程中發現契約可能訂錯（例：`MipGap` 過鬆導致 productio
 
 ★ **跨 variant 的 bound 軌跡若起訖完全一致** → 該類旋鈕對 dual 側無效，整類標記「已否證」（§7 早停 B）。
 
-### 2.2 剖面 → 候選旋鈕（只列搜尋策略）
+### 2.2 剖面 → 候選旋鈕（只列策略旋鈕）
 
-本表只含**搜尋策略**。停止條件（`MipGap` `TimeLimit` `NodeLimit` `IntegerSolutionLimit`）與執行資源（`Threads` 等）不在此掃 —— 見 §2.0。
+本表只含**策略旋鈕**。契約旋鈕（`MipGap` `TimeLimit` `NodeLimit` `IntegerSolutionLimit`）與環境旋鈕（`Threads` 等）不在此掃 —— 見 §2.0。
 
 | 剖面 | 候選（依序試，一輪一顆） |
 | --- | --- |
@@ -372,51 +364,6 @@ tuning 過程中發現契約可能訂錯（例：`MipGap` 過鬆導致 productio
 | **Primal-search** | `Emphasis = 1` → `RinsHeuristicFrequency` → `HeuristicEffort` → `NodeSelect = 0`（DFS）→ `DiveType` → `Emphasis = 4`（前者無效時的後備） |
 | **Node-cost** | 減 cuts（各 cut 設 `-1`）→ `RootAlgorithm` / `NodeAlgorithm` → `Presolve` |
 | **數值不穩** | `NumericalEmphasis = true` |
-
-#### 2.2.1 搜尋策略全池（109 顆）—— 掃描的合法上限
-
-**這是「可以動」的完整清單，不是每輪的候選清單。** 每輪仍照 §2.1 判剖面 → 只從 §2.2 對應那一列取候選 → 一輪一顆。
-
-**永遠適用純 MILP（86 顆）**
-
-| 群組 | 顆數 | 成員 |
-| --- | --- | --- |
-| emphasis 與搜尋分支 | 18 | `AdvancedStart` `BacktrackTolerance` `BestBoundInterval` `BranchDirection` `DiveType` `Emphasis` `KappaStatistics` `MipSearch` `NodeSelect` `NumericalEmphasis` `OptimalityTarget` `PriorityOrderType` `Probe` `SolutionType` `StrongBranchingCandidateLimit` `StrongBranchingIterationLimit` `UsePriorityOrder` `VariableSelect` |
-| 啟發式與 solution polishing | 13 | `CardinalityLocalSearch` `FeasibilityPumpHeuristic` `HeuristicEffort` `HeuristicFrequency` `LocalBranchingHeuristic` `PolishAfterAbsoluteMipGap` `PolishAfterDetTime` `PolishAfterMipGap` `PolishAfterNodes` `PolishAfterSolutions` `PolishAfterTime` `RepairTries` `RinsHeuristicFrequency` |
-| 切割平面 | 22 | `AggregationLimitForCut` `BqpCuts` `CliqueCuts` `CoverCuts` `CutPasses` `CutsFactor` `DisjunctiveCuts` `EachCutLimit` `FlowCoverCuts` `FlowPathCuts` `GomoryCandidateLimit` `GomoryCuts` `GomoryPassLimit` `GubCoverCuts` `ImpliedBoundCuts` `LiftAndProjectCuts` `LocalImpliedBoundCuts` `McfCuts` `MirCuts` `NodeCuts` `RltCuts` `ZeroHalfCuts` |
-| 前處理 | 16 | `AggregatorFill` `AggregatorLimit` `BoundStrengthening` `CoefficientReduction` `DependencyCheck` `LpFolding` `NodePresolve` `PreIndicator` `PresolveDual` `PresolvePasses` `PresolveReduce` `PresolveReformulations` `RelaxedLpPresolve` `RepeatPresolve` `Scaling` `Symmetry` |
-| root / node LP 演算法 | 13 | `RootAlgorithm` `NodeAlgorithm` `DualSimplexPricing` `MarkowitzTolerance` `PrimalSimplexPricing` `SimplexCrash` `SimplexDynamicRows` `SimplexPerturbationConstant` `SimplexPerturbationIndicator` `SimplexPerturbationLimit` `SimplexPricingCandidateList` `SimplexRefactorFrequency` `SimplexSingularityLimit` |
-| subMIP（RINS 等啟發式的內部求解） | 4 | `SubMipNodeAlgorithm` `SubMipNodeLimit` `SubMipRootAlgorithm` `SubMipScaling` |
-
-**有條件才有意義（23 顆）** —— 條件不成立時設了不會有作用，別浪費輪次：
-
-| 群組 | 顆數 | 什麼條件下才生效 |
-| --- | --- | --- |
-| Barrier 內部 | 8 | `RootAlgorithm` / `NodeAlgorithm` 選 `4`（barrier）才生效 |
-| Sifting 內部 | 2 | 選 `5`（sifting）才生效 |
-| Network 內部 | 2 | 選 `3`（network）才生效 |
-| QP / MIQCP / SOS | 6 | 模型要有二次項或 SOS 集合 |
-| Benders | 4 | 模型要有 Benders 分解註記 |
-| FeasOpt | 1 | 只在呼叫 feasopt 放鬆不可行模型時 |
-
-#### 2.2.2 兩顆會炸掉整輪的旋鈕（實測）
-
-這兩個不是「設了沒作用」，是**直接丟例外**。掃進 variant 池會讓整輪實驗中斷：
-
-| 旋鈕 | 危險值 | CPLEX 回報 | 純 MILP 上的安全值 |
-| --- | --- | --- | --- |
-| `BendersStrategy` | `1` `2` `3` | `Error 2000: No Benders decomposition available` | 只有 `-1` 與 `0` |
-| `OptimalityTarget` | `2` | `Error 1017: Not available for mixed-integer problems` | `0` `1` `3` |
-
-★ 另有一顆執行資源旋鈕 `CpuMask` 在本機平台**完全不能用**（`Error 1811: Attempt to invoke unsupported operation`，
-連官方文件列的預設值 `"auto"` 都設不進去；CPLEX 自己的 Interactive Optimizer 執行 `set cpumask auto` 同樣被拒）。
-它屬執行資源類本來就不掃，列在這裡是避免有人拿它當「壓低 θ」的手段。
-
-★ `Seed` 的上限是 **2100000000**，超過丟 `Error 1015`。官方 Parameters Reference 只寫「any integer」沒給上限。
-
-> 以上由 `OptimFoundation.Cplex.Tests` 的 `SolverParamValueMatrixTests` 實測得出：
-> 182 顆旋鈕 × 官方文件列出的每一個合法值 = 538 個案例，各跑一次真實求解。
-> 538 個裡只有這 7 個值被 CPLEX 拒絕，其餘全部可用。
 
 #### `Emphasis` 五個值的官方語意 —— 選錯等於掃錯方向
 
@@ -436,9 +383,7 @@ tuning 過程中發現契約可能訂錯（例：`MipGap` 過鬆導致 productio
 
 ### 2.3 環境定版（sizing）—— R0 之前的一次性步驟
 
-執行資源旋鈕改變 θ（§2.0.2），所以 **MUST 先定死再量 θ**。這一步只做一次，**不計入輪次**。
-
-★ **多數情況下這一步只是抄值。** Phase 2 出口已要求 `productionBaseline` 明設 `Threads`（依實機核心數實測）、`ParallelMode = 1` 與固定 `Seed`（coding guide §5 的 `CplexConfig` 表）。**同一台實機接手時沿用、不重跑 sizing**，把值抄進契約區塊即可。只有下列三種情況才執行下面的掃描：換機器、換 CPLEX 版本、Phase 2 未明設（視為交付缺陷，記成 finding）。
+環境旋鈕改變 θ（§2.0.2），所以 **MUST 先定死再量 θ**。這一步只做一次，**不計入輪次**。
 
 **做法**：固定 `ParallelMode = 1`（決定論，換取可比性），只掃 `Threads`，候選三個：**實體核心數 / −1 / −2**。NEVER 用邏輯核心數（超執行緒下多 thread 爭用記憶體存取，常比實體核心數更慢）。每個候選跑 3 個 seed，比 `sgm(runtime)`。
 
@@ -450,7 +395,7 @@ tuning 過程中發現契約可能訂錯（例：`MipGap` 過鬆導致 productio
 | 有明顯勝者 | 取之，凍結 |
 | 記憶體警告或 node file 溢寫 | 降 threads，或先處理 `MemoryLimitMb` / `NodeFileStrategy` 的順序雷，再重跑 sizing |
 
-**為什麼平手時取最低者**：threads 高會抬高 θ（執行緒時序分歧），θ 抬高就更難偵測搜尋策略的真實改善。**效能相當時選低 threads = 買到更靈敏的量測。** production 要不要開更高是 promotion 後的獨立決定。
+**為什麼平手時取最低者**：threads 高會抬高 θ（執行緒時序分歧），θ 抬高就更難偵測策略旋鈕的真實改善。**效能相當時選低 threads = 買到更靈敏的量測。** production 要不要開更高是 promotion 後的獨立決定。
 
 **定版後**把 `Threads` / `ParallelMode` / `MemoryLimitMb` / `NodeFileStrategy` 的確切值寫進 `TuningHistory.md` 契約區塊。之後任一項變動 → **重跑 sizing 與 R0**。
 
@@ -497,12 +442,6 @@ CPLEX 的 **dynamic search** 是預設求解演算法，有一個會被靜默關
 ### 3.0 R0 校準輪 —— 不調任何東西（硬 gate）
 
 **R0 沒跑完不准進 R1。** 它產出的常數是後續每一輪的判定依據；沒有它，任何「改善」都無法與雜訊區分。
-
-**exp 分支的形狀由 Phase 2 交付**（coding guide §8.4 的 R0-ready 契約）：experiment 名已是 `<Project>-tuning-r0`、label 已帶 `r0-` 前綴、`// R0 —` marker 已就位、5 個 seed 已列好。**Phase 3 進場不重寫 code**，直接 `dotnet run --project <project.csproj> -- exp`。
-
-★ 執行前 MUST 先刪 `bin/.../Experiments/<Project>-tuning-r0.*` —— Phase 2 驗證管線時跑過一次，同名 experiment 是 **append 不是覆寫**（§3.3），不刪會把驗證 trial 混進正式 R0。
-
-形狀不符契約（缺前綴、名稱不對、混掃旋鈕）→ 這是 Phase 2 的交付缺陷：**記成 finding 並就地補正 exp 分支**（它在白名單內），流程照常往下跑，不必退回 Phase 2。
 
 **variant 池**：只有 baseline 一個 config，跑 `K` 個 seed。`K = 5`（MIPLIB / SCIP 實務慣例）。另指定 **3 個 holdout seeds 全程不參與調參**（§4.6 用）。
 
@@ -579,7 +518,7 @@ R0 **不計入 `tuningRound`**，它是校準不是輪次。
 
 | 必讀來源 | 擷取內容 | 本輪如何使用 |
 | --- | --- | --- |
-| `TuningHistory.md` 的契約區塊與**所有既有 R 節** | 現行 baseline provenance、主指標、θ、已否證方向、歷史目標／裁決／失敗原因 | 排除已否證或重複方向；確認哪些設定已試過、為何不再試；判定本輪能改的唯一搜尋策略旋鈕 |
+| `TuningHistory.md` 的契約區塊與**所有既有 R 節** | 現行 baseline provenance、主指標、θ、已否證方向、歷史目標／裁決／失敗原因 | 排除已否證或重複方向；確認哪些設定已試過、為何不再試；判定本輪能改的唯一策略旋鈕 |
 | 前一輪與現行 baseline 的 `Experiments/<name>.csv`／JSON（逐欄抽取） | label、完整 config snapshot、Status、objective、BestBound、MipGap、runtime、seed、metrics | 對照 baseline 與歷史 variant 的有效設定與結果；確認本輪不是在重跑相同 config |
 | 前一輪與現行 baseline 的 `-trajectory.csv` | `t_feas`、`Δbound`、`t_stall`、endGap／bound 的改善或停滯型態 | 依 §2.1 重判／確認瓶頸剖面，並只從 §2.2 對應列選候選旋鈕 |
 | R0 與最近一次 holdout 結果 | 主指標彙總、θ、holdout 是否維持改善 | 把本輪目標量化成可判的門檻，而不是「希望更快」 |
@@ -677,16 +616,15 @@ MIP 有 **performance variability**：換機器、置換 row/column 順序、換
 
 ### 3.5 實驗 runner 的行為
 
-**runner 行為的唯一權威是 coding guide [§8.1](../coding/optimfoundation-api-guide.md)** —— 笛卡兒積展開、label 組成、預設安靜、`Clone()` 建 variant、共用一份 data、label 重複丟哪個例外、輸出三件、log 檔名時機，一律查那一節。**本節 NEVER 複製它**，改一邊忘另一邊就是規範漂移。
-
-Phase 3 在其上額外要求：
-
 | 規則 | 說明 |
 | --- | --- |
-| archive | bin 產物成功後**立即**搬到專案根 `Experiments/`，三件缺一不可、每輪永久保留（§3.3.1） |
-| `OnSolved` 邊界 | 只屬 `OptProject`，`OptExperiment` 沒有——掃描中不要大量寫 solution |
-| 一輪一顆 | 一輪只改一個搜尋策略旋鈕（§3.1） |
-| 輪次前綴 | config label MUST 帶 `r<N>-`，experiment 名 MUST `<Project>-tuning-r<N>`（§3.3） |
+| experiment 預設安靜 | solver log、LP/MPS/Sol export、housekeeping 預設全 OFF |
+| 笛卡兒積 | `.AddModel` × `.AddConfig` 自動展開；單一 cell 用 `.AddTrial(model, label, config)` |
+| label | 自動成為 `ModelName \| config-label`；輪次前綴（`r1-`）寫進 config label |
+| `OnSolved` 邊界 | **只屬 `OptProject`**，`OptExperiment` 沒有——掃描中不要大量寫 solution |
+| label 重複 | `Run()` 在建任何 engine 前丟 `InvalidOperationException`；重複的 `AddConfig` label 在加入當下丟 `ArgumentException` |
+| 輸出 | bin 暫存的 `Experiments/<name>.csv`（一列一 Trial）+ `.json`（巢狀含 `config` / `metrics` / `convergence[]`）+ `-trajectory.csv`；成功後三件 MUST archive 到專案根 `Experiments/`，每輪永久保留 |
+| log 檔名 | exp 模式 MUST 在 `OptData.Load` **之前** `Logging.SetLogFileName("<Project>_exp")`，整次執行才收在同一包 |
 
 要覆寫 project-level defaults 時用 `.UseConfig(() => projectConfig)`；factory 每個 cell 都會執行。一般 solver 掃描保留預設即可。
 
@@ -1213,8 +1151,7 @@ NEVER 建議改成 soft constraint。NEVER 自己動手修任何檔案。
 動機：一次只改一個旋鈕，才知道是哪個旋鈕起作用。一次改三個然後變快了，你學不到任何可複用的知識。
 
 輸入：`TuningHistory.md` 的 R{{N}} 計畫段、Program.cs 的 productionBaseline 現值、History 契約區塊與全部既有 R 節、前一輪／現行 baseline 的 experiment 摘要與 trajectory 摘要
-規範：讀 .claude/skills/tuning/solver-tuning-guide.md 的 §2 與 §3（兩節）。
-旋鈕名稱與可設值 MUST 查 .claude/skills/tuning/cplex-parameter-reference.md，NEVER 憑記憶寫欄位名——那份是查表用，grep 需要的那幾顆即可，不要整份讀進 context。
+規範：讀 .claude/skills/tuning/solver-tuning-guide.md 的 §2、§3 與附錄 A（旋鈕名稱與可設值 MUST 查附錄 A，NEVER 憑記憶寫欄位名）
 
 輸出：補齊 `TuningHistory.md` 的 R{{N}} 計畫段，含：
 - 本輪量化目標：baseline 值、主指標、改善門檻 > θ、品質／不變式條件
@@ -1228,7 +1165,7 @@ NEVER 建議改成 soft constraint。NEVER 自己動手修任何檔案。
 1. 每個 variant 相對 baseline 只有一處差異（逐項比對，寫在表上）
 2. experiment name 為 {{Project}}-tuning-r{{N}}，與歷史不重名
 3. baseline 來自 productionBaseline.Clone()
-4. 每個旋鈕名都在 cplex-parameter-reference.md 查得到，且落在「搜尋策略」那五組（其餘為凍結類，不可掃）
+4. 每個旋鈕名都在附錄 A 查得到且標 ✅
 5. 每個 variant 都有可追溯的 evidence-to-config 理由；沒有重試已否證方向，除非明列剖面／契約／環境的變化
 6. 本輪目標可由當輪 Trial 與 trajectory 機械判定達成或失敗
 
@@ -1387,7 +1324,7 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 | promote 之後 production 反而變慢 | 只跑一個 seed，贏的是雜訊 | 回 §3.0 量 θ + §4.4 |
 | baseline 每次跑的時間都不一樣 | 沒固定 `Seed` / `ParallelMode` | `ParallelMode = 1` + 固定 seed + `DeterministicTimeLimit` |
 | `NodeFileStrategy` 設了但沒作用 | `MemoryLimitMb` 會強制 `MIP.Strategy.File = 0` | 設 `MemoryLimitMb` **之後**再設 `NodeFileStrategy`（附錄 A ★） |
-| `CS1061` 找不到 `epGap` / `workThreads` / `mipEmphasis` 等欄位 | 用了已廢止的 camelCase 舊名 | 對照 `cplex-parameter-reference.md` 改用 PascalCase（附錄 A ★★） |
+| `CS1061` 找不到 `epGap` / `workThreads` / `mipEmphasis` 等欄位 | 用了已廢止的 camelCase 舊名 | 對照附錄 A 改用 PascalCase（附錄 A ★★） |
 | 調到 timeout 都還在 gap 5% | 已到旋鈕的極限 | §7 停損，把「改模型結構」當建議交還使用者 |
 | 交付後 `git diff` 有 `.csv` / `Constraint_*.cs` | 越界改了凍結範圍的檔 | 全部還原，該訴求依 §1 退回對應 phase |
 | `TuningHistory.md` 只有 promote 的輪次 | retain 的輪次沒記 | 補記——不記等於下一輪重做同一組實驗 |
@@ -1417,17 +1354,71 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 
 ---
 
-## 附錄 A · 旋鈕查表（已移出本檔）
+## 附錄 A · `CplexConfig` 全旋鈕對照
 
-全 182 顆的官方參數路徑、型別、值域與預設在
-[`cplex-parameter-reference.md`](cplex-parameter-reference.md)，依 §2.0 的五分類分組。
+✅ = 框架已提供且已接線；❌ = 框架尚未提供（要用得改框架本體並重編 Core + Cplex DLL，屬框架維護，不在本流程內，見附錄 B）。
 
-**查表用，不必通讀**——要寫欄位名或設值時 grep 那一份即可。移出去的理由：它是查詢資料不是規範，
-留在本檔會讓每次 tuning 都得吃掉約 300 行的表格，也會撞到 §8.1「單一 agent 輸入 ≤ 800 行」的上限。
+欄位為 `null` 即採用 CPLEX 預設，tuning 時**只設要動的那一個**。
 
-分類與「能不能進 variant 池」的判準仍在 §2.0；搜尋策略的全池清單在 §2.2.1。
+★ **查表前先查 §2.0 的四分類。** 本表只列「這顆旋鈕是什麼」，不代表它可以進 variant 池：
 
-下列四條註記是**規範不是查表資料**，所以留在本檔（§2.2、§9 都引用它們）：
+| 類別 | 本表中的成員 | 可否當 variant |
+| --- | --- | --- |
+| **契約** | `MipGap` `AbsoluteMipGap` `TimeLimit` `DeterministicTimeLimit` `NodeLimit` `IntegerSolutionLimit` `IntegralityTolerance` `OptimalityTol` `FeasibilityTol` | ❌ 整期固定 |
+| **環境** | `Threads` `ParallelMode` `MemoryLimitMb` `TreeMemoryLimitMb` `NodeFileStrategy` | ❌ §2.3 sizing 定版後凍結 |
+| **器材** | `Seed` `ClockType` | ❌ `Seed` 是重複量測的自變數 |
+| **策略** | 其餘全部 | ✅ **唯一的 variant 池** |
+
+| 用途 | CPLEX 參數 | `CplexConfig` 欄位 | 取值 / 預設 |
+| --- | --- | --- | --- |
+| 執行緒數 | `Param.Threads` | ✅ `Threads` | 整數，預設 32；實測比較核心數 / −1 / −2 |
+| 平行模式 | `Param.Parallel` | ✅ `ParallelMode` | −1 機會式 / 0 自動 / 1 決定論 |
+| 限制式讀取上限 | `Param.Read.Constraints` | ✅ `RowRead` | 整數，預設 30000 |
+| 工作記憶體 | `IntParam.WorkMem` | ✅ `MemoryLimitMb` | MB，預設 2048 |
+| 樹記憶體上限 | `Param.MIP.Limits.TreeMemory` | ✅ `TreeMemoryLimitMb` | MB |
+| 節點檔策略 | `Param.MIP.Strategy.File` | ✅ `NodeFileStrategy` | 0 不存 / 1 記憶體壓縮（預設） / 2 磁碟 / 3 磁碟壓縮 |
+| 節點選擇 | `Param.MIP.Strategy.NodeSelect` | ✅ `NodeSelect` | 0 DFS / 1 best-bound（預設） / 2 best-estimate / 3 交替 |
+| 分支變數選擇 | `Param.MIP.Strategy.VariableSelect` | ✅ `VariableSelect` | −1 min-infeas / 0 自動 / 1 max-infeas / 2 pseudo cost / 3 strong branching / 4 pseudo reduced cost |
+| 分支方向 | `Param.MIP.Strategy.Branch` | ✅ `BranchDirection` | −1 向下 / 0 自動 / 1 向上 |
+| 潛降策略 | `Param.MIP.Strategy.Dive` | ✅ `DiveType` | 0 自動 / 1 傳統 / 2 探測 / 3 引導 |
+| 搜尋模式 | `Param.MIP.Strategy.Search` | ✅ `MipSearch` | 0 自動 / 1 傳統 B&C / 2 動態 B&C |
+| 探測強度 | `Param.MIP.Strategy.Probe` | ✅ `Probe` | −1..3 |
+| RINS 頻率 | `Param.MIP.Strategy.RINSHeur` | ✅ `RinsHeuristicFrequency` | −1 關 / 0 自動 / N |
+| 啟發式投入 | `Param.MIP.Strategy.HeuristicEffort` | ✅ `HeuristicEffort` | 倍率 |
+| MIP emphasis | `Param.Emphasis.MIP` | ✅ `Emphasis` | 0 平衡 / 1 重可行解 / 2 重最佳性 / 3 best bound / 4 hidden |
+| 數值穩定 | `Param.Emphasis.Numerical` | ✅ `NumericalEmphasis` | bool |
+| Cut 數量倍數 | `Param.MIP.Limits.CutsFactor` | ✅ `CutsFactor` | 倍率 |
+| Cut 回合數 | `Param.MIP.Limits.CutPasses` | ✅ `CutPasses` | −1 / 0 / N |
+| Gomory 切割 | `Param.MIP.Cuts.Gomory` | ✅ `GomoryCuts` | −1 關 / 0 自動 / 1..3 漸積極 |
+| 覆蓋切割 | `Param.MIP.Cuts.Covers` | ✅ `CoverCuts` | −1 / 0 / 1..3 |
+| 團切割 | `Param.MIP.Cuts.Cliques` | ✅ `CliqueCuts` | −1 / 0 / 1..3 |
+| MIR 切割 | `Param.MIP.Cuts.MIRCut` | ✅ `MirCuts` | −1 / 0 / 1..3 |
+| Flow cover 切割 | `Param.MIP.Cuts.FlowCovers` | ✅ `FlowCoverCuts` | −1 / 0 / 1..3 |
+| MIP gap（相對） | `Param.MIP.Tolerances.MIPGap` | ✅ `MipGap` | 預設 1e-4 |
+| MIP gap（絕對） | `Param.MIP.Tolerances.AbsMIPGap` | ✅ `AbsoluteMipGap` | 數值 |
+| 整數容差 | `Param.MIP.Tolerances.Integrality` | ✅ `IntegralityTolerance` | 數值 |
+| 最佳性容差 | `Param.Simplex.Tolerances.Optimality` | ✅ `OptimalityTol` | 預設 1e-6 |
+| 可行性容差 | `Param.Simplex.Tolerances.Feasibility` | ✅ `FeasibilityTol` | 預設 1e-6 |
+| 時間限制（牆鐘） | `Param.TimeLimit` | ✅ `TimeLimit` | 秒，**MUST 明設，NEVER 留 `null`** |
+| 決定論時間 | `Param.DetTimeLimit` | ✅ `DeterministicTimeLimit` | ticks，可重現實驗首選 |
+| 計時方式 | `Param.ClockType` | ✅ `ClockType` | 1 CPU / 2 wall |
+| 節點上限 | `Param.MIP.Limits.Nodes` | ✅ `NodeLimit` | 整數 |
+| 整數解上限 | `Param.MIP.Limits.Solutions` | ✅ `IntegerSolutionLimit` | 找到 N 個整數解即停 |
+| Solution polishing | `Param.MIP.PolishAfter.Time` | ✅ `PolishAfterTime` | 秒 |
+| 隨機種子 | `Param.RandomSeed` | ✅ `Seed` | 整數 |
+| 預處理 | `Param.Preprocessing.Presolve` | ✅ `PreIndicator` / `Presolve` | bool；一般保持開啟，只有 debug 才關 |
+| 對稱性消除 | `Param.Preprocessing.Symmetry` | ✅ `Symmetry` | −1 auto / 0 off / 1..5 逐步提高強度；排班、指派這類同質資源的題目值得試 |
+| Root 演算法 | `IntParam.RootAlgorithm` | ✅ `RootAlgorithm` | 0 自動 / 1 primal / 2 dual / 3 network / 4 barrier / 5 sifting / 6 concurrent |
+| 節點 LP 演算法 | `IntParam.NodeAlg` | ✅ `NodeAlgorithm` | 0..6 |
+| Simplex 迭代上限 | `Param.Simplex.Limits.Iterations` | ✅ `SimplexIterationLimit` | 整數 |
+| Barrier 演算法 | `Param.Barrier.Algorithm` | ✅ `BarrierAlgorithm` | 0..3 |
+| ZeroHalf / Disjunctive 切割 | `Param.MIP.Cuts.ZeroHalfCut` / `.Disjunctive` | ❌ | — |
+| 進階 presolve | `Preprocessing.Aggregator` / `NumPass` / `Reduce` | ❌ | — |
+| 記憶體 emphasis | `Param.Emphasis.MemUsage` | ❌ | — |
+| 分支優先級 | `Cplex.SetPriority` / order file | ❌ | 只能間接用 `VariableSelect` 影響 |
+| MIP start（初始解注入） | `Cplex.AddMIPStart` / `SetVectors` | ❌ | 等效手段：`Emphasis = 1` + `RinsHeuristicFrequency` + `HeuristicEffort` |
+| 自動調參 | `Cplex.TuneParam` | ❌ | — |
+| Heuristic / Lazy / UserCut callback | 對應 callback | ❌ | — |
 
 > ★ **`MemoryLimitMb` 與 `NodeFileStrategy` 的順序雷**：框架的 `Configuration()` 在設定 `MemoryLimitMb` 時會強制 `MIP.Strategy.File = 0`。要做「記憶體爆 → 溢寫節點檔」，MUST 在設 `MemoryLimitMb` **之後**再設 `NodeFileStrategy = 2/3`，否則被覆蓋成 0。
 >
@@ -1454,19 +1445,15 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 
 動 `CplexConfig` / `OptEngine` 屬**改 OptimFoundation 框架本體** → Core + Cplex DLL 必須一起 rebuild 並依 `dlls/README.md` 回填 `dlls/` 與 `VERSION.txt`。這**不在 Phase 3 範圍內**，列出來是為了在遇到瓶頸時知道「這條路目前走不通、要走得先做框架維護」。
 
-**2026-08 更新：原本列在這裡的參數缺口已全部補上。** ZeroHalf / Disjunctive / Implied 切割、進階 presolve
-（`AggregatorLimit` `PresolvePasses` `PresolveReduce`）、記憶體 emphasis（`MemoryEmphasis`）、內建 tune 的
-量測設定（`TuningMeasure` `TuningRepeat` `TuningTimeLimit`）現在都是 `CplexConfig` 的正式欄位。
-分支優先級也有了部分替代：`PriorityOrderType` 可以讓 CPLEX **自動產生**一份優先序（依成本遞減／bound range／
-cost per coefficient count），搭配 `UsePriorityOrder` 開關使用。
-
-**剩下三個真正的缺口**，都不是「加一個欄位」能解決的，要暴露新的 API 方法：
-
 | 缺口 | CPLEX 對應 | 影響哪個手段 | 建議補法 |
 | --- | --- | --- | --- |
-| MIP start / 初始解注入 | `Cplex.AddMIPStart` / `SetVectors` | warm start；`RepairTries` 欄位已有，但沒有 start 可修 | `OptEngine.SetMIPStart(dict)` |
-| 逐變數分支優先級 | `Cplex.SetPriority` / order file | 手動指定某些變數先分支（`PriorityOrderType` 只能自動產生） | `OptEngine.SetBranchPriority(var, p)` |
-| 自動調參方法 | `Cplex.TuneParam` | 附錄 C.2 的 baseline（`Param.Tune.*` 的設定欄位已有，但沒有觸發 tune 的方法） | `OptEngine.AutoTune()` |
+| MIP start / 初始解注入 | `Cplex.AddMIPStart` / `SetVectors` | warm start | `OptEngine.SetMIPStart(dict)` |
+| 分支優先級 | `Cplex.SetPriority` / order file | branching priority | `OptEngine.SetBranchPriority(var, p)` |
+| ZeroHalf 切割 | `Param.MIP.Cuts.ZeroHalfCut` | 切割 | 加 `int? zeroHalfCuts` |
+| Disjunctive / Implied 切割 | `Param.MIP.Cuts.Disjunctive` / `.Implied` | 切割 | 加對應欄位 |
+| 進階 presolve | `Preprocessing.Aggregator` / `NumPass` / `Reduce` | 預處理 | 加對應欄位 |
+| 記憶體 emphasis | `Param.Emphasis.MemUsage` | 記憶體 | 加 `bool? memoryEmphasis` |
+| 自動調參 | `Cplex.TuneParam` | 附錄 C.2 的 baseline | `OptEngine.AutoTune()` |
 | Heuristic callback | `Cplex.HeuristicCallback` | 自訂啟發式 | 暴露 callback 註冊點 ⚠️ |
 | Lazy / user cut callback | `LazyConstraintCallback` / `UserCutCallback` | 延遲生成限制式 | 暴露 callback 註冊點 ⚠️ |
 

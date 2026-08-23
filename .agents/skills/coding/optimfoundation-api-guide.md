@@ -1469,7 +1469,7 @@ namespace MyProject
 | --- | --- | --- |
 | 1. import | `args.Length >= 2 && args[0] == "import"`；`OptData.Load(() => new Dataload(rawFile)).Export()`；立即 `return 0` | raw 來源格式與 `Dataload(string rawFile)` 內的攤平／生成細節 |
 | 2. 模型 | `isExperiment` 判斷與 log 設定；唯一一次 canonical `OptData.Load`；具名 `ProjectConfig`、`productionBaseline`；唯一 `OptModel("Canonical")` chain | Set / Parameter / scalar、變數、Objective、Constraint、config 值 |
-| 3. 實驗 | `if (isExperiment)`；由 `productionBaseline.Clone()` 建 config；`OptExperiment` + `.AddModel(model)` + `.AddConfig(...)` + `.Run()`；立即 `return 0` | 只有 seed 值與說明文字；名稱、label、marker 一律照 §8.4 的 R0-ready 契約，NEVER 自創 |
+| 3. 實驗 | `if (isExperiment)`；由 `productionBaseline.Clone()` 建 config；`OptExperiment` + `.AddModel(model)` + `.AddConfig(...)` + `.Run()`；立即 `return 0` | round 名稱、說明、experiment config 與比較旋鈕 |
 | 4. 正式跑 | `using var project = new OptProject(model)`；兩個 `.UseConfig`；`.OnSolved`；`Execute()` 與 0/1 exit code | Solution 類別與輸出內容 |
 
 - 四個標記 `// 1. import 段落`、`// 2. 模型段落`、`// 3. 實驗段落`、`// 4. 正式跑段落` MUST 各出現一次，順序固定；缺任一個即 Phase 2 FAIL。
@@ -1484,7 +1484,7 @@ namespace MyProject
 | --- | --- | --- |
 | **1 import** | `new Dataload(rawFile)`、`OptData.Load(...).Export()`、立即 `return 0` | canonical model、實驗或正式求解 |
 | **2 模型** | `isExperiment` 與 log 設定；唯一一次 canonical `OptData.Load`；scalar、具名 `ProjectConfig` / `productionBaseline`；唯一 `OptModel("Canonical")` chain | 資料轉換；`new OptEngine(...)`；`AddLHS` / `AddRHS`（數學式留在各 Constraint / Objective 類別） |
-| **3 實驗** | `// R0 — <Project>-tuning-r0` marker、clone baseline、`OptExperiment`、`AddModel`、`AddConfig`、`Run`、立即 `return 0` | 改模型、改資料、正式 `OptProject`、自創 experiment 名或 label |
+| **3 實驗** | clone baseline、`OptExperiment`、`AddModel`、`AddConfig`、`Run`、立即 `return 0` | 改模型、改資料、正式 `OptProject` |
 | **4 正式跑** | `OptProject`、兩個 `UseConfig`、`OnSolved`、`Execute`、0/1 exit code | 改模型、改資料、第二次 `OptData.Load` |
 
 - MUST 模型段的 canonical `OptData.Load` **整個程式只呼叫一次**，production 與 experiment 共用同一份 `data` —— Why: 兩份資料會在中途漂移，實驗結果就不能拿來回答 production 的問題
@@ -1510,8 +1510,8 @@ namespace MyProject
 | 顆數                          | 整個 `Program.cs` **只有一顆具名 `productionBaseline`**；experiment 的 variant 一律從它 `Clone()`（§8.2） |
 | `TimeLimit`                   | MUST 明設，NEVER 留 `null`（無限）—— Why: 沒有停點的 production 執行沒辦法納入流程，也無從比較            |
 | `MipGap`                       | 依專案可接受的品質明設；預設 `1e-4` 對多數排程題偏嚴，會白花時間收最後那點 gap                            |
-| `Threads` | 預設 32 通常過大，MUST 依實機核心數設定並實測。此列與下一列合起來就是**環境契約**，Phase 3 同一台實機沿用，不重跑 sizing |
-| `Seed` / `ParallelMode` | **無條件 MUST 明設**：`ParallelMode = 1` + 固定 `Seed` —— Why: 這兩顆決定 Phase 3 量得準不準。留 `null` 等於交出一個不可比的 baseline，Phase 3 進場第一件事就得回頭改 code |
+| `Threads`                 | 預設 32 通常過大，MUST 依實機核心數設定並實測                                                             |
+| `Seed` / `ParallelMode` | 要做 tuning 比較就 MUST 固定（`ParallelMode = 1` + 固定 seed），否則兩次執行不可比                        |
 | `ITunableConfig` 與 CPLEX 設定 | `CplexConfig` 仍實作 `ITunableConfig`，但公開設定一律是同一套 PascalCase property；不再有 camelCase 對應欄位 |
 | 其餘旋鈕                      | 一律留 `null` 用 CPLEX 預設 —— NEVER 一開始就塞滿參數，那會讓 Phase 3 分不出是哪個旋鈕造成差異            |
 
@@ -1726,7 +1726,7 @@ build 失敗走 fix loop：擷取 compiler error → 修 → 重 build，**至�
 **同名實驗是 append，不是覆寫。** `Run()` 內的 `Save()` 會先讀既有 JSON，再把歷史 trials 合併回傳值的 `result.Trials`。因此 experiment 命名 MUST 用 `<Project>-tuning-r<N>`，每輪 N 加一 —— NEVER 重複用同一個名字 —— Why: 重跑同名 experiment 後直接 `foreach (result.Trials)` 會再次看到歷史資料，把舊 trial 誤報成本輪結果。
 
 ```csharp
-var baseline = productionBaseline.Clone();
+var baseline = solverConfig.Clone();
 var emphasis = baseline.Clone();
 emphasis.Emphasis = 2;
 var tighterGap = baseline.Clone();
@@ -1754,10 +1754,6 @@ var result = new OptExperiment("MyProject-tuning-r1", "一次只改一個 solver
 | baseline 可重現     | 固定 `Threads` / `ParallelMode` / `Seed`，讓每次跑的停點一致              |
 | `OnSolved` 邊界     | 只屬 `OptProject`；實驗不應大量寫 solution                                          |
 | 一次只動一個旋鈕    | 同時改兩個就分不出是哪個造成差異                                                    |
-| label 重複          | `Run()` 在建任何 engine 前丟 `InvalidOperationException`；重複的 `AddConfig` label 在加入當下丟 `ArgumentException` |
-| 輸出                | `bin/.../Experiments/<name>.csv`（一列一 Trial）+ `.json`（巢狀含 `config` / `metrics` / `convergence[]`）+ `-trajectory.csv` |
-| archive 責任        | bin 產物會被 clean 掉。搬到專案根 `Experiments/` 是 **Phase 3 每輪的責任**，Phase 2 不做 |
-| log 檔名            | exp 模式 MUST 在 `OptData.Load` **之前** `Logging.SetLogFileName("<Project>_exp")`，整次執行才收在同一包 |
 
 ### 8.2 AI 閉環：Trial → champion → production baseline
 
@@ -1811,50 +1807,6 @@ production 驗證：dotnet build 結果、ValidateRules 結果
 ```
 
 這是決策索引；完整逐 Trial 數值仍由 experiment JSON 保存。即使本輪沒有勝者也要記 retain 與證據，避免下一輪重做同一組實驗。
-
-### 8.4 Phase 2 出口 —— exp 分支的 R0-ready 契約
-
-**Phase 2 交付的 exp 分支 MUST 已經是 Phase 3 的 R0 形狀**，讓 Phase 3 進場時一行 code 都不用改，直接 `dotnet run --project <project.csproj> -- exp` 就跑得出 R0。
-
-Why: exp 分支確實在 Phase 3 的可寫白名單裡，Phase 3「改得動」——但每次接棒都要先重寫命名、補 label 前綴、補 marker、補 `ParallelMode`，那是把 Phase 2 沒做完的事推給下游；而且重寫期間的 build 失敗全算在 tuning 頭上，污染調校紀錄。
-
-四條機械可驗的要求：
-
-| # | 要求 | 錯的樣子 |
-| --- | --- | --- |
-| 1 | experiment 名 = `<Project>-tuning-r0` | `"proj-tuning"`、`"test"`、`"exp1"` |
-| 2 | 每個 config label 帶 `r0-` 前綴 | `.AddConfig("baseline", ...)` |
-| 3 | exp 分支開頭有 marker 註解 `// R0 — <Project>-tuning-r0` | 沒有 marker |
-| 4 | r0 內容 = **baseline × 5 個固定 seed**，NEVER 混掃旋鈕 | 同一輪塞 `gap=0.01` + `threads=4` + `emphasis=2` |
-
-第 4 條最容易做錯。**R0 是校準輪**，用途是量 baseline 自己的雜訊地板 θ，所以它只有 baseline 一個 config、變的只有 `Seed`。Phase 2 交出一個混掃七顆旋鈕的 experiment，Phase 3 拿到手只能整份丟掉重寫。
-
-```csharp
-// 3. 實驗段落
-if (isExperiment)
-{
-    // R0 — <Project>-tuning-r0
-    var exp = new OptExperiment("<Project>-tuning-r0", "R0 校準：baseline × 5 seeds");
-    exp.AddModel(model);
-
-    foreach (var seed in new[] { 11, 22, 33, 44, 55 })
-    {
-        var c = productionBaseline.Clone();
-        c.Seed = seed;
-        exp.AddConfig($"r0-baseline-s{seed}", c);
-    }
-
-    exp.Run();
-    return 0;
-}
-```
-
-**Phase 2 MUST 實跑一次** `-- exp` 確認管線可執行——build 綠不代表跑得動。
-
-★ 跑完的 bin 產物**不 archive**，而且 **Phase 3 執行 R0 前 MUST 先刪 `bin/.../Experiments/<Project>-tuning-r0.*`** —— Why: 同名 experiment 是 append 不是覆寫（§8.1），不刪會把 Phase 2 的驗證 trial 混進正式 R0。
-
-**Phase 2 不做的事**：不跑 `Threads` sizing 比較、不算 θ、不判瓶頸剖面、不 archive 到專案根、不指定 holdout seeds。那些是 Phase 3 的 S1–S2——它們是**解讀**，不是轉譯。Phase 2 只負責交出一個「按下去就會產出正確 R0 資料」的殼。
-
 
 ---
 
