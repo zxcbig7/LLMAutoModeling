@@ -40,7 +40,11 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 ## Step 0 · 入口 gate（不通過就不准動手）
 
 1. 確認 `Projects/<Project>/Model/<Project>_Model.md` 存在
-2. 確認使用者已明說「模型確認」/「開始實作」，或 `status.json` 的 `modelConfirmed: true`
+2. 確認使用者已表達「開始實作」，或 `status.json` 的 `modelConfirmed: true`
+
+**使用者主動叫 `/coding` 並指向某一份 Model.md，本身就算「開始實作」**——本 skill 的 description 就是用這幾句話觸發的。但 MUST 在動手前用一句話覆述該 Model.md「已套用假設」段裡**會改變模型形狀**的項目（質量守恆、空白格語意、變數型別這類），給使用者當場否決的機會；覆述完直接開工，不要停下來等回覆。通過後把 `modelConfirmed` 設 true，並在交付時寫明依據是使用者的這次呼叫。
+
+**空參數、或由你自己掃 `status.json` 挑出來的專案不算確認**：`modelConfirmed: false` 時停下問使用者。
 
 **任一項不成立 → 停下，回 `modeling`**，不產任何 `.cs`。
 
@@ -93,11 +97,14 @@ Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Patter
 | 2 | `Parameter/Parameter_*.cs` | PARAM 段，同下標的係數併一個類 | §2.2 |
 | 3 | `Data/Dataload.cs` + `Data/*.csv` | 顯式載入，數值保真 | §2.0、§2.4 |
 | 4 | `Variable/Variable{B,C,I}_*.cs` | VAR 段，型別由前綴決定 | §3 |
-| 5 | `Constraint/Constraint_*.cs` | 每條 `[Cn]` 一檔，`///` 註記寫回條號 | §4.2、附錄 A |
-| 6 | `Objective/ObjectiveFunction.cs` | OBJ 段逐項 | §4.3 |
-| 7 | `Program.cs` | 材料 → OptModel → runner，順序照 `[C1][C2]…` | §5 |
+| 5 | `Objective/ObjectiveFunction.cs` | OBJ 段逐項 | §4.3 |
+| 6 | `Constraint/Constraint_*.cs` | 每條 `[Cn]` 一檔，`///` 註記寫回條號 | §4.2、附錄 A |
+| 7 | `Solution/<Project>Solution.cs` | `ValidateData`（建模前資料驗收）+ `ValidateRules`（解後逐條代回） | §6 |
+| 8 | `Program.cs` | 材料 → 資料驗收 → OptModel → runner，順序照 `[C1][C2]…` | §5 |
 
-轉譯鐵律（移項禁令、`AddLHS`/`AddRHS`/`CreateXxx` 對應、係數來源、Objective 必須先於 Constraint）全在 **api-guide §4 與 `../AGENTS.md` 的數學一致性天條**，動手前讀那兩處。
+轉譯鐵律（移項禁令、`AddLHS`/`AddRHS`/`CreateXxx` 對應、係數來源）全在 **api-guide §4 與 `../AGENTS.md` 的數學一致性天條**，動手前讀那兩處。
+
+Objective 與 Constraint **誰先寫成檔案不拘**（5 / 6 可對調，multi-agent 時 C5 ∥ C6 平行派工）；真正受規範的是 `Program.cs` 的**註冊順序**——`.AddObjective` MUST 在 `.AddConstraints` 之前（§4.3）。
 
 **中途發現 Model.md 歧義 → 立即停止，回 `modeling` 補模型**，NEVER 自己選一種解釋繼續。
 

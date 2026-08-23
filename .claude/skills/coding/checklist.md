@@ -87,6 +87,7 @@ Projects/<Project>/
 - [ ] 正式載入走 `OptData.Load(() => new Dataload(...))`。
 - [ ] import 寫出 Set 與 Parameter 都使用 `CsvCtrl.WriteRows`，輸出可由 `Load<T>` round-trip 讀回。
 - [ ] 沒有把資料生成、補值或隨機化混進 `Dataload(IDataSource source)`。
+- [ ] 專案沒有 raw 來源時，`Dataload(string rawFile)` 用的是 api-guide §2.4 的退化形式（委派 `this(new CsvDataSource())` + log 一行），**沒有**為了「讓它有事做」而發明加工邏輯，也**沒有** `new CsvDataSource(rawFile)` 這種不存在的多載。
 - [ ] `Dataload` 欄位名「小寫元件 + PascalCase 語意」：`set_Item` / `parameter_Demand`。
 
 ## 5. Variable 一致性
@@ -113,8 +114,9 @@ Projects/<Project>/
 - [ ] 沒有混用 `AddRHS(value)` 與會覆蓋 RHS 常數的 `CreateXxx(rhs, name)`。
 - [ ] 沒有手動修改 `ConstraintCount`。
 - [ ] Objective 方向與 Model.md 相同，使用 `CreateMinimize()` 或 `CreateMaximize()`，且是 OBJ 段的逐項轉譯。
-- [ ] Objective 在 constraints 前加入 `OptModel`。
+- [ ] `Program.cs` 的 `.AddObjective(...)` 寫在所有 `.AddConstraints(...)` 之前（註冊順序，api-guide §4.3；寫檔先後不拘）。
 - [ ] Objective / Constraint constructor 只收實際依賴（Set / Parameter / scalar），不收整包 `Dataload`。
+- [ ] 依賴的型別是 `List<Set_*>` / `List<Parameter_*>` / `double`——**NEVER 把 `Set_*` 單列型別當集合參數**（`Set_Item` 是一列資料，不是集合）。
 
 ## 7. Hardcode 稽查
 
@@ -136,13 +138,13 @@ Projects/<Project>/
 - [ ] Log 含事件代碼、context、錯誤值、原因與 `result=aborted`。
 - [ ] 公開 API 邊界對外部/未預期例外記錄後原樣 rethrow。
 - [ ] 同一 exception 不會在底層與邊界重複記錄。
-- [ ] 命名、CSV、變數 arity/type、限制式與 DataContext edge cases 有測試。
+- [ ] 命名、CSV、變數 arity/type、限制式與 DataContext 的 edge case 由 `ValidateData` / `ValidateRules` 覆蓋（本架構的八資料夾不含測試專案層，回歸保障來自這兩個驗證入口與 §11.5 的改壞測試）。
 
 ## 10. Program.cs 四段不可變模板與組裝
 
 - [ ] `Program.cs` 是唯一組裝點，按順序各有且只有一個逐字標記：`// 1. import 段落`、`// 2. 模型段落`、`// 3. 實驗段落`、`// 4. 正式跑段落`；缺一、重複、改名或重排一律 FAIL。
 - [ ] import 段固定含 `args.Length >= 2 && args[0] == "import"`、`new Dataload(rawFile)`、`.Export()` 與 `return 0`；不因現有 CSV 或資料來源是 DB 而省略。
-- [ ] 模型段固定含 `isExperiment` 判斷、唯一一次 `OptData.Load(() => new Dataload())`、具名 `ProjectConfig`、唯一具名 `productionBaseline`、唯一 `new OptModel("Canonical")` chain。
+- [ ] 模型段固定含 `isExperiment` 判斷、唯一一次 `OptData.Load(() => new Dataload())`、緊接其後的 `<Project>Solution.ValidateData(data)`、具名 `ProjectConfig`、唯一具名 `productionBaseline`、唯一 `new OptModel("Canonical")` chain。
 - [ ] 實驗段固定含 `if (isExperiment)`、至少一次 `productionBaseline.Clone()`、`new OptExperiment(...)`、`.AddModel(model)`、至少一個 `.AddConfig(...)`、`.Run()` 與 `return 0`；不得以「尚未 tuning」省略。
 - [ ] 正式跑段固定含 `using var project = new OptProject(model)`、`ProjectConfig` 與 `productionBaseline` 各一個 `.UseConfig(...)`、`.OnSolved(...)`、`project.Execute()` 與成功 0／失敗 1 的 exit code。
 - [ ] 四段直接平坦存在 `Main`；沒有包裝四段或模型組裝的 helper、factory、local function，也沒有替代 CLI 命令或額外 mode。
@@ -157,15 +159,23 @@ Projects/<Project>/
 - [ ] 沒有用 `GetVarSol` / `GetSetVarSol` / `CsvCtrl.SaveToCSV`（不存在）。
 - [ ] 使用最新版公開名稱：`project.Engine`、`engine.VariableCount`、`engine.RegisteredVariableCount`、`CplexConfig.TimeLimit` / `MipGap` / `Threads`。
 
+## 11.5 兩個驗證入口（`Solution/<Project>Solution.cs`）
+
+- [ ] `ValidateData(Dataload)` 存在，且在 `Program.cs` 模型段的 `OptData.Load` 之後、建模之前被呼叫一次。
+- [ ] `ValidateData` 檢查了所有**全格語意**的 Parameter（缺格丟例外，不是採 0）與跨表關聯；本專案若全屬稀疏語意，方法體留空但 `<summary>` 寫明理由。
+- [ ] `ReadAndValidate` 掛在 `OnSolved`，`ValidateRules` 逐條把解代回**每一條** constraint。
+- [ ] ★ **已做過「故意改壞」測試**（api-guide §6）：把某個查解 key 或某條比較改錯後重跑，確認 `ValidateRules` **真的會 throw**；確認後已還原。沒做這一步 = 驗證可能整段靜默通過。
+- [ ] 組 key 一律明寫 row 的 property（`item.Item`），**沒有**直接內插 row 物件（`{item}`）——多維 row 沒有隱式字串轉換，那樣拼出來的 key 永遠查不到。
+
 ## 12. Build / Solve / Output 一致性
 
 - [ ] `dotnet build` 無 error，fix loop 沒超過 5 次。
-- [ ] unit tests 全過。
 - [ ] `Status` 已依 `SolveStatus` 分流（api-guide §7.1）：`Optimal` / `Feasible` 有可用解；`TimeLimit` 無解時改用小 instance 驗證；`Infeasible` / `Unbounded` / `Error` / `NotSolved` 不得當成功交付。
 - [ ] `Feasible`（撞限制但有解）**不算失敗**——已對 incumbent 完成解驗證協定 2–4 並記錄 `MipGap` 與 `BestBound`，且**未**以放寬 `CplexConfig.MipGap` / 加大 `CplexConfig.TimeLimit` 的方式把它「湊成 `Optimal`」。
 - [ ] 解已代回**每條** constraint，LHS op RHS 成立。
 - [ ] 目標值與關鍵變數的單位、量級對得上題目。
 - [ ] LP bound sanity 檢查過（max：整數解 ≤ LP bound；`Feasible` 時比 `BestBound`）。
+- [ ] 純 LP（模型無整數變數）時已辨識 `BestBound = -1E+75` / `MipGap = 1E+75` 是佔位值而非異常，且**沒有**把它們當品質指標寫進交付報告。
 - [ ] 與 Model.md 的小例 / 已知解對照過。
 - [ ] 變數與限制式實際數量符合預期。
 - [ ] `ISolutionSink` 或 `GetSolution` 輸出欄位、列數與 key 正確。
@@ -187,6 +197,8 @@ Projects/<Project>/
 - [ ] `status.json` 已更新（`buildOk` / `solveVerified` / `solveStatus` / `verifiedOn`），且 `solveStatus` 與 `verifiedOn` 如實填寫（Phase 3 靠這兩欄決定進場情境）。
 
 ## 15. AI 最終靜態掃描（完成前必跑）
+
+> 這段含中文註解。要落成 `.ps1` 檔給 Windows PowerShell 5 跑，MUST 存成 **UTF-8 with BOM**，否則中文會被 ANSI codepage 打壞（見 `.claude/README.md` 文件標準）。直接貼進終端機執行則不受影響。
 
 ```powershell
 $project = "Projects/<Project>"
@@ -234,7 +246,7 @@ $sections = @(
 )
 $requiredBySection = @(
     @('args\.Length\s*>=\s*2\s*&&\s*args\[0\]\s*==\s*"import"', 'new Dataload\(rawFile\)', '\.Export\(\)', 'return\s+0\s*;'),
-    @('bool\s+isExperiment\s*=', 'OptData\.Load\(\(\)\s*=>\s*new Dataload\(\)\)', 'new ProjectConfig', 'var\s+productionBaseline\s*=\s*new CplexConfig', 'new OptModel\("Canonical"\)'),
+    @('bool\s+isExperiment\s*=', 'OptData\.Load\(\(\)\s*=>\s*new Dataload\(\)\)', '\.ValidateData\(data\)', 'new ProjectConfig', 'var\s+productionBaseline\s*=\s*new CplexConfig', 'new OptModel\("Canonical"\)'),
     @('if\s*\(isExperiment\)', 'productionBaseline\.Clone\(\)', 'new OptExperiment\(', '\.AddModel\(model\)', '\.AddConfig\(', '\.Run\(\)', 'return\s+0\s*;'),
     @('using\s+var\s+project\s*=\s*new OptProject\(model\)', '\.UseConfig\(', '\.OnSolved\(', 'project\.Execute\(\)', 'return\s+solved\s*\?\s*0\s*:\s*1\s*;')
 )

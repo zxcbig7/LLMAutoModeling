@@ -50,20 +50,20 @@ C0 orchestrator（主對話，不寫 code）
 
 依賴順序：C1 → C2 → C3 → C4 →（C5 ∥ C6）→ C7 → C8 → C9 →（V1 ∥ V2）→ `dotnet run` → V3
 
-| Agent | subagent_type | model | 讀哪節 guide |
-| --- | --- | --- | --- |
-| C1 manifest-builder | `general-purpose` | `sonnet` | 不讀（只讀 Model.md） |
-| C2 scaffold | `general-purpose` | `sonnet` | §1 |
-| C3 data-layer | `general-purpose` | `opus` | §2 |
-| C4 variable | `general-purpose` | `sonnet` | §3 |
-| C5 constraint | `general-purpose` | `opus` | §4 + 附錄 A |
-| C6 objective | `general-purpose` | `sonnet` | §4 |
-| C7 program | `general-purpose` | `opus` | §5 |
-| C8 solution | `general-purpose` | `sonnet` | §6 |
-| C9 builder | `general-purpose` | `sonnet` | §9（只讀 `rg` 命中處） |
-| V1 checklist-verifier | `verifier` | （內建） | §10 |
-| V2 back-translator | `second-opinion` | （內建） | 不讀 guide |
-| V3 solve-verifier | `verifier` | （內建） | §7 |
+| Agent                 | subagent_type     | model    | 讀哪節 guide           |
+| --------------------- | ----------------- | -------- | ---------------------- |
+| C1 manifest-builder   | `general-purpose` | `sonnet` | 不讀（只讀 Model.md）  |
+| C2 scaffold           | `general-purpose` | `sonnet` | §1                     |
+| C3 data-layer         | `general-purpose` | `opus`   | §2                     |
+| C4 variable           | `general-purpose` | `sonnet` | §3                     |
+| C5 constraint         | `general-purpose` | `opus`   | §4 + 附錄 A            |
+| C6 objective          | `general-purpose` | `sonnet` | §4                     |
+| C7 program            | `general-purpose` | `opus`   | §5                     |
+| C8 solution           | `general-purpose` | `sonnet` | §6                     |
+| C9 builder            | `general-purpose` | `sonnet` | §9（只讀 `rg` 命中處） |
+| V1 checklist-verifier | `verifier`        | （內建） | §10                    |
+| V2 back-translator    | `second-opinion`  | （內建） | 不讀 guide             |
+| V3 solve-verifier     | `verifier`        | （內建） | §7                     |
 
 ## API guide 分片表
 
@@ -73,19 +73,19 @@ C0 orchestrator（主對話，不寫 code）
 rg -n "^## §|^## 附錄" ".claude/skills/coding/optimfoundation-api-guide.md"
 ```
 
-| 節 | 內容 | 誰讀 |
-| --- | --- | --- |
-| §0 | 心智模型 | 所有寫 code 的 agent（開場必讀，最短） |
-| §1 | 建立專案 / csproj / DLL | C2 |
-| §2 | 資料層 Set / Parameter / Dataload | C3 |
-| §3 | 變數層 | C4 |
-| §4 | 模型層 Objective 與 Constraint | C5、C6 |
-| §5 | Program.cs 組裝、公開 runner/config API | C7 |
-| §6 | Solution 取解與輸出 | C8 |
-| §7 | 驗收 / 解驗證協定 | V3 |
-| §9 | API 速查卡 | 所有 agent，但**只搜尋自己要用的 API 名，讀命中處 ±20 行** |
-| §10 | 常見錯誤與反模式 | V1 |
-| 附錄 A | 線性化 pattern 對照 | C5 |
+| 節     | 內容                                    | 誰讀                                                       |
+| ------ | --------------------------------------- | ---------------------------------------------------------- |
+| §0     | 心智模型                                | 所有寫 code 的 agent（開場必讀，最短）                     |
+| §1     | 建立專案 / csproj / DLL                 | C2                                                         |
+| §2     | 資料層 Set / Parameter / Dataload       | C3                                                         |
+| §3     | 變數層                                  | C4                                                         |
+| §4     | 模型層 Objective 與 Constraint          | C5、C6                                                     |
+| §5     | Program.cs 組裝、公開 runner/config API | C7                                                         |
+| §6     | Solution 取解與輸出                     | C8                                                         |
+| §7     | 驗收 / 解驗證協定                       | V3                                                         |
+| §9     | API 速查卡                              | 所有 agent，但**只搜尋自己要用的 API 名，讀命中處 ±20 行** |
+| §10    | 常見錯誤與反模式                        | V1                                                         |
+| 附錄 A | 線性化 pattern 對照                     | C5                                                         |
 
 §9 用法示範（NEVER 整節讀）：
 

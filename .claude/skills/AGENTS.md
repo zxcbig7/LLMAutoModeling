@@ -18,11 +18,11 @@
 
 ## 唯一路線：三階段 phase gate
 
-| 階段 | 唯一規範檔（讀這一份就夠） | 產物 | 出口 gate |
-| --- | --- | --- | --- |
-| **Phase 1 · Modeling** | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) | `Model/<Project>_Model.md` | 使用者明說「模型確認」/「開始實作」 |
-| **Phase 2 · Coding** | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠、解已驗證 | 解驗證協定四步全過 |
-| **Phase 3 · Tuning** | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md` | champion promotion 後 production 重跑通過 |
+| 階段                   | 唯一規範檔（讀這一份就夠）                                                   | 產物                                         | 出口 gate                                 |
+| ---------------------- | ---------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------- |
+| **Phase 1 · Modeling** | [`modeling/model-design-guide.md`](modeling/model-design-guide.md)           | `Model/<Project>_Model.md`                   | 使用者明說「模型確認」/「開始實作」       |
+| **Phase 2 · Coding**   | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠、解已驗證             | 解驗證協定四步全過                        |
+| **Phase 3 · Tuning**   | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md)             | promotion 後的 baseline + `TuningHistory.md` | champion promotion 後 production 重跑通過 |
 
 執行入口是三個 skill：[`modeling`](modeling/SKILL.md) → [`coding`](coding/SKILL.md) → [`tuning`](tuning/SKILL.md)。
 
@@ -80,20 +80,22 @@
 ## Canonical 寫法（不得從相容範例反推）
 
 - 新專案唯一 scaffold 是本 repo 的 [`../../Template/`](../../Template/)；生成到 `Projects/<Project>/` 後使用 repo 根 `dlls/` 的 `<Reference>` / `<Analyzer>`
-- **generator 是唯一 paved path；手寫 base class 已廢止，沒有後路。** 唯一可照抄的既有專案是 `Projects/HospitalRostering_Generator`
+- **generator 是唯一 paved path；手寫 base class 已廢止，沒有後路。**
+- **可照抄結構的既有專案只有 [`../../Projects/CandyBlending/`](../../Projects/CandyBlending/)**（八資料夾、四段 `Program.cs`、`Data/Dataload.cs`、`Solution/` 的兩個驗證入口都符合現行規範，build 綠且解已驗證）。
+- `Projects/HospitalRostering_Generator` 是**早於本版規範**的可運作範例：子 namespace、建構子收整包 `Dataload` 與 `OptEngine`、`Build()` 無參數、`FirstOrDefault`、`try/catch` 吞例外，且有 `Constraint/BuildModel.cs`、`Variable/VariableCreate.cs` 兩個八資料夾外的組裝檔。**可讀來理解 API 行為，NEVER 照抄結構。**
 - sibling `OptimFoundation/OptimFoundation/Templates/` 是框架整合與相容性案例，可能用 `ProjectReference` 或歷史寫法，**不是** AI 新建專案的 scaffold
 - 規則與範本 code 衝突時，以本檔與三個 phase 檔為準；把 Template 標成待修，NEVER 為迎合落後範本而放寬規則
 
 ## 三階段契約總表
 
-| | Phase 1 · Modeling | Phase 2 · Coding | Phase 3 · Tuning |
-| --- | --- | --- | --- |
-| **Input** | 題目原文（文字或檔案路徑） | 已確認的 `Model/<Project>_Model.md` | 已 `solveVerified`、**exp 分支 R0-ready** 的專案 + 效能症狀 |
-| **本質** | 降維：自然語言 → 數學 | 翻譯：數學 → C#，零詮釋 | 實驗：只動 solver 旋鈕 |
-| **Output** | `Model/<Project>_Model.md` | 八資料夾專案，build 綠、解已驗證、**exp 分支 R0-ready** | 更新後的 `productionBaseline` + `TuningHistory.md` |
-| **啟動條件** | 使用者給題目 | 上一階段 gate 通過 | **使用者主動提出**（NEVER 自己建議） |
-| **可寫範圍** | 只有 `Model/*.md` | 整個 `Projects/<Project>/`（`Model/` 除外，唯讀） | 白名單五處：`Program.cs` 的 `productionBaseline`、`Program.cs` exp 分支、`TuningHistory.md`、`Experiments/`、`status.json` 的 P3 欄位 |
-| **退場** | 術語不明 → 追問 | Model.md 有歧義 → 退回 Phase 1 | 前提破裂 → 退回 Phase 1 / 2 |
+|              | Phase 1 · Modeling         | Phase 2 · Coding                                        | Phase 3 · Tuning                                                                                                                      |
+| ------------ | -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Input**    | 題目原文（文字或檔案路徑） | 已確認的 `Model/<Project>_Model.md`                     | 已 `solveVerified`、**exp 分支 R0-ready** 的專案 + 效能症狀                                                                           |
+| **本質**     | 降維：自然語言 → 數學      | 翻譯：數學 → C#，零詮釋                                 | 實驗：只動 solver 旋鈕                                                                                                                |
+| **Output**   | `Model/<Project>_Model.md` | 八資料夾專案，build 綠、解已驗證、**exp 分支 R0-ready** | 更新後的 `productionBaseline` + `TuningHistory.md`                                                                                    |
+| **啟動條件** | 使用者給題目               | 上一階段 gate 通過                                      | **使用者主動提出**（NEVER 自己建議）                                                                                                  |
+| **可寫範圍** | 只有 `Model/*.md`          | 整個 `Projects/<Project>/`（`Model/` 除外，唯讀）       | 白名單五處：`Program.cs` 的 `productionBaseline`、`Program.cs` exp 分支、`TuningHistory.md`、`Experiments/`、`status.json` 的 P3 欄位 |
+| **退場**     | 術語不明 → 追問            | Model.md 有歧義 → 退回 Phase 1                          | 前提破裂 → 退回 Phase 1 / 2                                                                                                           |
 
 ### Phase 1 出口契約
 
@@ -103,15 +105,15 @@ Model.md 固定八段順序，**下游逐項在吃，缺一項轉譯就得猜**�
 問題描述 → Terminology Mapping Table → SET → PARAM → VAR → CONSTRAINT → OBJ → 已套用假設
 ```
 
-| 段 | 必填欄 | 下游用途 |
-| --- | --- | --- |
-| Terminology | Term / 語意 / Role / Unit / Derived? / Raw phrase | 決定類別命名 |
-| SET | 名 / 語意 / 成員範例 | 決定建哪幾顆 `Set_*` |
-| PARAM | 名 / 語意 / **Dim** / 值 | 決定 `[OptDim]` property |
-| VAR | 名 / 語意 / Dim / **型別** / LB / UB | 決定 `VariableB_` / `VariableC_` / `VariableI_` 前綴 |
-| CONSTRAINT | **`LHS op RHS` 原形** + **pattern tag** + Dim + 一句中文 | 逐條對照 `AddLHS` / `AddRHS` |
-| OBJ | 方向 + 所有項在 LHS | 決定 `CreateMinimize` / `CreateMaximize` |
-| 已套用假設 | Phase 1 自行套用的預設清單 | 驗收時分辨哪些是題目、哪些是 AI 補的 |
+| 段          | 必填欄                                                   | 下游用途                                             |
+| ----------- | -------------------------------------------------------- | ---------------------------------------------------- |
+| Terminology | Term / 語意 / Role / Unit / Derived? / Raw phrase        | 決定類別命名                                         |
+| SET         | 名 / 語意 / 成員範例                                     | 決定建哪幾顆 `Set_*`                                 |
+| PARAM       | 名 / 語意 / **Dim** / 值                                 | 決定 `[OptDim]` property                             |
+| VAR         | 名 / 語意 / Dim / **型別** / LB / UB                     | 決定 `VariableB_` / `VariableC_` / `VariableI_` 前綴 |
+| CONSTRAINT  | **`LHS op RHS` 原形** + **pattern tag** + Dim + 一句中文 | 逐條對照 `AddLHS` / `AddRHS`                         |
+| OBJ         | 方向 + 所有項在 LHS                                      | 決定 `CreateMinimize` / `CreateMaximize`             |
+| 已套用假設  | Phase 1 自行套用的預設清單                               | 驗收時分辨哪些是題目、哪些是 AI 補的                 |
 
 ### Phase 2 出口契約
 
@@ -130,19 +132,23 @@ Projects/<Project>/
 └── status.json
 ```
 
-轉譯順序（依賴決定，不可跳）：Set → Parameter → Dataload + CSV → Variable →（Constraint ∥ Objective）→ Program.cs → Solution。
+轉譯順序（依賴決定，不可跳）：Set → Parameter → Dataload + CSV → Variable →（Objective ∥ Constraint，寫檔先後不拘）→ Program.cs → Solution。
 
-出口 gate = **解驗證協定四步全過**：① Status 五態診斷 ② 解代回每一條 constraint ③ 單位與量級對得上題目 ④ LP bound sanity。看到 `Optimal` 就宣稱完成不合格。
+出口 gate = **解驗證協定四步全過**：① `SolveStatus` 七態分流 ② 解代回每一條 constraint ③ 單位與量級對得上題目 ④ LP bound sanity。看到 `Optimal` 就宣稱完成不合格。
 
-**① 的五態依框架 `SolveStatus` 列舉判定，NEVER 只認 `Optimal`**：
+**① 依框架 `SolveStatus` 的七個列舉值判定，NEVER 只認 `Optimal`**（與 [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) §7 同一張表）：
 
-| `SolveStatus` | 語意 | Phase 2 gate | 下一步 |
-| --- | --- | --- | --- |
-| `Optimal` | 證明最佳 | ②③④ 照跑 | 過 gate |
-| `Feasible` | **有 incumbent、未證明最佳**（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | ②③④ 對 incumbent 照跑（④ 改比 `BestBound`） | **過 gate**，記錄 `MipGap`；效能不足是 Phase 3 的事 |
-| `TimeLimit` | **中止且無任何可用解**（名字誤導，非時間專屬） | 無解可驗，②③ 做不了 | 換小 instance 求到 `Optimal` 完成 ②③④ 才過 gate |
-| `Infeasible` | 無可行解 | ✗ | 讀 IIS 取證，退回 Phase 1 / 2 |
-| `Unbounded` | 目標式無界 | ✗ | 補漏掉的界限 constraint，退回 Phase 2 |
+| `SolveStatus` | 語意                                                                                  | Phase 2 gate                                | 下一步                                              |
+| ------------- | ------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------- |
+| `Optimal`     | 證明最佳                                                                              | ②③④ 照跑                                    | 過 gate                                             |
+| `Feasible`    | **有 incumbent、未證明最佳**（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | ②③④ 對 incumbent 照跑（④ 改比 `BestBound`） | **過 gate**，記錄 `MipGap`；效能不足是 Phase 3 的事 |
+| `TimeLimit`   | **中止且無任何可用解**（名字誤導，非時間專屬）                                        | 無解可驗，②③ 做不了                         | 換小 instance 求到 `Optimal` 完成 ②③④ 才過 gate     |
+| `Infeasible`  | 無可行解                                                                              | ✗                                           | 讀 IIS 取證，退回 Phase 1 / 2                       |
+| `Unbounded`   | 目標式無界                                                                            | ✗                                           | 補漏掉的界限 constraint，退回 Phase 2               |
+| `Error`       | 求解過程出錯                                                                          | ✗                                           | 執行面問題，先修到跑得起來再談驗證                  |
+| `NotSolved`   | 沒跑到求解                                                                            | ✗                                           | lifecycle 沒走完，先修                              |
+
+★ 純 LP（模型無整數變數）沒有 MIP bound，`BestBound` / `MipGap` 會是 `-1E+75` / `1E+75` 佔位值。那不是異常，是「這題沒有 gap 可言」；NEVER 把它當品質指標寫進交付報告（api-guide §7）。
 
 Why 把 `Feasible` 放進 gate：撞時限但有 incumbent **正是 Phase 3 最典型的進場情境**。要求 `Optimal` 才准出 Phase 2 會讓這類專案卡死在 Phase 2——而 Phase 2 手上沒有任何合法工具能修「太慢」，那顆旋鈕在 Phase 3。轉譯忠實與否用 incumbent 就驗得出來，跟有沒有證明最佳無關。
 
@@ -190,25 +196,25 @@ Projects/<Project>/
 
 單一檔，各階段**只更新自己負責的欄位**，NEVER 整檔覆寫。
 
-| 欄位 | 型別 | 誰寫 | 誰讀 | 意義 |
-| --- | --- | --- | --- | --- |
-| `phase` | string | 全部 | 全部 | `modeling` / `coding` / `tuning` |
-| `updated` | date | 全部 | 全部 | `YYYY-MM-DD` |
-| `modelConfirmed` | bool | P1 | P2 gate | 使用者確認過模型，非 AI 自評 |
-| `auditPass` | bool | P1 | P1 gate | 自驗清單全 PASS |
-| `redteamHigh` | int | P1 | P1 gate | 反向紅隊高嚴重度發現數，須為 0 |
-| `manifestUnits` | int | P2 | P2 進度 | 轉譯工單 unit 數 |
-| `buildOk` | bool | P2 | P2 resume | `dotnet build` 通過 |
-| `v1Pass` | bool | P2 | P2 gate | checklist 稽核無 FAIL |
-| `v2Faithful` | bool | P2 | P2 gate | 反向翻譯結論為轉譯忠實 |
-| `solveVerified` | bool | P2 | **P3 gate** | 解驗證協定四步全過 |
-| `solveStatus` | string | P2 | **P3 進場分流** | 框架 `SolveStatus` 值：`Optimal` / `Feasible` / `TimeLimit` |
-| `verifiedOn` | string | P2 | **P3 進場分流** | 解驗證是在哪份資料上完成的：`production` 或 `small-instance:<說明>` |
-| `tuningRound` | int | P3 | P3 停損 | 目前輪次 |
-| `productionBaseline` | string | P3 | P3 下輪 | 現行 baseline 的 Trial label 或 `initial` |
-| `baselineSourceExperiment` | string | P3 | provenance | 來源 experiment 名 |
-| `baselineSourceTrial` | string | P3 | provenance | 來源 Trial label |
-| `promotionVerified` | bool | P3 | P3 gate | promotion 後 production 驗證通過 |
+| 欄位                       | 型別   | 誰寫 | 誰讀            | 意義                                                                |
+| -------------------------- | ------ | ---- | --------------- | ------------------------------------------------------------------- |
+| `phase`                    | string | 全部 | 全部            | `modeling` / `coding` / `tuning`                                    |
+| `updated`                  | date   | 全部 | 全部            | `YYYY-MM-DD`                                                        |
+| `modelConfirmed`           | bool   | P1   | P2 gate         | 使用者確認過模型，非 AI 自評                                        |
+| `auditPass`                | bool   | P1   | P1 gate         | 自驗清單全 PASS                                                     |
+| `redteamHigh`              | int    | P1   | P1 gate         | 反向紅隊高嚴重度發現數，須為 0                                      |
+| `manifestUnits`            | int    | P2   | P2 進度         | 轉譯工單 unit 數                                                    |
+| `buildOk`                  | bool   | P2   | P2 resume       | `dotnet build` 通過                                                 |
+| `v1Pass`                   | bool   | P2   | P2 gate         | checklist 稽核無 FAIL                                               |
+| `v2Faithful`               | bool   | P2   | P2 gate         | 反向翻譯結論為轉譯忠實                                              |
+| `solveVerified`            | bool   | P2   | **P3 gate**     | 解驗證協定四步全過                                                  |
+| `solveStatus`              | string | P2   | **P3 進場分流** | 框架 `SolveStatus` 值：`Optimal` / `Feasible` / `TimeLimit`         |
+| `verifiedOn`               | string | P2   | **P3 進場分流** | 解驗證是在哪份資料上完成的：`production` 或 `small-instance:<說明>` |
+| `tuningRound`              | int    | P3   | P3 停損         | 目前輪次                                                            |
+| `productionBaseline`       | string | P3   | P3 下輪         | 現行 baseline 的 Trial label 或 `initial`                           |
+| `baselineSourceExperiment` | string | P3   | provenance      | 來源 experiment 名                                                  |
+| `baselineSourceTrial`      | string | P3   | provenance      | 來源 Trial label                                                    |
+| `promotionVerified`        | bool   | P3   | P3 gate         | promotion 後 production 驗證通過                                    |
 
 全新專案的初始值：
 
@@ -231,32 +237,33 @@ Projects/<Project>/
 
 規則相同，只差調度：
 
-| 跑法 | 何時 |
-| --- | --- |
-| 單線 | 預設。一個 agent 依該 phase 規範檔從頭做到尾 |
+| 跑法        | 何時                                                            |
+| ----------- | --------------------------------------------------------------- |
+| 單線        | 預設。一個 agent 依該 phase 規範檔從頭做到尾                    |
 | multi-agent | constraint > 8 條、或 Model.md > 300 行、或使用者要求最高保真度 |
 
 走 multi-agent 就讀該 phase 規範檔的「multi-agent 執行層」節依其拓樸 fan-out，orchestrator 只收工單狀態與 PASS/FAIL。理由是 context 預算：Phase 2 的 API guide 上千行、Model.md 數百行、產出十幾支 `.cs`，單線 agent 會把視窗讀滿，而讀滿之後漏掉的正是它該把關的規則。
 
-| Phase | multi-agent 節 |
-| --- | --- |
-| 1 | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) §8（M0–M6） |
-| 2 | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md)（C0–C9 / V1–V3） |
-| 3 | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) §8（T0–T7） |
+| Phase | multi-agent 節                                                                          |
+| ----- | --------------------------------------------------------------------------------------- |
+| 1     | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) §8（M0–M6）          |
+| 2     | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md)（C0–C9 / V1–V3） |
+| 3     | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) §8（T0–T7）            |
 
 ## repo 內資源
 
-| 資源 | 路徑 | 用途 |
-| --- | --- | --- |
-| Phase 1 唯一規範 | [`modeling/model-design-guide.md`](modeling/model-design-guide.md) | 四階段降維、Model.md 契約、線性化 pattern、multi-agent |
-| Phase 2 唯一標準 | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md) | 端到端轉譯規範；§9 = 框架簽名 + 黑名單，§8 = Experiment API |
-| Phase 2 產出一致性契約 | [`coding/checklist.md`](coding/checklist.md) | AI 交付前機械驗收，逐條核對 |
-| Phase 2 multi-agent | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md) | C0–C9 / V1–V3 拓樸與派工 prompt |
-| Phase 3 唯一規範 | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md) | 進場 gate、旋鈕全表、promotion 閉環、multi-agent |
-| 專案輸出 | [`../../Projects/`](../../Projects/) | 新專案建這裡：`Projects/<Project>/` |
-| DLL 唯一來源 | [`../../dlls/`](../../dlls/) | csproj HintPath 一律指這裡 |
-| 專案模板 | [`../../Template/`](../../Template/) | 新專案的資料夾結構與程式範本 |
-| 可運作範例 | [`../../Projects/HospitalRostering_Generator/`](../../Projects/HospitalRostering_Generator/) | 唯一可照抄的既有專案 |
+| 資源                   | 路徑                                                                                         | 用途                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Phase 1 唯一規範       | [`modeling/model-design-guide.md`](modeling/model-design-guide.md)                           | 四階段降維、Model.md 契約、線性化 pattern、multi-agent                                                 |
+| Phase 2 唯一標準       | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md)                 | 端到端轉譯規範；§9 = 框架簽名 + 黑名單，§8 = Experiment API                                            |
+| Phase 2 產出一致性契約 | [`coding/checklist.md`](coding/checklist.md)                                                 | AI 交付前機械驗收，逐條核對                                                                            |
+| Phase 2 multi-agent    | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md)                       | C0–C9 / V1–V3 拓樸與派工 prompt                                                                        |
+| Phase 3 唯一規範       | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md)                             | 進場 gate、旋鈕全表、promotion 閉環、multi-agent                                                       |
+| 專案輸出               | [`../../Projects/`](../../Projects/)                                                         | 新專案建這裡：`Projects/<Project>/`                                                                    |
+| DLL 唯一來源           | [`../../dlls/`](../../dlls/)                                                                 | csproj HintPath 一律指這裡                                                                             |
+| 專案模板               | [`../../Template/`](../../Template/)                                                         | 新專案的資料夾結構與程式範本                                                                           |
+| **結構參考專案**       | [`../../Projects/CandyBlending/`](../../Projects/CandyBlending/)                             | 符合現行規範的最小完整專案：八資料夾、四段 `Program.cs`、`ValidateData` + `ValidateRules` 兩個驗證入口 |
+| 舊版可運作範例         | [`../../Projects/HospitalRostering_Generator/`](../../Projects/HospitalRostering_Generator/) | 早於本版規範，只讀 API 行為，NEVER 照抄結構                                                            |
 
 ## 文件同步原則
 
