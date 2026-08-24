@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Data/*.csv MUST 複製到輸出，否則執行時在 bin 讀不到 input -->
+    <None Update="Data\**\*.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- AutoSetsGenerator：以 analyzer DLL 掛入，[OptVar]/[OptParam] + [OptDim<T>] 在編譯期生成 class body（本範本預設建模方式） -->
     <Analyzer Include="..\dlls\OptimFoundation.Generators.dll" />
   </ItemGroup>

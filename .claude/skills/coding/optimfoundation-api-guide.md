@@ -1269,7 +1269,7 @@ namespace MyProject
 
 - 繼承 `ConstraintBase` 取得 `ConstraintName`（= 類別名）
 - class 開頭 `<summary>` MUST 貼上 Model.md 對應的數學式 —— Why: 驗收時逐條對照靠這行
-- 限制式命名 MUST `ConstraintName@index1@index2`；`DateTime` 索引用 `{date:yyyy_MM_dd}`；複合索引用底線（`@{block}_{digit}`）
+- 限制式命名 MUST `ConstraintName@index1@index2`。**把原始維度值直接傳給 `CreateXxx(this, dims...)`**（`engine.CreateLessEqual(this, date.Date)`），框架自己會把 `DateTime` 格式化成 `yyyy_MM_dd` —— NEVER 手拼日期字串或 `@` key；複合索引用底線（`@{block}_{digit}`）
 - 建構子 MUST 逐項列出實際依賴，型別用**框架實際型別**：Set 與 Parameter 一律是 `List<Set_Item>` / `List<Parameter_MaxDays>`（`Set_Item` 是**一列**資料，不是集合，直接當參數型別會編不過），scalar 用 `double`
   NEVER 用 `IReadOnlyList<int>` 這種退化型別 —— Why: 型別即文件，`IReadOnlyList<int>` 看不出是哪顆 Set，傳錯了編譯器不會擋
   NEVER 接收 `Dataload`，也 NEVER 另造 `ModelContext` 之類的整包物件繞過這條規則
@@ -1654,7 +1654,7 @@ namespace MyProject
             {
                 var maxDays = data.parameter_MaxDays.FindParameterOrLog(p => p.Item == item.Item, item.Item)?.QTY ?? 0.0;
                 double used = data.set_Date.Sum(date =>
-                    assign.TryGetValue($"VariableB_Assign@{item.Item}@{date.Date:yyyy-MM-dd}", out var value) ? value : 0.0);
+                    assign.TryGetValue($"VariableB_Assign@{item.Item}@{date.Date:yyyy_MM_dd}", out var value) ? value : 0.0);
 
                 if (used > maxDays + 1e-6)
                     throw new InvalidOperationException($"{item} 違反 MaxDays：{used} > {maxDays}。");
@@ -1684,7 +1684,7 @@ namespace MyProject
 建模層從不碰字串——`AddLHS(coef, new VariableB_Assign { … })` 傳的是物件，框架自己呼叫 `ToString()`。只有這裡查解時要自己拼：
 
 ```csharp
-assign.TryGetValue($"VariableB_Assign@{item.Item}@{date.Date:yyyy-MM-dd}", out var value);
+assign.TryGetValue($"VariableB_Assign@{item.Item}@{date.Date:yyyy_MM_dd}", out var value);
 ```
 
 ★ **組 key MUST 明寫 row 的 property（`item.Item`），NEVER 直接內插 row 物件（`{item}`）。**
@@ -1698,7 +1698,7 @@ assign.TryGetValue($"VariableB_Assign@{item.Item}@{date.Date:yyyy-MM-dd}", out v
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | 分隔符**一律 `@`**                           | NEVER `\|`。`\|` 在這套框架另有用途——Trial label 是 `"Canonical \| r1-baseline"`、log 行是 `時間 \| INFO \| [caller] msg`——別抓錯 |
 | 維度順序 = `[OptDim]` 宣告順序               | 與 `BuildVars` 傳入 sets 的順序同一份真相                                                                                         |
-| `DateTime` 維度**用 `yyyy-MM-dd`**（連字號） | ★ 與**限制式名**的 `{date:yyyy_MM_dd}`（底線）不同。變數名的格式是 `ToString()` 寫死的，限制式名是你自己取的，兩者不通用          |
+| `DateTime` 維度**用 `yyyy_MM_dd`**（底線） | ★ 變數 key 與限制式名是**同一套**格式，由框架的 `ToString()` 寫死。**NEVER 寫成 `yyyy-MM-dd`** —— 那是 CSV 的輸入格式；拼成連字號時 `TryGetValue` 只會回 `false`，接著 `?? 0.0` 讓整段驗證靜默通過 |
 
 Why 這裡特別要小心：`TryGetValue` 拼錯只會回 `false`，接著 `?? 0.0` 把它當成「這個變數是 0」，`ValidateRules` 於是**整段靜默通過**，你以為驗過了。驗證邏輯寫完後 MUST 故意改一個值確認它真的會 throw。
 
@@ -1928,9 +1928,10 @@ public abstract class ConstraintBase : ModelElementBase
 }
 ```
 
-- 變數 / 參數的 key = `ClassName@{p1}@{p2}@…`，分隔符 `@`；`DateTime` 一律格式化為 `yyyy-MM-dd`
+- 變數 / 參數的 key = `ClassName@{p1}@{p2}@…`，分隔符 `@`；**`DateTime` 一律格式化為 `yyyy_MM_dd`（底線）**
 - 屬性順序 = `[OptDim]` 宣告順序 = 傳入 sets 的順序，三者 MUST 一致（接錯不報錯）
-- 例：`new VariableB_Assign { Employee = "E1", Date = new DateTime(2026,1,1) }` → `"VariableB_Assign@E1@2026-01-01"`
+- 例：`new VariableB_Assign { Employee = "E1", Date = new DateTime(2026,1,1) }` → `"VariableB_Assign@E1@2026_01_01"`
+- ★ **底線是實測值**（`Template/` 的 LP 輸出：`VariableI_Produce@ItemA@2026_01_01`）。**變數 key 與限制式名用同一套格式**，沒有連字號版本；`yyyy-MM-dd` 只是 CSV 的輸入格式
 - ★ **`@` 是保留字元，資料值不得含它**：Set 成員或維度值出現 `@`，框架在建變數 / 賦值當下丟 `ArgumentException`（訊息指出是哪個 Set 或哪個 property）—— Why: 它是 key 的維度分隔符，混進資料會讓兩顆不同變數組出同一個 key。CSV 裡的品項代號、員工編號含 `@` 時 MUST 在 import 階段換掉
 - `InitClassBySets` 型別轉不過丟 `InvalidCastException`（訊息含第幾個參數與期望型別）；屬性數 ≠ 參數數丟 `ArgumentException`
 
@@ -2329,7 +2330,7 @@ public static class VariableBuilder
 | Set 元素型別         | 轉字串方式                                 |
 | -------------------- | ------------------------------------------ |
 | `string`             | 原樣                                       |
-| `DateTime`           | `ToString("yyyy-MM-dd")`                   |
+| `DateTime`           | `ToString("yyyy_MM_dd")`（底線，實測）     |
 | `int` / `long`       | `ToString()`                               |
 | `double` / `decimal` | `ToString(CultureInfo.InvariantCulture)`   |
 | enum                 | `ToString()`（列舉名，不是數值）           |

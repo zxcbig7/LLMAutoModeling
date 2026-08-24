@@ -166,6 +166,7 @@ Projects/<Project>/
 - [ ] `ReadAndValidate` 掛在 `OnSolved`，`ValidateRules` 逐條把解代回**每一條** constraint。
 - [ ] ★ **已做過「故意改壞」測試**（api-guide §6）：把某個查解 key 或某條比較改錯後重跑，確認 `ValidateRules` **真的會 throw**；確認後已還原。沒做這一步 = 驗證可能整段靜默通過。
 - [ ] 組 key 一律明寫 row 的 property（`item.Item`），**沒有**直接內插 row 物件（`{item}`）——多維 row 沒有隱式字串轉換，那樣拼出來的 key 永遠查不到。
+- [ ] `DateTime` 維度在 key 裡是 **`yyyy_MM_dd`（底線）**，不是 CSV 的 `yyyy-MM-dd`；限制式名則把原始 `DateTime` 直接交給 `CreateXxx`，沒有手拼日期字串。
 
 ## 12. Build / Solve / Output 一致性
 

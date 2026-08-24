@@ -267,4 +267,6 @@ Projects/<Project>/
 
 ## 文件同步原則
 
-`tutorial(for developer)/`、`Template/` 與 `Projects/HospitalRostering_Generator` 必須與 Phase 2 guide 使用同一套 row-based Set/Parameter、`Load<T>`、B/C/I 前綴與 owner-based constraint naming。歷史設計文件不得作為產碼依據。
+`tutorial(for developer)/`、[`../../Template/`](../../Template/) 與 [`../../Projects/CandyBlending/`](../../Projects/CandyBlending/) 必須與 Phase 2 guide 使用同一套 row-based Set/Parameter、`Load<T>`、B/C/I 前綴與 owner-based constraint naming。歷史設計文件不得作為產碼依據。
+
+`Projects/HospitalRostering_Generator` **不在同步範圍內**：它早於本版規範，保留為可運作的 API 行為參考。要拿它當結構依據前，先改成符合本檔與 Phase 2 guide 的形狀。
