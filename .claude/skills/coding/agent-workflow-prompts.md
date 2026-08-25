@@ -12,8 +12,9 @@ Phase 2（轉譯實作）的 **multi-agent 執行層**：把 `optimfoundation-ap
 ## Context 鐵則（三 phase 共用）
 
 - NEVER 把 Model.md 全文 / `.cs` 原文 / build log 全文貼進 orchestrator 對話 —— ALWAYS 落檔，agent 之間**只傳路徑與工單列** —— Why: orchestrator 一旦裝進 code 原文，就會忍不住自己下場改，而它手上的規則早被稀釋了
-- NEVER 任何 agent `Read` 整份 API guide —— ALWAYS 三步定位：`rg -n "^## §" <guide>` 取行號 → 算出該節區間 → `Read offset/limit`（見下方分片表）
+- NEVER 任何 agent `Read` 整份 API guide —— ALWAYS 三步定位：搜尋 `^## §` 取得章節位置 → 算出該節區間 → 只讀該區間（見下方分片表）
 - MUST 單一 agent 輸入預算 ≤ 800 行（規範 + 材料合計）；超過 → 再拆一層
+- MUST 所有驗證靠讀檔與比對完成 —— NEVER 為了驗收去寫 `.ps1` / `.py` 腳本；skill 目錄下只有 `.md`
 - MUST 回報上限：執行類 ≤ 15 行、稽核類 ≤ 30 行；證據引用 ≤ 5 行原文
 - MUST orchestrator 只持有：**工單表、狀態表、PASS/FAIL 表、檔案路徑**
 - MUST 平行 fan-out 一次 ≤ 6 個 agent，分批收斂
@@ -67,11 +68,7 @@ C0 orchestrator（主對話，不寫 code）
 
 ## API guide 分片表
 
-權威 guide 是同層 `optimfoundation-api-guide.md`，Phase 2 的唯一標準（同層已無第二份規範，NEVER 去別處找）。**NEVER 硬編行號**——行號會隨改版失效，一律現場搜尋：
-
-```powershell
-rg -n "^## §|^## 附錄" ".claude/skills/coding/optimfoundation-api-guide.md"
-```
+權威 guide 是同層 `optimfoundation-api-guide.md`，Phase 2 的唯一標準（同層已無第二份規範，NEVER 去別處找）。**NEVER 硬編行號**——行號會隨改版失效，一律現場搜尋 `^## §` 與 `^## 附錄` 取得章節位置。
 
 | 節     | 內容                                    | 誰讀                                                       |
 | ------ | --------------------------------------- | ---------------------------------------------------------- |
@@ -87,11 +84,7 @@ rg -n "^## §|^## 附錄" ".claude/skills/coding/optimfoundation-api-guide.md"
 | §10    | 常見錯誤與反模式                        | V1                                                         |
 | 附錄 A | 線性化 pattern 對照                     | C5                                                         |
 
-§9 用法示範（NEVER 整節讀）：
-
-```powershell
-rg -n "BuildVars|AddLHS|CreateLessEqual" ".claude/skills/coding/optimfoundation-api-guide.md"
-```
+§9 用法（NEVER 整節讀）：搜尋你要用的那幾個 API 名（例如 `BuildVars`、`AddLHS`、`CreateLessEqual`），只讀命中處 ±20 行。
 
 ## 中間產物
 
@@ -279,7 +272,7 @@ NEVER 修改 Model.md。
 輸入：Projects/<Project>/
 規範：同層 checklist.md（全讀並逐條執行）
 
-先做：checklist §0「Canonical 專案架構」與 §15「AI 最終靜態掃描」的 PowerShell 指令**照跑一遍**；任何未列出的手寫資料夾、缺少固定資料夾或錯名路徑均為 FAIL。命中靜態掃描時逐筆判定是否為舊 API 或反模式。
+先做：checklist §0「Canonical 專案架構」與 §15「交付前最終核對」**逐列查一遍**（那是清單不是腳本——打開檔案、搜尋、與期望值比對）；任何未列出的手寫資料夾、缺少固定資料夾或錯名路徑均為 FAIL。
 再做：§1 到 §14 各段逐條核對。
 
 回報格式：

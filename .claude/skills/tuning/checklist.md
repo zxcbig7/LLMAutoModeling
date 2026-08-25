@@ -1,6 +1,7 @@
 # tuning · 交付前自檢
 
 > 規則本體在同層 `solver-tuning-guide.md` 與上層 `../AGENTS.md`。
+> **本 skill 不依賴任何外部腳本**：所有驗證都是這份清單裡「開檔、讀值、比對」的動作，沒有 `.ps1` / `.py` 要跑。
 > 本檔只是交付前的勾選面。**沒有實驗證據的項目不准打勾。**
 > ★ = 錯了不會報錯，但結論整批作廢。
 
@@ -54,10 +55,62 @@
 - [ ] experiment 名帶輪次（`<Project>-tuning-r<N>`），與歷史不重名
 - [ ] 有 warm-up 排除 / 順序輪替
 
+## 每輪 archive 逐項驗收（S3 每輪結束、進入裁決前）
+
+> **沒有腳本可跑——逐項自己開檔比對。**
+> 每一列都寫了「怎麼查」與「期望值」；查不到、對不上一律 FAIL，FAIL 未修正前**不得 promotion、不得開始下一輪**。
+> `<P>` = 專案名，`<N>` = 本輪輪次，`<base>` = `<P>-tuning-r<N>`。
+
+**A. 檔案齊備**
+
+- [ ] 專案根有 `Experiments/`、`TuningHistory.md`、`Program.cs` 三者。
+- [ ] `Experiments/` 下本輪的檔齊全且檔名逐字正確：`<base>.csv`（主表，一列一 trial）、`<base>-meta.csv`（說明檔，放模型大小/環境/基準完整設定）、`<base>.json`（累積與重讀用）。`<base>-trajectory.csv` **只有在真的收集到收斂軌跡時才會產生**——純 LP 或求解太快時沒有，這是正常的，看主表的 `TrajectoryPoints` 欄是不是 0 就知道。
+- [ ] `Experiments/` 下**每一個** `<P>-tuning-r*.json` 都符合 `<P>-tuning-r<數字>.json`；沒有 `test`、`exp1`、`tmp` 這類命名。
+- [ ] 歷史輪次的 archive 仍在（每輪永久保留，NEVER 因為「舊的沒用了」刪除）。
+
+**B. 三處交叉引用對得上**
+
+- [ ] `Program.cs` 的 exp 分支有本輪 marker，**整行逐字**是 `// R<N> — <base>`（破折號是 `—`，不是 `-`）。
+- [ ] `TuningHistory.md` 有 `## R<N>` 標題（行首、`##` 一級）。
+- [ ] 該節內文有引用 archive 路徑字串 `Experiments/<base>.json`。
+
+**C. `TUNING-FACTS` 與 archive JSON 逐欄比對**（§6.2.2）
+
+- [ ] `TuningHistory.md` 的 R<N> 節有成對的 `<!-- TUNING-FACTS:R<N>:BEGIN -->` / `:END -->`，中間是可解析的 ```json``` 區塊。
+- [ ] facts 的 `experiment` 值**逐字**等於 `<base>`（大小寫敏感）。
+- [ ] facts 的 `archive.csv` / `archive.json` / `archive.trajectory` 三個路徑指向 A 節那三個實際存在的檔。
+- [ ] facts 的 `trials` 陣列長度 **等於** archive JSON `trials` 陣列長度。
+- [ ] ★ **逐個 trial、逐個欄位對照** archive JSON（順序相同，一個都不能跳）：
+
+  | facts 欄位 | 在 archive JSON 的來源 | 比對方式 |
+  | --- | --- | --- |
+  | `label` | `trials[i].label` | 逐字相同 |
+  | `seed` | `trials[i].config.tunable.Seed`（找不到再看 `config.solverSpecific.Seed`） | 數值相同 |
+  | `status` | `trials[i].metrics.status` | 逐字相同 |
+  | `objectiveValue` | `trials[i].metrics.objectiveValue` | 逐字相同（含 `NaN`，NEVER 改寫成 0） |
+  | `bestBound` | `trials[i].metrics.bestBound` | 同上 |
+  | `mipGap` | `trials[i].metrics.mipGap` | 同上 |
+  | `runTimeMs` | `trials[i].metrics.runTimeMs` | 同上 |
+  | `configDiffFromBaseline` | `trials[i].config` 與本輪 baseline config 的差集 | 只列真正不同的欄位，**Seed 除外**（seed 是重複量測條件，不是策略差異） |
+
+- [ ] 對照時發現任何一格不符 → **先修 facts 或重出 archive**，NEVER 用敘事文字掩蓋，也 NEVER 手改 archive 檔。
+
+**D. label 與跨輪去重**
+
+- [ ] archive JSON 每個 `trials[i].label` 都以 `| r<N>-` 開頭的 config 段結尾（本輪前綴正確，沒有沿用上一輪的 `r<N-1>-`）。
+- [ ] ★ 把本輪每個 **非 baseline、非 replica** candidate 的 `configDiffFromBaseline` 拿去比對 `TuningHistory.md` 的**已否證清單**與歷史各輪的 facts：**不得與任何歷史 candidate 的有效設定完全相同**（忽略 Seed 後仍相同 = 重跑舊實驗）。
+- [ ] label 含 `-replica-of-r<M>` 的 replica candidate，History 本輪節**明確寫了為什麼要重跑**（replication 理由）；沒寫理由的 replica 視為重複實驗。
+
+**E. 數字只能從 facts 來**
+
+- [ ] 本輪敘事、彙總表與裁決引用的每個 Trial 數字，都能指回 `TUNING-FACTS` 的某個 label／欄位。
+- [ ] 聚合值（`sgm`、PAR10、平均 endGap、θ）有寫明「用了哪幾個 facts + 哪個公式」，讀者照著能自己算一次。
+- [ ] 沒有任何數字是憑印象、憑對話記憶或憑 `bin/` 裡已被清掉的檔寫出來的。
+
 ## 判定與證據
 
 - [ ] 每個 Trial 都有 `Status`、objective、`MipGap`、runtime（`TimeLimit` 的 trial 數值欄為 `NaN` 是正常的）
-- [ ] ★ **未使用 `NodeCount` / `IterationCount` 做判定**（框架不填，值為空）
+- [ ] ★ **未「只憑」`NodeCount` / `IterationCount` 做判定** —— 自 2026-08-25 起框架會填實際值，但 node 少不等於快（實測 `VariableSelect=3` node 更多且慢 4 倍、`Emphasis=3` node 更少也慢 2.4 倍），MUST 與 runtime 一起判讀
 - [ ] ★ **未把 `NaN` 的 objective / `MipGap` 當 0 參與彙總**
 - [ ] ★ 排名用的是**該情境的主指標**，且用了 §4.3 指定的彙總法；已寫明方法與計算值
 - [ ] ★ 情境 B / C **沒有拿 runtime 排名**（全部跑滿時限，排出來必然全部平手）

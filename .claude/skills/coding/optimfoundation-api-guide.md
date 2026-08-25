@@ -1527,8 +1527,8 @@ namespace MyProject
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 顆數                           | 整個 `Program.cs` **只有一顆具名 `productionBaseline`**；experiment 的 variant 一律從它 `Clone()`（§8.2）                                                                  |
 | `TimeLimit`                    | MUST 明設，NEVER 留 `null`（無限）—— Why: 沒有停點的 production 執行沒辦法納入流程，也無從比較                                                                             |
-| `MipGap`                       | 依專案可接受的品質明設；預設 `1e-4` 對多數排程題偏嚴，會白花時間收最後那點 gap                                                                                             |
-| `Threads`                      | 預設 32 通常過大，MUST 依實機核心數設定並實測。此列與下一列合起來就是**環境契約**，Phase 3 同一台實機沿用，不重跑 sizing                                                   |
+| `MipGap`                       | 依專案可接受的品質明設；留 `null` 會用 CPLEX 自己的 `1e-4`，對多數排程題偏嚴，會白花時間收最後那點 gap                                                                     |
+| `Threads`                      | **MUST 明設**，依實機核心數設定並實測。`CplexConfig` 自 2026-08-25 起不帶任何預設值，留 `null` = CPLEX 自行決定執行緒數 = 每台機器不一樣，baseline 不可比。此列與下一列合起來就是**環境契約**，Phase 3 同一台實機沿用，不重跑 sizing |
 | `Seed` / `ParallelMode`        | **無條件 MUST 明設**：`ParallelMode = 1` + 固定 `Seed` —— Why: 這兩顆決定 Phase 3 量得準不準。留 `null` 等於交出一個不可比的 baseline，Phase 3 進場第一件事就得回頭改 code |
 | `ITunableConfig` 與 CPLEX 設定 | `CplexConfig` 仍實作 `ITunableConfig`，但公開設定一律是同一套 PascalCase property；不再有 camelCase 對應欄位                                                               |
 | 其餘旋鈕                       | 一律留 `null` 用 CPLEX 預設 —— NEVER 一開始就塞滿參數，那會讓 Phase 3 分不出是哪個旋鈕造成差異                                                                             |
@@ -1772,13 +1772,13 @@ var result = new OptExperiment("MyProject-tuning-r1", "一次只改一個 solver
 | experiment 預設安靜 | solver log、LP/MPS/Sol export 與 housekeeping 預設都 OFF                                                                      |
 | 具體 config         | 用 `Clone()` 建 variant，NEVER 用 tune delegate 突變共用 baseline                                                             |
 | 笛卡兒積            | `.AddModel` × `.AddConfig` 自動展開；單一 cell 用 `.AddTrial(model, label, config)`                                           |
-| label               | 自動成為 `ModelName \| config-label`；輪次前綴（`r1-`）寫進 config label                                                      |
+| label               | `Trial.Label` **只放 config label**；模型名另有 `Trial.Model` 欄，NEVER 再黏成一個字串。輪次前綴（`r1-`）寫進 config label      |
 | 命名                | experiment name 一律 `<Project>-tuning-r<N>`，每輪遞增                                                                        |
 | baseline 可重現     | 固定 `Threads` / `ParallelMode` / `Seed`，讓每次跑的停點一致                                                                  |
 | `OnSolved` 邊界     | 只屬 `OptProject`；實驗不應大量寫 solution                                                                                    |
 | 一次只動一個旋鈕    | 同時改兩個就分不出是哪個造成差異                                                                                              |
 | label 重複          | `Run()` 在建任何 engine 前丟 `InvalidOperationException`；重複的 `AddConfig` label 在加入當下丟 `ArgumentException`           |
-| 輸出                | `bin/.../Experiments/<name>.csv`（一列一 Trial）+ `.json`（巢狀含 `config` / `metrics` / `convergence[]`）+ `-trajectory.csv` |
+| 輸出                | `bin/.../Experiments/` 下的 `<name>.csv`（主表，一列一 Trial，22 欄）+ `<name>-meta.csv`（說明檔，模型大小／環境／baseline 完整設定）+ `.json`（巢狀含 `config` / `metrics` / `convergence[]`）+ `-trajectory.csv`（**有收集到軌跡才有**；純 LP 沒有分支定界就不會有，看主表 `TrajectoryPoints` 是不是 0） |
 | archive 責任        | bin 產物會被 clean 掉。搬到專案根 `Experiments/` 是 **Phase 3 每輪的責任**，Phase 2 不做                                      |
 | log 檔名            | exp 模式 MUST 在 `OptData.Load` **之前** `Logging.SetLogFileName("<Project>_exp")`，整次執行才收在同一包                      |
 
@@ -2128,7 +2128,9 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
 {
     public CplexConfig Clone(); // 建立 tuning variant 的唯一方式
 
-    // 唯一設定面：全部使用 PascalCase public property，null = CPLEX 預設。
+    // 唯一設定面：全部使用 PascalCase public property。
+    // 每一顆都 null = 沒設 = 不送進 CPLEX = 用 CPLEX 官方預設 = 不寫進紀錄。
+    // 本類別**不帶任何預設值**，純粹是接口（2026-08-25 起；舊版有 6 顆帶預設，已移除）。
     public int? Threads { get; set; }
     public int? RowRead { get; set; }
     public double? MemoryLimitMb { get; set; }
@@ -2196,9 +2198,12 @@ public sealed class OptExperiment
 
 public sealed class Trial
 {
-    public string Label { get; set; } // "{model.Name} | {configLabel}"
-    public DateTime RunAt { get; set; } // 與 Label 合起來是 Save() 的去重鍵
-    public ConfigSnapshot Config { get; set; } // 唯一 PascalCase 設定快照，可重現設定
+    public string RunId { get; set; }   // 這批實驗的識別 = 執行開始時間 yyyyMMdd-HHmmss
+    public int TrialId { get; set; }    // 批內序號，從 1 起
+    public string Model { get; set; }   // 模型名，獨立一欄
+    public string Label { get; set; }   // 只放 config label（NEVER 是 "模型名 | 設定名"）
+    public DateTime RunAt { get; set; } // 與 Model + Label 合起來是 Save() 的去重鍵
+    public ConfigSnapshot Config { get; set; } // 設定快照，只記有設的旋鈕
     public SolveMetrics Metrics { get; set; } // 評分依據，欄位見下
     public string Note { get; set; }
     // 自寫 runner 才需要；走 OptExperiment 時框架自動呼叫
@@ -2207,7 +2212,10 @@ public sealed class Trial
 public sealed class ConfigSnapshot
 {
     public string Solver { get; set; }
-    public Dictionary<string, object> Settings { get; set; } // 唯一 PascalCase CplexConfig 設定快照
+    public Dictionary<string, object> Tunable { get; set; }        // 跨 solver 共通旋鈕
+    public Dictionary<string, object> SolverSpecific { get; set; } // 該 solver 全部旋鈕
+    // 兩者都**只放有設定的**：null = 沒設 = 用 solver 預設 = 不記錄。
+    // NEVER 期待沒設的旋鈕出現在這裡（舊版塞滿 null，已移除）。
 }
 public sealed class SolveMetrics // = engine.LastMetrics
 {
@@ -2216,16 +2224,23 @@ public sealed class SolveMetrics // = engine.LastMetrics
     public double BestBound { get; set; }
     public double MipGap { get; set; }
     public double RunTimeMs { get; set; }
-    public long? NodeCount { get; set; }
-    public long? IterationCount { get; set; }
+    public long? NodeCount { get; set; }      // 2026-08-25 起會填實際值
+    public long? IterationCount { get; set; } // 同上；node 少不等於快，MUST 配 runtime 判讀
     public int VarCount { get; set; }
+    public int ConstraintCount { get; set; }
+    public List<ConvergencePoint> Convergence { get; set; } // 收斂軌跡；純 LP 會是空的
+    // 以下四個是唯讀衍生值，直接從 Convergence 算，NEVER 自己另外存
+    public int TrajectoryPoints { get; }  // = Convergence.Count；0 就是這次沒收集到軌跡
+    public double? TFeasMs { get; }       // 第一次找到可行解的時間
+    public double? TStallMs { get; }      // 界限最後一次變動的時間
+    public double? DeltaBound { get; }    // 界限總共推進多少
 }
 public class Experiment
 {
     public Experiment(string name, string description);
     public List<Trial> Trials { get; set; }
     public void AddTrial(Trial trial); // 自寫 runner 用
-    public void Save(); // 跨 run append，依 RunAt + Label 去重
+    public void Save(); // 跨 run append，依 RunAt + Model + Label 去重
     public static Experiment Load(string name);
 }
 ```
@@ -2236,7 +2251,7 @@ public class Experiment
 - 兩個 `UseConfig` 可交換順序；同型別重複設定時最後一個 factory 生效
 - `OptExperiment` 未呼叫 `UseConfig` 時：solver log OFF、LP/MPS/SOL 全不匯出、不做 housekeeping；solver config 在 cell 開始時先 `Clone()`
 - Trial label 重複（cross × cross、cross × explicit、explicit × explicit）→ `Run()` 在建任何 engine 前丟 `InvalidOperationException`；重複的 `AddConfig` label 在加入當下丟 `ArgumentException`
-- 輸出：CSV 一列一 Trial（給人 / Excel）、JSON 巢狀含 `config` / `metrics` / `convergence[]`（給 LLM）
+- 輸出：主表 CSV 一列一 Trial（給人 / Excel，含 `DiffKnobs` 直接標明「跟 baseline 差在哪」）、`-meta.csv` 說明檔（整批不變的東西只寫一次）、JSON 巢狀含 `config` / `metrics` / `convergence[]`（給 LLM）、`-trajectory.csv`（有軌跡才有）
 
 **9.2.9 I/O：`CsvCtrl` / `ISolutionSink` / `FolderDir` / `Logging`**
 

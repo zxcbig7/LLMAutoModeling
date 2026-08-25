@@ -166,11 +166,12 @@ Why: exp 分支雖在 Phase 3 的白名單內，但「每次接棒都先重寫�
 Projects/<Project>/Program.cs
 Projects/<Project>/TuningHistory.md
 Projects/<Project>/Experiments/<Project>-tuning-r<N>.csv
+Projects/<Project>/Experiments/<Project>-tuning-r<N>-meta.csv
 Projects/<Project>/Experiments/<Project>-tuning-r<N>.json
-Projects/<Project>/Experiments/<Project>-tuning-r<N>-trajectory.csv
+Projects/<Project>/Experiments/<Project>-tuning-r<N>-trajectory.csv   ← 有收集到軌跡才會有
 ```
 
-（`status.json` 若已納管則可額外出現。）多出任何其他改動就是越界。`Experiments/` 是本階段唯一允許的專案結構擴充，每輪三件缺一不可，且 MUST 通過 `Test-TuningRoundArchive.ps1`。
+（`status.json` 若已納管則可額外出現。）多出任何其他改動就是越界。`Experiments/` 是本階段唯一允許的專案結構擴充；每輪 `.csv` / `-meta.csv` / `.json` **三者缺一不可**，`-trajectory.csv` 則**只有在真的收集到軌跡時才會產生**（純 LP 或求解太快就沒有，看主表 `TrajectoryPoints` 是不是 0）。MUST 通過 [`tuning/checklist.md`](tuning/checklist.md) 的「每輪 archive 逐項驗收」A–E。
 
 出口 gate = champion 寫回 baseline → 重新 build → 跑無參數 production → `ValidateRules` 通過。只產出 experiment 報表而 production 仍跑舊 config，**不算完成**。沒有可靠勝者時，「retain + 證據」也是合法交付。
 

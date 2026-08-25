@@ -20,6 +20,8 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 | [`checklist.md`](checklist.md) | 交付前的機械驗收契約 | 宣告完成前逐條跑 |
 | [`agent-workflow-prompts.md`](agent-workflow-prompts.md) | C0–C9 / V1–V3 派工拓樸 | 走 multi-agent 時 |
 
+**本 skill 不依賴任何外部腳本**（沒有 `.ps1` / `.py` 要跑）：交付前的驗收是 `checklist.md` §15「交付前最終核對」那張表，逐項開檔、搜尋、比對期望值。
+
 衝突順序：`../AGENTS.md` → api-guide → checklist。**兩份規則互相矛盾 → 停下回報檔名與衝突**，NEVER 挑方便的那條、NEVER 先產出再補讀。憑記憶寫 API 一律視為違規。
 
 審查既有 Phase 2 專案 → 用 `/review`（[`../../commands/Ph2_Coding/review.md`](../../commands/Ph2_Coding/review.md)），不在本 skill 重述審查規則。
@@ -60,11 +62,7 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 
 ## Step 1 · 定位本階段細則
 
-api-guide 是 Phase 2 唯一標準，**NEVER 整份讀**——現場搜章節行號再讀那一段：
-
-```powershell
-Select-String -Path ".claude/skills/coding/optimfoundation-api-guide.md" -Pattern "^## §|^## 附錄"
-```
+api-guide 是 Phase 2 唯一標準，**NEVER 整份讀**——用你手上的搜尋能力找 `^## §` 與 `^## 附錄` 取得章節位置，再只讀需要的那一段。**NEVER 硬編行號**（行號會隨改版失效），也不必為此寫任何腳本。
 
 | 要查什麼 | 節 |
 | --- | --- |
@@ -112,7 +110,7 @@ Objective 與 Constraint **誰先寫成檔案不拘**（5 / 6 可對調，multi-
 
 `dotnet build` → 有錯就修 → 重 build。**第 5 次仍失敗就停下回報**，附最後一次的錯誤摘要與你已試過的修法，不要無限迴圈。
 
-（`.claude/hooks/dotnet-build-summary.ps1` 會自動摘要 error/warning 行。）
+每輪只看 build 輸出裡帶診斷碼的行（`error CSxxxx` / `warning CSxxxx`）與最後的成功／失敗結論，**NEVER 把整份 build log 讀進來**。
 
 ## Step 5 · 解驗證協定（四步全過才算完成）
 

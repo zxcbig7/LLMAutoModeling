@@ -26,9 +26,15 @@ var projectConfig = new ProjectConfig
 // 環境契約（workThreads / parallelMode）尚未定版，待 S1 sizing
 var baseline = new CplexConfig
 {
+    // 2026-08-25 調參結論：保留原設定。
+    // 試過兩顆旋鈕都明顯更差（強分支慢 4 倍、重界限慢 2.4 倍），沒有值得採用的贏家。
+    // 停止條件還原成原本的值；另外補上 ParallelMode 與 Seed —— 這兩顆本來就該明設，
+    // 沒設的話每次跑的路徑都不一樣，之後想比較任何東西都沒有基準。
     MipGap = 0.03,
     TimeLimit = 180,
     Threads = 10,
+    ParallelMode = 1,
+    Seed = 11,
 };
 
 var model = new OptModel("HospitalRostering_Generator")
@@ -50,25 +56,28 @@ var model = new OptModel("HospitalRostering_Generator")
 
 if (args.Contains("experiment"))
 {
-    var emphasis = baseline.Clone(); emphasis.Emphasis = 2;
-    var varSel = baseline.Clone(); varSel.VariableSelect = 3;
-    var nodeSelect = baseline.Clone(); nodeSelect.NodeSelect = 1;
-    var gap = baseline.Clone(); gap.MipGap = 0.01;
-    var threads = baseline.Clone(); threads.Threads = 4;
-    var seed = baseline.Clone(); seed.Seed = 20260622;
+    // R2 — HospitalRostering-tuning-r2
+    // R1 已否證：強分支 VariableSelect=3 反而慢 4 倍、node 更多，一個種子還撞時限。
+    // 重新看 R0 的數字：首解 0.4 秒就有了，之後全部時間都花在「證明這就是最佳解」，
+    // 也就是把界往上推那 0.30。所以這輪改用重視界限的搜尋重點。
+    var exp = new OptExperiment(
+        "HospitalRostering-tuning-r2",
+        "R2：時間都花在證明最佳性 → 試 Emphasis=3（重視界限）");
+    exp.AddModel(model);
 
-    var result = new OptExperiment(
-            "hospital-generator-tuning",
-            "比較 emphasis / varSel / nodeSelect / gap / threads / seed 對求解的影響")
-        .AddModel(model)
-        .AddConfig("baseline", baseline)
-        .AddConfig("emphasis=optimal", emphasis)
-        .AddConfig("varsel=strong", varSel)
-        .AddConfig("nodesel=bestbound", nodeSelect)
-        .AddConfig("gap=0.01", gap)
-        .AddConfig("threads=4", threads)
-        .AddConfig("seed=20260622", seed)
-        .Run();
+    foreach (var s0 in new[] { 11, 22, 33, 44, 55 })
+    {
+        var b = baseline.Clone();
+        b.Seed = s0;
+        exp.AddConfig($"r2-baseline-s{s0}", b);
+
+        var e = baseline.Clone();
+        e.Seed = s0;
+        e.Emphasis = 3;
+        exp.AddConfig($"r2-Emphasis=3-s{s0}", e);
+    }
+
+    var result = exp.Run();
 
     Logging.Info($"[Experiment] 完成：{result.Trials.Count} 個 Trial");
     return;

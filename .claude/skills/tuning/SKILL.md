@@ -18,8 +18,9 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 | [`../AGENTS.md`](../AGENTS.md) | 天條、三階段契約、`status.json` schema | 動手前 |
 | [`solver-tuning-guide.md`](solver-tuning-guide.md) | **Phase 3 唯一規範**：進場情境、可寫白名單、旋鈕分類、實驗設計、champion 判定、promotion、停損 | 每個 S 步驟依標註的節次讀那一節 |
 | [`checklist.md`](checklist.md) | 交付前自檢 | 宣告完成前逐條跑 |
-| [`cplex-parameter-reference.md`](cplex-parameter-reference.md) | 旋鈕查表（欄位名、型別、值域、預設） | **查表用，不必通讀**；要寫欄位名或設值時 grep 它，NEVER 憑記憶寫 |
-| [`Test-TuningRoundArchive.ps1`](Test-TuningRoundArchive.ps1) | 每輪 archive 的機械驗證 | 每輪建 archive 後執行；失敗視為不可 promotion |
+| [`cplex-parameter-reference.md`](cplex-parameter-reference.md) | 旋鈕查表（欄位名、型別、值域、預設） | **查表用，不必通讀**；要寫欄位名或設值時搜尋它，NEVER 憑記憶寫 |
+
+**本 skill 不依賴任何外部腳本**（沒有 `.ps1` / `.py` 要跑）：每輪的 archive 驗證是 `checklist.md`「每輪 archive 逐項驗收」那一節，逐項開檔比對。
 
 衝突順序：`../AGENTS.md` → solver-tuning-guide → checklist。**兩份規則互相矛盾 → 停下回報檔名與衝突**，NEVER 挑方便的那條、NEVER 先實驗再補讀。
 
@@ -94,7 +95,7 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 2. 候選**只從剖面對應那一類取**（§2.2；全池見 §2.2.1，**§2.2.2 兩顆會丟例外的旋鈕不可掃**），**一輪一顆**
 3. 改 `Program.cs` exp 分支的 variant 定義（`baseline.Clone()`），build，跑 `-- exp`
 4. 每個 variant × 同一組 5 個 tuning seeds；seed 是共同因子不是 variant
-5. archive 三件到專案根 `Experiments/`，產 `TUNING-FACTS` block，跑 `Test-TuningRoundArchive.ps1`（§3.3.1、§6.2.2）
+5. archive 本輪 artifact 到專案根 `Experiments/`（`.csv` / `-meta.csv` / `.json` 必備，`-trajectory.csv` 有才搬），產 `TUNING-FACTS` block，再逐項跑 `checklist.md` 的「每輪 archive 逐項驗收」A–E（§3.3.1、§6.2.2）
 6. 抽數：**NEVER 整份 JSON / log 讀進 context**，grep 抽欄位（§8.1）
 7. 裁決（§4 五個 Step）
 8. 寫實測、分析報告與裁決，更新**已否證清單**（跨輪累積）
@@ -119,7 +120,7 @@ champion 用 3 個未參與調參的 seed 重跑。改善消失 → over-tuning�
 
 ## 交付
 
-**diff 檢查**（規範 §0.1.2）：`git diff --name-only` MUST 只有 `Program.cs`、`TuningHistory.md`、本輪 `Experiments/` 三件（+ `status.json`）。`Program.cs` 內部 diff 只允許 baseline 值、provenance 註解、exp 分支 variant 定義——model chain 出現在 diff 裡 = 越界，全部還原。
+**diff 檢查**（規範 §0.1.2）：`git diff --name-only` MUST 只有 `Program.cs`、`TuningHistory.md`、本輪 `Experiments/` artifact（+ `status.json`）。`Program.cs` 內部 diff 只允許 baseline 值、provenance 註解、exp 分支 variant 定義——model chain 出現在 diff 裡 = 越界，全部還原。
 
 **回報**：進場情境與主指標、跑了幾輪、每輪一行（假設 → 裁決）、θ 與剖面、champion 或 retain + 理由、停止原因（§7.1 哪一條）、production 驗證結果、`TuningHistory.md` 路徑。
 
@@ -144,3 +145,4 @@ champion 用 3 個未參與調參的 seed 重跑。改善消失 → over-tuning�
 - NEVER 重寫 Phase 2 交付的 exp 分支形狀（只補正不合契約處，並記成 finding）
 - NEVER 沒刪 bin 同名檔就跑 R0（append 會混進 Phase 2 的驗證 trial）
 - NEVER 不留 Experiment 紀錄就宣稱改善
+- NEVER 跳過每輪的 archive 逐項驗收（A–E 任一 FAIL 未修就不得 promotion、不得進下一輪）

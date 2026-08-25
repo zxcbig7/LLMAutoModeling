@@ -128,7 +128,7 @@ Gate 順序固定：**資料驗證（載入時自動）→ 解驗證協定四步
 | 2 | `Program.cs` **exp 分支內**的 variant 定義與 round config archive | 每輪實驗的 `Clone()`、旋鈕設定與可重跑設定快照 | 只在 exp 分支內；當輪一律 `baseline.Clone()` 起手；**每個已執行 round 的完整設定區塊 MUST 保留，NEVER 被下一輪覆寫或刪除**（§3.3） |
 | 3 | 專案根 `TuningHistory.md` | 決策紀錄 | 每輪追加，NEVER 改寫歷史節 |
 | 4 | `status.json` 的 Phase 3 欄位 | 進度 | 只更新自己負責的欄位 |
-| 5 | `Experiments/`（專案根的 Phase 3 archive） | 每輪不可變的 CSV／JSON／trajectory 原始證據 | 只允許由 `bin/.../Experiments/` 複製本輪三件 artifact；納入 source control；NEVER 手改內容 |
+| 5 | `Experiments/`（專案根的 Phase 3 archive） | 每輪不可變的 CSV／JSON／trajectory 原始證據 | 只允許由 `bin/.../Experiments/` 複製本輪 artifact；納入 source control；NEVER 手改內容 |
 
 **白名單之外一律唯讀，包含**：model 組裝 chain、`Dataload`、`Set/` `Parameter/` `Variable/` `Constraint/` `Objective/` `Solution/`、`Data/*.csv`、`Model.md`、`ProjectConfig`、csproj、OptimFoundation 框架與 `dlls/`。
 
@@ -141,16 +141,17 @@ Projects/<Project>/
 ├── TuningHistory.md
 ├── status.json
 └── Experiments/
-    ├── <Project>-tuning-r0.csv
-    ├── <Project>-tuning-r0.json
-    ├── <Project>-tuning-r0-trajectory.csv
+    ├── <Project>-tuning-r0.csv              ← 主表，一列一 trial
+    ├── <Project>-tuning-r0-meta.csv         ← 說明檔，模型大小／環境／baseline 完整設定
+    ├── <Project>-tuning-r0.json             ← 累積與重讀用
+    ├── <Project>-tuning-r0-trajectory.csv   ← 有收集到軌跡才有
     ├── <Project>-tuning-r1.csv
+    ├── <Project>-tuning-r1-meta.csv
     ├── <Project>-tuning-r1.json
-    ├── <Project>-tuning-r1-trajectory.csv
     └── ...
 ```
 
-`bin/<Configuration>/net8.0/Experiments/` 是 framework 的**暫存輸出**，不是 archive。每次成功執行 R<N> 後，MUST 將同名 `.csv`、`.json`、`-trajectory.csv` 三件一併複製到專案根 `Experiments/`；複製後以 read-only 原始證據看待，NEVER rename、覆寫、刪除或人工編輯。`dotnet clean` 後 bin 可以消失，但 archive 的所有既有 round 必須仍完整存在。
+`bin/<Configuration>/net8.0/Experiments/` 是 framework 的**暫存輸出**，不是 archive。每次成功執行 R<N> 後，MUST 將同名 `.csv`、`-meta.csv`、`.json` 一併複製到專案根 `Experiments/`（有 `-trajectory.csv` 就一併搬）；複製後以 read-only 原始證據看待，NEVER rename、覆寫、刪除或人工編輯。`dotnet clean` 後 bin 可以消失，但 archive 的所有既有 round 必須仍完整存在。
 
 #### 0.1.1 Phase 2 結果不變式（本階段最硬的驗收點）
 
@@ -330,7 +331,7 @@ tuning 過程中發現契約可能訂錯（例：`MipGap` 過鬆導致 productio
 
 **資料來源**：`bin/.../Experiments/<name>-trajectory.csv`（框架自動產出，欄位 `RunAt, Label, PointIndex, TimeMs, Objective, Bound, Gap`）。
 
-★ **NEVER 用 `NodeCount` / `IterationCount` 做診斷** —— 框架目前不填這兩個欄位（experiment CSV 中為空）。憑它們判斷「node 數暴衝」「node throughput 低」是不可執行的指引。
+★ **`NodeCount` / `IterationCount` 自 2026-08-25 起會填實際值**，但**不能單獨看**：node 少不等於快——實測 `VariableSelect=3`（強分支）node 更多且慢 4 倍，而 `Emphasis=3` node 更少卻也慢 2.4 倍。要搭配 runtime 一起判讀；`IterationCount / NodeCount` 才看得出每個節點貴不貴。仍 NEVER 只憑它們就下結論。
 
 從軌跡計算四個量：
 
@@ -579,7 +580,8 @@ R0 **不計入 `tuningRound`**，它是校準不是輪次。
 | 必讀來源 | 擷取內容 | 本輪如何使用 |
 | --- | --- | --- |
 | `TuningHistory.md` 的契約區塊與**所有既有 R 節** | 現行 baseline provenance、主指標、θ、已否證方向、歷史目標／裁決／失敗原因 | 排除已否證或重複方向；確認哪些設定已試過、為何不再試；判定本輪能改的唯一搜尋策略旋鈕 |
-| 前一輪與現行 baseline 的 `Experiments/<name>.csv`／JSON（逐欄抽取） | label、完整 config snapshot、Status、objective、BestBound、MipGap、runtime、seed、metrics | 對照 baseline 與歷史 variant 的有效設定與結果；確認本輪不是在重跑相同 config |
+| 前一輪與現行 baseline 的 `Experiments/<name>.csv`（主表，逐欄抽取） | `RunId`／`TrialId`／`Model`／`TrialLabel`／`BasedOn`／`DiffKnobs`／`Seed`／`RunAt`／`Status`／`ObjectiveValue`／`BestBound`／`MipGap`／`RunTimeMs`／`TFeasMs`／`TStallMs`／`DeltaBound`／`NodeCount`／`IterationCount`／`TrajectoryPoints`／`VarCount`／`ConstraintCount`／`Note`（共 22 欄） | 對照 baseline 與歷史 variant 的結果；**`DiffKnobs` 就是「這筆跟 baseline 差在哪」，框架已經算好，直接抄不要自己算**；確認本輪不是在重跑相同 config |
+| `Experiments/<name>-meta.csv`（說明檔，`Section,Key,Value` 長格式） | `run.*` 各批開始時間與 trial 數、`model.*` 變數／限制式數、`environment.*`、`baseline.*` 的完整設定 | 取 baseline 的有效設定與模型規模；**沒列到的旋鈕就是沒設**（= 用 solver 預設） |
 | 前一輪與現行 baseline 的 `-trajectory.csv` | `t_feas`、`Δbound`、`t_stall`、endGap／bound 的改善或停滯型態 | 依 §2.1 重判／確認瓶頸剖面，並只從 §2.2 對應列選候選旋鈕 |
 | R0 與最近一次 holdout 結果 | 主指標彙總、θ、holdout 是否維持改善 | 把本輪目標量化成可判的門檻，而不是「希望更快」 |
 
@@ -646,7 +648,7 @@ Why: 同名實驗是 **append 不是覆寫**。`Run()` 內的 `Save()` 會先讀
 
 保存的是**完整的有效設定快照**，不是「當時從 baseline Clone 後改一個欄位」的口頭描述。已 promotion 後 baseline 會改，舊區塊若仍只寫 `baseline.Clone()` 就會隨 baseline 漂移，失去歷史意義。因此，round 結束後 MUST 把每個 baseline／variant 實際生效的 `CplexConfig` 值 materialize 在該 R<N> 區塊（或以明確 snapshot initializer 表達），並保留：experiment name、config label、每個非預設／非 null 旋鈕值、seeds、停止與環境契約版本。每個 config label 仍 MUST 有 `r<N>-` 前綴。
 
-`OptExperiment` 在 `bin/.../Experiments/` 產生 `<Project>-tuning-r<N>.csv`、`.json` 與 `-trajectory.csv`；三者是該 round 的完整 Trial／config／convergence 原始證據。**成功後立即 archive 到專案根 `Experiments/`（§0.1），三件缺一不可。**同名 `OptExperiment` 是 append，不是覆寫，因此一個已 archive 的 r<N> 永遠不可再執行；要重做實驗 MUST 使用新的 r<N+1>，並在 History 說明是 replication。
+`OptExperiment` 在 `bin/.../Experiments/` 產生 `<Project>-tuning-r<N>.csv`（主表）、`-meta.csv`（說明檔）、`.json`（累積用），以及 `-trajectory.csv`（**有收集到軌跡才有**）；合起來是該 round 的完整 Trial／config／convergence 原始證據。**成功後立即 archive 到專案根 `Experiments/`（§0.1）；前三者缺一不可。**同名 `OptExperiment` 是 append，不是覆寫，因此一個已 archive 的 r<N> 永遠不可再執行；要重做實驗 MUST 使用新的 r<N+1>，並在 History 說明是 replication。
 
 #### 3.3.2 跨輪有效 config 去重
 
@@ -676,13 +678,13 @@ MIP 有 **performance variability**：換機器、置換 row/column 順序、換
 
 ### 3.5 實驗 runner 的行為
 
-**runner 行為的唯一權威是 coding guide [§8.1](../coding/optimfoundation-api-guide.md)** —— 笛卡兒積展開、label 組成、預設安靜、`Clone()` 建 variant、共用一份 data、label 重複丟哪個例外、輸出三件、log 檔名時機，一律查那一節。**本節 NEVER 複製它**，改一邊忘另一邊就是規範漂移。
+**runner 行為的唯一權威是 coding guide [§8.1](../coding/optimfoundation-api-guide.md)** —— 笛卡兒積展開、label 組成、預設安靜、`Clone()` 建 variant、共用一份 data、label 重複丟哪個例外、輸出哪幾個檔、log 檔名時機，一律查那一節。**本節 NEVER 複製它**，改一邊忘另一邊就是規範漂移。
 
 Phase 3 在其上額外要求：
 
 | 規則 | 說明 |
 | --- | --- |
-| archive | bin 產物成功後**立即**搬到專案根 `Experiments/`，三件缺一不可、每輪永久保留（§3.3.1） |
+| archive | bin 產物成功後**立即**搬到專案根 `Experiments/`；`.csv` / `-meta.csv` / `.json` 缺一不可，`-trajectory.csv` 有就一併搬。每輪永久保留（§3.3.1） |
 | `OnSolved` 邊界 | 只屬 `OptProject`，`OptExperiment` 沒有——掃描中不要大量寫 solution |
 | 一輪一顆 | 一輪只改一個搜尋策略旋鈕（§3.1） |
 | 輪次前綴 | config label MUST 帶 `r<N>-`，experiment 名 MUST `<Project>-tuning-r<N>`（§3.3） |
@@ -752,7 +754,7 @@ display settings changed
 | 3 | **主指標**（穩健彙總後，§4.3） | runtime `sgm` | **endGap 平均** | **找到解的 seed 數 → `t_feas` `sgm`** |
 | 4 | 改善 MUST **大於 θ**（§4.4） | 否則視同平手 | 否則視同平手 | seed 數差 ≤ 1 亦視同平手 |
 
-★ **NEVER 用 `NodeCount` / `IterationCount` 做判定或 tie-break** —— 框架目前不填這兩個欄位（experiment CSV 中為空）。需要 tie-break 時改用 §2.1 的 `Δbound` 與 `t_stall`。
+★ **`NodeCount` / `IterationCount` 自 2026-08-25 起會填實際值**，但**不能單獨看**：node 少不等於快——實測 `VariableSelect=3`（強分支）node 更多且慢 4 倍，而 `Emphasis=3` node 更少卻也慢 2.4 倍。要搭配 runtime 一起判讀；`IterationCount / NodeCount` 才看得出每個節點貴不貴。仍 NEVER 只憑它們就下結論。
 
 **NEVER 讓一個比較快但解較差的 trial 勝出**；情境 B 同理——**NEVER 讓一個 gap 收得漂亮但 incumbent 反而變差的 trial 勝出**，第 1 項就該把它擋掉。
 
@@ -980,7 +982,7 @@ phase2Status / phase2Objective / phase2Bound / phase2Gap / verifiedOn
 
 #### 6.2.2 `TUNING-FACTS` 機械事實區塊（防止亂填數字）
 
-每個 R<N> 節 MUST 在敘事分析前放入一個由 archive JSON 產生的 machine facts block；它是 History 中所有 Trial 原始數值的唯一來源，**不得手寫或事後編輯數字**。格式固定如下（實際值由 verifier 讀 archive 後比對）：
+每個 R<N> 節 MUST 在敘事分析前放入一個**逐欄抄自 archive JSON** 的 machine facts block；它是 History 中所有 Trial 原始數值的唯一來源，**不得手寫估計值或事後編輯數字**。格式固定如下：
 
 ````markdown
 <!-- TUNING-FACTS:R<N>:BEGIN -->
@@ -988,20 +990,20 @@ phase2Status / phase2Objective / phase2Bound / phase2Gap / verifiedOn
 {
   "experiment": "<Project>-tuning-r<N>",
   "archive": {
-    "csvSha256": "<SHA256>",
-    "jsonSha256": "<SHA256>",
-    "trajectorySha256": "<SHA256>"
+    "csv": "Experiments/<Project>-tuning-r<N>.csv",
+    "json": "Experiments/<Project>-tuning-r<N>.json",
+    "trajectory": "Experiments/<Project>-tuning-r<N>-trajectory.csv"
   },
   "trials": [
     {
       "label": "<Model> | r<N>-<config>",
-      "seed": null,
+      "seed": 11,
       "status": "Optimal|Feasible|TimeLimit",
       "objectiveValue": 0.0,
       "bestBound": 0.0,
       "mipGap": 0.0,
       "runTimeMs": 0.0,
-      "configFingerprint": "<SHA256>"
+      "configDiffFromBaseline": "Emphasis: null → 2"
     }
   ]
 }
@@ -1009,12 +1011,11 @@ phase2Status / phase2Objective / phase2Bound / phase2Gap / verifiedOn
 <!-- TUNING-FACTS:R<N>:END -->
 ````
 
-敘事或彙總表引用 Trial 數字時，MUST 指向 `TUNING-FACTS` 的 label／欄位，或清楚寫出使用哪些 facts 與哪個公式得出聚合值（例如 `sgm`、PAR10、平均 endGap）。沒有 facts 引用的數字視為未驗證主張。執行 `Test-TuningRoundArchive.ps1` 時，任何 SHA、Trial field、config fingerprint、archive 路徑與 History facts 不一致都是 FAIL；先修 facts 或 archive provenance，NEVER 用敘事文字掩蓋。
+**`configDiffFromBaseline` 只列與本輪 baseline 真正不同的欄位，`Seed` 除外**——seed 是重複量測條件，不是策略差異。它同時是跨輪去重的依據：兩輪的 diff 字串相同 = 同一個 candidate 被重跑。
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/tuning/Test-TuningRoundArchive.ps1 `
-    -ProjectDir Projects/<Project>
-```
+敘事或彙總表引用 Trial 數字時，MUST 指向 `TUNING-FACTS` 的 label／欄位，或清楚寫出使用哪些 facts 與哪個公式得出聚合值（例如 `sgm`、PAR10、平均 endGap）。沒有 facts 引用的數字視為未驗證主張。
+
+**怎麼驗**：本階段**不使用任何外部腳本**。每輪 archive 完成後，逐項執行 [`checklist.md`](checklist.md) 的「每輪 archive 逐項驗收」A–E——開檔、讀值、與 archive JSON 逐欄比對。任何一格對不上（trial 欄位、archive 路徑、label 前綴、跨輪重複）都是 FAIL；**先修 facts 或重出 archive**，NEVER 用敘事文字掩蓋，也 NEVER 手改 archive 檔。
 
 ### 6.3 規則
 
@@ -1024,7 +1025,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/tuning/Test-T
 - 歷史節 NEVER 改寫，只追加
 - History 是**每輪分析與決策的永久報告**；完整逐 Trial 數值與完整 config 仍由該輪 experiment JSON 保存，但 JSON 不是唯一紀錄（§3.3.1）
 - **History 報告 MUST 有分析者自己的敘事見解**（§6.2.1）；只留 Trial 表、config diff 或一句裁決，均不算完成的 round report
-- 每輪 archive 與 `TUNING-FACTS` MUST 通過 `Test-TuningRoundArchive.ps1`；未通過時不得 promotion、不得開始下一輪
+- 每輪 archive 與 `TUNING-FACTS` MUST 通過 `checklist.md` 的「每輪 archive 逐項驗收」A–E；未通過時不得 promotion、不得開始下一輪
 
 ---
 
@@ -1132,7 +1133,7 @@ T5 用 `second-opinion` 的理由：promotion 會改寫 production baseline，�
 └── Projects/<Project>/
     ├── TuningHistory.md       ← 永久分析與決策報告（每輪一節 + TUNING-FACTS）
     ├── Program.cs             ← 唯一 productionBaseline 與 R<N> config archive 所在
-    ├── Experiments/           ← source-controlled Phase 3 archive，每輪永久三件
+    ├── Experiments/           ← source-controlled Phase 3 archive，每輪永久保留
     │   └── <Project>-tuning-r<N>.{csv,json,-trajectory.csv}
     └── bin/Experiments/       ← framework 暫存輸出；archive 後可被 clean 清掉
 ```
@@ -1248,7 +1249,7 @@ NEVER 建議改成 soft constraint。NEVER 自己動手修任何檔案。
 4. 從 archive JSON 抽每個 Trial 的：label、完整 config snapshot、Status、objective、BestBound、MipGap、runtime、nodes、seed
    NEVER 整份 JSON 讀進 context——用 grep / 逐欄抽取
 5. 從 archive `<name>-trajectory.csv` 抽 baseline 與各 candidate 的 `t_feas`、`Δbound`、`t_stall`、endGap／bound 停滯摘要
-6. 依 archive JSON 產生本輪 `TUNING-FACTS` block，填入 History；執行 `Test-TuningRoundArchive.ps1`，PASS 才交給 analyst
+6. 依 archive JSON 逐欄抄出本輪 `TUNING-FACTS` block，填入 History；逐項跑 `checklist.md` 的「每輪 archive 逐項驗收」A–E，全 PASS 才交給 analyst
 7. solver log 同理：只 grep Status、objective、gap、time 幾行
 
 輸出：將下列 Trial 摘要與 archive 參照直接寫入 `TuningHistory.md` 的 R{{N}} 節：
@@ -1261,7 +1262,7 @@ NEVER 建議改成 soft constraint。NEVER 自己動手修任何檔案。
 2. warm-up 那次已標記排除
 3. 未修改 productionBaseline（附 git diff 摘要佐證）
 4. 每個 Trial 能回連到本輪的 config label／snapshot，且 baseline 與 candidate 的收斂摘要已抽出
-5. archive 三件完整、TUNING-FACTS 與 archive 一致、沒有跨輪重複 candidate config
+5. archive 完整（`.csv` / `-meta.csv` / `.json` 必備）、TUNING-FACTS 與 archive 一致、沒有跨輪重複 candidate config
 
 回報格式：Trial 表（≤15 列）、執行總時間、異常（crash / 無解 / 逾時）清單。總長 ≤20 行。
 NEVER 下「哪個比較好」的結論。
@@ -1338,8 +1339,8 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 2. initializer 上方 provenance 註解含 experiment + Trial label + 日期 + diff
 3. `Program.cs` exp 分支已新增／保留本輪 `R<N>` 的完整有效 config snapshot；舊 round 區塊仍存在且未被覆寫
 4. TuningHistory.md 該節已納入本輪 analysis 報告、experiment／JSON 參照與每個 variant 的 baseline → variant diff；before/after production diff 逐項可讀
-5. `Test-TuningRoundArchive.ps1` 對全部 archive PASS
-6. git diff 只動了 Program.cs、TuningHistory.md 與本輪三件 Experiment archive
+5. 全部 archive 通過 `checklist.md` 的「每輪 archive 逐項驗收」A–E
+6. git diff 只動了 Program.cs、TuningHistory.md 與本輪的 Experiment archive
 
 回報格式：before/after config diff（逐項）、TuningHistory 節標題、git diff 檔案清單。總長 ≤15 行。
 ```
@@ -1367,7 +1368,7 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 3. T5 裁決完成
 4. PROMOTE → T6 寫回 + T7 production 驗證 PASS；RETAIN → `TuningHistory.md` 有 retain 記錄與證據
 5. `Program.cs` exp 分支保留該 R<N> 的完整有效 config snapshot，且本輪 `OptExperiment` JSON 可依名稱找到
-6. 專案根 `Experiments/` 已 archive 本輪 `.csv`、`.json`、`-trajectory.csv`，且 `Test-TuningRoundArchive.ps1` 對**所有** round PASS
+6. 專案根 `Experiments/` 已 archive 本輪 `.csv`、`.json`、`-trajectory.csv`，且**所有** round 都通過 `checklist.md` 的「每輪 archive 逐項驗收」A–E
 7. `TuningHistory.md` 該輪包含完整 analysis 報告、前輪證據參照、收斂軌跡敘事、分析者見解與下一輪保留／排除方向
 8. `status.json` 已更新（§5.4）
 
@@ -1400,7 +1401,7 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 ❌ **把 `MipGap` / `TimeLimit` 當速度旋鈕掃** —— 它們是停止條件，兩個不同契約的 trial 比 runtime 沒有意義（§2.0）
 ❌ **把 `Seed` 放進 variant 池排名** —— 它是重複量測的自變數，「贏」只證明變異大（§2.0）
 ❌ **在 threads 未定版時量 θ** —— threads 改變雜訊幅度，等於用會伸縮的尺量東西（§2.0.2）
-❌ **憑 `NodeCount` / `IterationCount` 判斷瓶頸** —— 框架不填這兩個欄位，改用軌跡剖面（§2.1）
+★ **`NodeCount` / `IterationCount` 自 2026-08-25 起會填實際值**，但**不能單獨看**：node 少不等於快——實測 `VariableSelect=3`（強分支）node 更多且慢 4 倍，而 `Emphasis=3` node 更少卻也慢 2.4 倍。要搭配 runtime 一起判讀；`IterationCount / NodeCount` 才看得出每個節點貴不貴。仍 NEVER 只憑它們就下結論。
 ❌ **`Emphasis = 2` 當成推 bound 的手段** —— 推 bound 是 `3`（BESTBOUND）（§2.2）
 ❌ **看到 objective 變好就採用** —— 同契約下 objective 應恆等於 Phase 2 基線，變了代表越界（§0.1.1）
 ❌ **跑完實驗才補寫「預測」** —— 事後永遠編得出理由，預測必須在跑之前寫死（§6.2）

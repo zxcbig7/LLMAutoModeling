@@ -36,7 +36,7 @@ Projects/<Project>/
 - [ ] 八個固定資料夾 **全部存在且名稱、大小寫完全一致**：`Model`、`Set`、`Parameter`、`Variable`、`Objective`、`Constraint`、`Solution`、`Data`。
 - [ ] 專案根只有 `<Project>.csproj`、`Program.cs` 與上述固定資料夾作為 **Phase 2** 手寫產物；執行期 `status.json` 可存在，但不是 AI 自創的架構層。
 - [ ] `Model/` 只放 `<Project>_Model.md`；`Dataload.cs` 在 `Data/`，與 CSV 同層。
-- [ ] 若專案已進入 Phase 3，唯一合法延伸由 [`../tuning/solver-tuning-guide.md`](../tuning/solver-tuning-guide.md) 定義：專案根的 `TuningHistory.md`、`status.json` 與 `Experiments/`。`Experiments/` 只可包含 `<Project>-tuning-r<N>.csv`、`.json`、`-trajectory.csv` 三件 archive；不得以此為由新增其他資料夾。
+- [ ] 若專案已進入 Phase 3，唯一合法延伸由 [`../tuning/solver-tuning-guide.md`](../tuning/solver-tuning-guide.md) 定義：專案根的 `TuningHistory.md`、`status.json` 與 `Experiments/`。`Experiments/` 只可包含 `<Project>-tuning-r<N>` 的 `.csv`、`-meta.csv`、`.json`（三者必備）與 `-trajectory.csv`（有收集到軌跡才有）；不得以此為由新增其他資料夾。
 - [ ] NEVER 建立 `Common/`、`Helpers/`、`Utils/`、`Services/`、`Models/`、`Infrastructure/`、`Domain/`、`Data/import/` 或任何依專案而變的資料夾。
 - [ ] 每個手寫型別一型別一檔，檔名 = 類別名，且只放入此型別責任所屬的固定資料夾；不得集中成 `Sets.cs`、`Variables.cs`、`Constraints.cs` 或通用 helper 檔。
 - [ ] 所有 `.cs` 使用**唯一** block namespace `namespace <Project> { }`；資料夾只做檔案分類，NEVER 形成子 namespace。
@@ -197,73 +197,56 @@ Projects/<Project>/
 - [ ] 回報含 build 結果、目標值、解摘要、輸出檔位置。
 - [ ] `status.json` 已更新（`buildOk` / `solveVerified` / `solveStatus` / `verifiedOn`），且 `solveStatus` 與 `verifiedOn` 如實填寫（Phase 3 靠這兩欄決定進場情境）。
 
-## 15. AI 最終靜態掃描（完成前必跑）
+## 15. 交付前最終核對（逐項自己查，沒有腳本可跑）
 
-> 這段含中文註解。要落成 `.ps1` 檔給 Windows PowerShell 5 跑，MUST 存成 **UTF-8 with BOM**，否則中文會被 ANSI codepage 打壞（見 `.claude/README.md` 文件標準）。直接貼進終端機執行則不受影響。
+> **本 skill 不依賴任何外部工具**：下面每一列都是「打開什麼、找什麼、期望看到什麼」。
+> 用你手上的檔案讀取與搜尋能力做，不要為了跑這張表去寫 `.ps1` / `.py`。
+> `<P>` = 專案名。全部對得上才算交付。
 
-```powershell
-$project = "Projects/<Project>"
+**15.1 專案結構**
 
-# 架構：手寫資料夾只能是 canonical 八個；Phase 3 extension 存在時才允許 Experiments/
-$allowedDirs = @('Model','Set','Parameter','Variable','Objective','Constraint','Solution','Data','bin','obj','Generated')
-if (Test-Path (Join-Path $project 'TuningHistory.md')) { $allowedDirs += 'Experiments' }
-Get-ChildItem -Directory $project |
-    Where-Object Name -notin $allowedDirs |
-    Select-Object -ExpandProperty FullName
+| 查什麼 | 怎麼查 | 期望值 |
+| --- | --- | --- |
+| canonical 八資料夾齊全 | 列出 `Projects/<P>/` 的子資料夾 | 恰好含 `Model` `Set` `Parameter` `Variable` `Objective` `Constraint` `Solution` `Data`；大小寫逐字相同 |
+| 沒有自創資料夾 | 同上 | 除八個 + `bin` `obj` `Generated` 外**沒有別的**；`Experiments/` 只有進入 Phase 3 後才允許出現 |
+| 專案根檔案 | 列出 `Projects/<P>/` 的檔案 | 只有 `<P>.csproj`、`Program.cs`、`status.json` |
+| 一型別一檔 | 逐一打開八資料夾下的 `.cs` | 每個檔恰好一個 `public ... class`，且檔名 = 類別名 |
 
-# 架構：canonical 八個資料夾必須全部存在
-@('Model','Set','Parameter','Variable','Objective','Constraint','Solution','Data') |
-    Where-Object { -not (Test-Path (Join-Path $project $_) -PathType Container) }
+**15.2 宣告面**
 
-# 宣告面：逐一確認 OptDim 泛型參數都是 framework 支援的基礎型別
-rg -n 'OptDim<' $project
+| 查什麼 | 怎麼查 | 期望值 |
+| --- | --- | --- |
+| `[OptDim<T>]` 的 `T` | 搜尋整個專案的 `OptDim<` | 每一處的 `T` 都是 `string` / `DateTime` / `int` / `long` / `double` / `decimal`；**沒有**任何 `OptDim<Set_...>` |
+| 資料讀取管道 | 搜尋 `Data/Dataload.cs` 的 `source.Load<` | 出現次數 = Model.md 的 SET + PARAM 總數；`Dataload(IDataSource)` 內**除了**這些 `source.Load<T>(...)` 賦值外沒有別的敘述 |
+| namespace | 搜尋所有 `.cs` 的 `namespace` | 全部是 `namespace <P>` 的 block 寫法；**沒有**子 namespace、**沒有** file-scoped `namespace X;` |
 
-# Dataload：逐一確認 Set / Parameter 都由 source.Load<T> 讀取
-rg -n 'source\.Load<' "$project/Data"
+**15.3 `Program.cs` 四段不可變模板**
 
-# Program.cs：四段不可變模板。順序、段內責任與必要呼叫均逐段驗證。
-$program = Join-Path $project 'Program.cs'
-$programText = Get-Content -LiteralPath $program -Raw
-$markers = @(
-    '// 1. import 段落',
-    '// 2. 模型段落',
-    '// 3. 實驗段落',
-    '// 4. 正式跑段落'
-)
-$starts = foreach ($marker in $markers) {
-    $matches = [regex]::Matches($programText, [regex]::Escape($marker))
-    if ($matches.Count -ne 1) { throw "FAIL Program marker [$marker] count=$($matches.Count)" }
-    $matches[0].Index
-}
-if (($starts | Select-Object -Unique).Count -ne 4 -or
-    $starts[0] -ge $starts[1] -or $starts[1] -ge $starts[2] -or $starts[2] -ge $starts[3]) {
-    throw 'FAIL Program four section markers are missing, duplicated, or out of order'
-}
-$sections = @(
-    $programText.Substring($starts[0], $starts[1] - $starts[0]),
-    $programText.Substring($starts[1], $starts[2] - $starts[1]),
-    $programText.Substring($starts[2], $starts[3] - $starts[2]),
-    $programText.Substring($starts[3])
-)
-$requiredBySection = @(
-    @('args\.Length\s*>=\s*2\s*&&\s*args\[0\]\s*==\s*"import"', 'new Dataload\(rawFile\)', '\.Export\(\)', 'return\s+0\s*;'),
-    @('bool\s+isExperiment\s*=', 'OptData\.Load\(\(\)\s*=>\s*new Dataload\(\)\)', '\.ValidateData\(data\)', 'new ProjectConfig', 'var\s+productionBaseline\s*=\s*new CplexConfig', 'new OptModel\("Canonical"\)'),
-    @('if\s*\(isExperiment\)', 'productionBaseline\.Clone\(\)', 'new OptExperiment\(', '\.AddModel\(model\)', '\.AddConfig\(', '\.Run\(\)', 'return\s+0\s*;'),
-    @('using\s+var\s+project\s*=\s*new OptProject\(model\)', '\.UseConfig\(', '\.OnSolved\(', 'project\.Execute\(\)', 'return\s+solved\s*\?\s*0\s*:\s*1\s*;')
-)
-for ($i = 0; $i -lt 4; $i++) {
-    foreach ($pattern in $requiredBySection[$i]) {
-        if ($sections[$i] -notmatch $pattern) { throw "FAIL Program section $($i + 1) missing [$pattern]" }
-    }
-}
-if (([regex]::Matches($sections[1], 'OptData\.Load\(\(\)\s*=>\s*new Dataload\(\)\)')).Count -ne 1) {
-    throw 'FAIL Program model section must load canonical data exactly once'
-}
+| 查什麼 | 怎麼查 | 期望值 |
+| --- | --- | --- |
+| 四個段落標記 | 在 `Program.cs` 搜尋每一個標記字串 | `// 1. import 段落`、`// 2. 模型段落`、`// 3. 實驗段落`、`// 4. 正式跑段落` **各出現 1 次**，且行號由小到大就是這個順序 |
+| canonical 資料載入 | 搜尋 `OptData.Load(() => new Dataload())` | **恰好 1 次**（在模型段） |
+| 建模前資料驗收 | 搜尋 `.ValidateData(data)` | **恰好 1 次**，位置在上一列那行的**下一行** |
+| import 段內容 | 讀第 1 段 | 含 `args[0] == "import"`、`new Dataload(rawFile)`、`.Export()`、`return 0` |
+| 模型段內容 | 讀第 2 段 | 含 `isExperiment` 判斷、具名 `ProjectConfig`、具名 `productionBaseline`（唯一一顆 `new CplexConfig`）、唯一 `new OptModel("Canonical")` chain |
+| 實驗段內容 | 讀第 3 段 | 含 `if (isExperiment)`、`// R0 — <P>-tuning-r0` marker、`productionBaseline.Clone()`、`new OptExperiment(`、`.AddModel(model)`、`.AddConfig(`、`.Run()`、`return 0` |
+| 正式跑段內容 | 讀第 4 段 | 含 `using var project = new OptProject(model)`、兩個 `.UseConfig(`、`.OnSolved(`、`project.Execute()`、成功 0／失敗 1 的 return |
+| 四段是平坦的 | 讀 `Main` 整體 | 四段直接寫在 `Main` 內；**沒有** helper／factory／local function 包住任何一段或模型組裝 |
 
-# 限制式：新 code 不手工組完整名稱
-rg -n -e 'ConstraintName\s*\+' `
-      -e 'Create(Equal|LessEqual|GreatEqual)\(\s*\x22' `
-      -e 'CreateRange\([^\r\n]*\x22' `
-      -e 'Create(Le|Ge|Eq)Soft\([^\r\n]*\x22' `
-      "$project/Constraint"
-```
+**15.4 限制式與目標式**
+
+| 查什麼 | 怎麼查 | 期望值 |
+| --- | --- | --- |
+| 沒有手工組限制式名 | 在 `Constraint/` 搜尋 `ConstraintName +`、`CreateEqual("`、`CreateLessEqual("`、`CreateGreatEqual("`、`CreateRange(` 後接字串字面值 | **0 命中**（新 code 一律 `CreateXxx(this, dims...)`，原始維度值直接傳，日期交給框架格式化） |
+| 沒有 soft constraint | 在 `Constraint/` 搜尋 `CreateLeSoft` / `CreateGeSoft` / `CreateEqSoft` | **0 命中**（除非 Model.md 本身就寫了 soft） |
+| 註冊順序 | 讀 `Program.cs` 的 `OptModel` chain | `.AddObjective(` 出現在所有 `.AddConstraints(` 之前 |
+| 條號對照 | 逐一打開 `Constraint/*.cs` | 每個檔的 `<summary>` 都寫了對應的 Model.md 條號 `[Cn]` 與數學式；Model.md 的每條 `[Cn]` 都找得到對應檔 |
+
+**15.5 實跑後的數字對照**
+
+| 查什麼 | 怎麼查 | 期望值 |
+| --- | --- | --- |
+| 變數數量 | 看 build/solve log 的「變數建立摘要」 | 與 Model.md 的 VAR 段 × 各自 domain 大小手算結果相同 |
+| 限制式數量 | 看 log 的「限制式建立摘要」 | 與 Model.md 每條 `[Cn]` 的 `∀` 展開數量加總相同（逐條列出算式對照，不要只看總數） |
+| 目標值 | 看 `Status` 與 `ObjVal` | 與 Model.md 小例或手算對照吻合；純 LP 時 `BestBound` / `MipGap` 是佔位值，不當品質指標 |
+| 解驗證 | 看 `ValidateRules` 的 log | 印出「全數成立」，且**已做過故意改壞測試**確認它真的會 throw（§11.5） |
