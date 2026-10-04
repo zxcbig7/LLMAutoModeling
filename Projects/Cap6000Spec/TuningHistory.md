@@ -68,7 +68,7 @@
    - 規範要求保留每輪區塊、當次只執行目前那輪（§3.3.1），但沒有規定怎麼選；本專案在 exp 分支用 `currentExperiment` 字串選區塊。
 3. **初始 `Threads = 8` 沒有 sizing 依據**（取自 Template 預設）→ 依 §2.3 實掃，結果維持 8。
 4. **量測解析度**：R0 五個 seed 在 CPLEX log 的確定性時間都是 103.07–103.16 ticks，主表 `SolveTimeMs` 卻在 140.99999982863665–188.0000000819564 ms 之間，而且都落在約 15.6 ms 的倍數附近。框架比 `SolveTimeMs` 沒有容差：S1 的 `s1-threads10-s33` 109.00000017136335 對 baseline 108.99999993853271 被判 lose——同一個計時 tick，只差浮點誤差。
-5. **前一版**：`Projects/Cap6000/` 是同一題、同契約的前一次調校，用 ModelTuner runner（`switch (mode)` + `Tuning/`），程式形狀不合 AI-Modeling 規範。本期不把它的實驗當成本專案的 archive，只在決策依據中當參考。
+5. **前一版**：`Projects/Cap6000/`（已刪除，見 AI-Modeling commit `856f88b`）是同一題、同契約的前一次調校，用 ModelTuner runner（`switch (mode)` + `Tuning/`），程式形狀不合 AI-Modeling 規範。本期不把它的實驗當成本專案的 archive，只在決策依據中當參考。
 
 ---
 
@@ -177,7 +177,7 @@
   - 歷史：已讀 S1、R0、S2.5；本專案尚無已否證方向；不適用：`NodeSelect` / `DiveType`（NodeCount = 0）；S2.5 沒有建議
   - experiment 摘要：`tuning-r0`（RunId 20261003-093037）5/5 Optimal、NodeCount 0、IterationCount 132；現行 baseline = `MipGap 1e-4 / TimeLimit 300 / Threads 8 / ParallelMode 1`
   - 收斂軌跡：R0 剖面 Primal-search；bound 一回 cut 後就停在 −2451470.55，gap 由 incumbent 側收尾
-  - 參考（非本專案 archive）：`Projects/Cap6000/` 前一版 R2 測過同一設定，CPLEX log ticks 逐 seed 與 baseline 相同
+  - 參考（非本專案 archive）：`Projects/Cap6000/`（已刪除，見 commit `856f88b`）前一版 R2 測過同一設定，CPLEX log ticks 逐 seed 與 baseline 相同
 **假設**：gap 的收尾取決於 root 啟發式何時找到 −2451346。`Emphasis = 1`（FEASIBILITY）讓 CPLEX 更積極找可行解、少花心力在 bound 上；root LP bound −2451537.3 本身就讓 −2451346 的 gap 約 7.8e-5 < 1e-4，bound 變弱也不會逼出分支，若啟發式更早找到收尾解就會更快。
 **預測**：不勝出（`Losses ≥ 1`）。emphasis 主要調整 B&B 節點上的排程，這題沒有節點；預期 CPLEX log 的確定性時間逐 seed 與 baseline 相同（前一版的觀察會重現），主表勝負只剩計時雜訊。若 ticks 不同，代表 emphasis 確實改變了 root 行為，要回頭看是變多還是變少。←跑之前寫死
 **每個設定的理由（跑之前）**：
@@ -264,7 +264,7 @@
   - 歷史：已讀 S1、R0、S2.5、R1（含 hold-out）；已否證：`Emphasis = 1`、「emphasis 與搜尋分支」群組；baseline 未變（R1 retain）
   - experiment 摘要：`tuning-r1`（RunId 20261003-093354）baseline 5/5 Optimal、NodeCount 0；R1 顯示 root 路徑不受 emphasis 影響
   - 收斂軌跡：情境 A 沿用 R0 剖面 Primal-search；收尾 incumbent −2451346 由 root 啟發式找到
-  - 參考（非本專案 archive）：`Projects/Cap6000/` 前一版 R3 測過同一設定，ticks 逐 seed 與 baseline 相同
+  - 參考（非本專案 archive）：`Projects/Cap6000/`（已刪除，見 commit `856f88b`）前一版 R3 測過同一設定，ticks 逐 seed 與 baseline 相同
 **假設**：CPLEX 官方說明 `RINSHeur` 設正整數 N 時在 node 0、N、2N…呼叫 RINS，**node 0 就是 root**，所以這題也會在 root 多跑一次 RINS。RINS 以 root LP 解與現有 incumbent 一致的變數固定後解子 MIP，可能比預設的 root 啟發式更早找到 −2451346。值取 10：在 root 的效果與任何正值相同，萬一出現分支也不會每個節點都跑。
 **預測**：不勝出（`Losses ≥ 1`）。baseline 在第一回 cut 後就找到收尾解，gap 很可能在 CPLEX 呼叫 node 0 的 RINS 之前就收斂；預期 ticks 逐 seed 與 baseline 相同，主表勝負只剩計時雜訊。←跑之前寫死
 **每個設定的理由（跑之前）**：
