@@ -496,13 +496,7 @@ CPLEX 的 **dynamic search** 是預設求解演算法，有一個會被靜默關
 
 此機制為 CPLEX 獨有，**NEVER 從其他 solver 的文件類推**。
 
-### 2.4 規模預警
-
-`EngineBase.Solve()` 在求解前跑 `PreSolveGuard()`：`VariableCount` 超過 `ScaleWarnThreshold`（預設 `10,000,000`）就 `Logging.Warn`（`[MODEL_SCALE_WARNING]`），**只警告不中止**。
-
-看到這個警告 → **不是調旋鈕的時機**。模型太大是結構問題（該縮 set / 拆問題），回報使用者並建議退回 Phase 1，NEVER 靠 `Threads` 硬扛。
-
-### 2.5 模型層手段不屬本階段（列出來是為了辨識）
+### 2.4 模型層手段不屬本階段（列出來是為了辨識）
 
 下列都是**真正有效**但**只適用於模型尚未定版時**（Phase 1）的手段。進了 Phase 3 模型已凍結，看到這類訴求 → 依 §1 退回 Phase 1，NEVER 在本階段做：
 

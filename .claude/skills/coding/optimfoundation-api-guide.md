@@ -2115,12 +2115,11 @@ public List<string> GetConflictConstraints(); // Infeasible 時的衝突集
 `Solve()` 的行為序列：
 
 1. 印建立摘要 log（模型有變動才重印）：`[變數建立摘要]`、`[限制式建立摘要]`，以及問題類型 `[模型類型] type=MILP continuous=2 integer=1 binary=3`
-2. `PreSolveGuard()`：`VariableCount` 超過 `ScaleWarnThreshold`（預設 `10,000,000`）→ `Logging.Warn` 一則，**只警告不中止**
-3. `ExportLP` / `ExportMPS` 為 true → 寫 `Model/{ModelName}_LP_{timestamp}.lp` / `_MPS_{timestamp}.mps`
-4. 求解，設定 `Status`
-5. 解可行且 `ExportSol` → 寫 `Solution/{ModelName}_Solution_{timestamp}.sol`
-6. `Infeasible` → 自動 `RefineConflict`，寫 `IIS/{ModelName}_IIS_{timestamp}.ilp`
-7. 印 `ObjVal / LastMetrics.BestBound / LastMetrics.Gap`，回填 `LastMetrics`
+2. `ExportLP` / `ExportMPS` 為 true → 寫 `Model/{ModelName}_LP_{timestamp}.lp` / `_MPS_{timestamp}.mps`
+3. 求解，設定 `Status`
+4. 解可行且 `ExportSol` → 寫 `Solution/{ModelName}_Solution_{timestamp}.sol`
+5. `Infeasible` → 自動 `RefineConflict`，寫 `IIS/{ModelName}_IIS_{timestamp}.ilp`
+6. 印 `ObjVal / LastMetrics.BestBound / LastMetrics.Gap`，回填 `LastMetrics`
 
 ```csharp
 public enum ModelType { LP, MILP, IP, BP }
