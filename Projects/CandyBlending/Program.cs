@@ -1,4 +1,5 @@
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
 using OptimFoundation.Cplex;
 
 namespace CandyBlending
@@ -16,7 +17,9 @@ namespace CandyBlending
             if (args.Length >= 2 && args[0] == "import-data")
             {
                 string rawFile = args[1];
-                OptData.Load(() => new Dataload(rawFile)).Export();
+                var imported = OptData.Load(() => new Dataload(rawFile));
+                CandyBlendingSolution.ValidateData(imported);
+                imported.Export();
                 return 0;
             }
 
@@ -69,10 +72,10 @@ namespace CandyBlending
             // exp —— 掃 solver 設定，不做正式求解
             if (isExperiment)
             {
-                // R0 — CandyBlending-tuning-r0（紀錄接在 Experiment/{專案名}-trial.csv 等累積檔，Experiment 欄 = 實驗名）
-                // read-model 的實驗另外命名，累積檔裡跟 canonical 同一輪分得開
+                // R0 — CandyBlending-tuning-r0（固定三個 CSV；有軌跡時另有 -trajectory.csv）
                 string experimentName = modelFile == null ? "tuning-r0" : $"tuning-r0-{model.Name}";
-                var exp = project.Experiment(experimentName, "R0 校準：baseline × 5 seeds");
+                var exp = project.Experiment(experimentName, "R0 校準：baseline × 5 seeds")
+                    .CaptureTrajectory(true);
                 exp.AddModel(model);
 
                 foreach (var seed in new[] { 11, 22, 33, 44, 55 })
@@ -85,14 +88,17 @@ namespace CandyBlending
                 var result = exp.Run();
 
                 foreach (var trial in result.Trials)
-                    Logging.Info($"[Experiment] {trial.Label} status={trial.Metrics.Status} solveTimeMs={trial.Metrics.SolveTimeMs:F0}");
+                    Logging.Info($"[試跑完成] 名稱={trial.Label} 狀態={trial.Metrics.Status} 耗時毫秒={trial.Metrics.SolveTimeMs:F0}");
                 return 0;
             }
 
             // 預設：正式求解（read-model 沒有資料，不跑解驗證）
             project.LoadConfig(projectConfig);
-            bool solved = project.Solve(model, productionBaseline,
-                onSolved: data == null ? null : engine => CandyBlendingSolution.ReadAndValidate(engine, data).Print());
+            bool solved = project.Solve(
+                model,
+                productionBaseline,
+                onSolved: data == null ? null : engine => CandyBlendingSolution.ReadAndValidate(engine, data, new CsvSolutionSink()).Print(),
+                beforeSolve: engine => engine.EnableTrajectory());
             return solved ? 0 : 1;
         }
 

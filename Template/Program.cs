@@ -1,4 +1,5 @@
 using OptimFoundation.Core;
+using OptimFoundation.Core.IO;
 using OptimFoundation.Cplex;
 
 namespace Template
@@ -16,7 +17,9 @@ namespace Template
             if (args.Length >= 2 && args[0] == "import-data")
             {
                 string rawFile = args[1];
-                OptData.Load(() => new Dataload(rawFile)).Export();
+                var imported = OptData.Load(() => new Dataload(rawFile));
+                TemplateSolution.ValidateData(imported);
+                imported.Export();
                 return 0;
             }
 
@@ -70,10 +73,10 @@ namespace Template
             // exp —— 交棒給 Phase 3 的 R0 形狀，NEVER 在這裡混掃多顆旋鈕
             if (isExperiment)
             {
-                // R0 — Template-tuning-r0（紀錄寫成 Experiment/Template-tuning-r0-trial.csv 等四個檔）
-                // read-model 的實驗另外命名，紀錄檔跟 canonical 同一輪分得開
+                // R0 — Template-tuning-r0（固定三個 CSV；有軌跡時另有 -trajectory.csv）
                 string experimentName = modelFile == null ? "tuning-r0" : $"tuning-r0-{model.Name}";
-                var exp = project.Experiment(experimentName, "R0 校準：baseline x 5 seeds");
+                var exp = project.Experiment(experimentName, "R0 校準：baseline x 5 seeds")
+                    .CaptureTrajectory(true);
                 exp.AddModel(model);
 
                 foreach (var seed in new[] { 11, 22, 33, 44, 55 })
@@ -86,14 +89,17 @@ namespace Template
                 var result = exp.Run();
 
                 foreach (var trial in result.Trials)
-                    Logging.Info($"[Experiment] {trial.Label} status={trial.Metrics.Status} solveTimeMs={trial.Metrics.SolveTimeMs:F0}");
+                    Logging.Info($"[試跑完成] 名稱={trial.Label} 狀態={trial.Metrics.Status} 耗時毫秒={trial.Metrics.SolveTimeMs:F0}");
                 return 0;
             }
 
             // 預設：正式求解（read-model 沒有資料，不跑解驗證）
             project.LoadConfig(projectConfig);
-            bool solved = project.Solve(model, productionBaseline,
-                onSolved: data == null ? null : engine => TemplateSolution.ReadAndValidate(engine, data).Print());
+            bool solved = project.Solve(
+                model,
+                productionBaseline,
+                onSolved: data == null ? null : engine => TemplateSolution.ReadAndValidate(engine, data, new CsvSolutionSink()).Print(),
+                beforeSolve: engine => engine.EnableTrajectory());
             return solved ? 0 : 1;
         }
 

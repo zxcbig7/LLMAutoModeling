@@ -1,7 +1,7 @@
 # Solver Tuning — Phase 3 端到端調校規範
 
 > **這份文件是什麼**：模型與資料已凍結、正確性已驗的專案跑太慢或收斂不了時，怎麼系統性地調 CPLEX solver 旋鈕，從「進場判斷」到「champion 寫回 production baseline 並驗證」的完整標準流程。
-> **怎麼用**：從 §0 的進場 gate 開始，**gate 沒過就不要往下讀**。gate 的第一件事是分 §0.0.1 的三個進場情境——**情境決定每個 seed 實際比到哪一項（A 比時間、B 比 gap、C 比有沒有找到解），也決定結果不變式怎麼驗**。旋鈕名稱與可設值查 [`cplex-parameter-reference.md`](cplex-parameter-reference.md)，NEVER 憑記憶寫欄位名。
+> **怎麼用**：從 §0 的進場 gate 開始，**gate 沒過就不要往下讀**。gate 的第一件事是分 §0.0.1 的三個進場情境——**情境決定每個 seed 實際比到哪一項（A 比時間、B 比 gap、C 比有沒有找到解），也決定結果不變式怎麼驗**。旋鈕分類查 [`cplex-parameter-reference.md`](cplex-parameter-reference.md)，實際 property 與型別查 sibling `CplexConfig.cs` / developer guide，NEVER 憑記憶寫欄位名。
 > **前置**：專案已通過 Phase 2 的解驗證協定四步（`status.json` 的 `solveVerified: true`），且**使用者主動提出**效能問題。求解**沒有**收斂到 `Optimal`（撞時限停在 `Feasible`，甚至沒找到任何解）**不是進場的阻礙，而是最典型的進場理由**——見 §0.0.1。
 > **本檔自足**：讀這一份就能從症狀走到 promotion 完成，流程判斷不需要開其他文件。天條全文在 [`../AGENTS.md`](../AGENTS.md)；Experiment / Config 的 **API 簽名、runner 行為、exp 分支的 R0-ready 形狀契約**在 [`../coding/optimfoundation-api-guide.md`](../coding/optimfoundation-api-guide.md) §8–§9，本檔 NEVER 複製那一份的內容。
 
@@ -15,7 +15,7 @@
 
 ## 術語與符號表
 
-本表是本檔所有 tuning 專有名詞、符號與縮寫的**唯一集中定義**。`CplexConfig` 的個別 property 名稱、CPLEX 原始參數與可設值以 [`cplex-parameter-reference.md`](cplex-parameter-reference.md) 為準；未列於本表的新專有名詞，MUST 在首次出現處先定義，再使用。
+本表是本檔所有 tuning 專有名詞、符號與縮寫的**唯一集中定義**。`CplexConfig` 的分類看 [`cplex-parameter-reference.md`](cplex-parameter-reference.md)，個別 property、型別與語意以 sibling `CplexConfig.cs` / developer guide 為準。
 
 ### 流程與證據
 
@@ -273,7 +273,7 @@ Why: tuning 的全部價值建立在「模型與資料固定」上——動了�
 
 Infeasible 幾乎都是模型或資料的錯，不是 solver 的錯。在這裡調旋鈕沒有任何意義——你要產出的是「該退回哪裡、退回去要修什麼」的**證據**，不是修法本身。
 
-1. 取衝突限制式名稱清單：讀 solver log 的 `[OptEngine] Conflict constraints (N): a, b, …` 那一行（`Solve()` 遇到 Infeasible 會自動 `RefineConflict` 並寫出這行；名稱數 MUST 等於 N），或呼叫 `engine.GetConflictConstraints()`
+1. 取衝突限制式名稱清單：讀 solver log 的 `[衝突限制式摘要] 數量=N 名稱=a|b|…` 那一行（`Solve()` 遇到 Infeasible 會自動 `RefineConflict` 並寫出這行；名稱數 MUST 等於 N），或呼叫 `engine.GetConflictConstraints()`
    `IIS/*.ilp` 只在要看式子內容時用上面的名稱 grep 那幾行，**NEVER 整檔讀進 context**；拿到名稱後回 `Constraint/` 找對應 `.cs` 與 Model.md 條目
 2. 對每個名稱，回 Model.md 找該條的語意
 3. 判定根因：
@@ -522,7 +522,7 @@ CPLEX 的 **dynamic search** 是預設求解演算法，有一個會被靜默關
 
 **exp 分支的形狀由 Phase 2 交付**（coding guide §8.4 的 R0-ready 契約）：experiment 名已是 `tuning-r0`（不含專案名）、label 已帶 `r0-` 前綴、`// R0 —` marker 已就位、5 個 seed 已列好。**Phase 3 進場不重寫 code**，直接 `dotnet run --project <project.csproj> -- exp`。
 
-★ 同名 experiment 是**整組覆寫**（§3.3）：Phase 2 驗證管線若已跑過 `-- exp`（實驗名 `tuning-r0`），bin 會有 `<Project>-tuning-r0-*.csv`；R0 正式執行時 `Save()` 會整組覆寫這些檔（留 `[EXPERIMENT_OVERWRITTEN]` WARN），**不必先刪**（Phase 2 不 archive，所以沒有衝突）。
+★ 同名 experiment 是**整組覆寫**（§3.3）：Phase 2 驗證管線若已跑過 `-- exp`（實驗名 `tuning-r0`），bin 會有 `<Project>-tuning-r0-*.csv`；R0 正式執行時 `Save()` 會整組覆寫這些檔（留 `[實驗紀錄覆寫]` WARN），**不必先刪**（Phase 2 不 archive，所以沒有衝突）。
 
 形狀不符契約（缺前綴、名稱不對、混掃旋鈕）→ 這是 Phase 2 的交付缺陷：**記成 finding 並就地補正 exp 分支**（它在白名單內），流程照常往下跑，不必退回 Phase 2。
 
@@ -658,7 +658,7 @@ var result = exp.Run();
 
 **MUST `tuning-r<N>`（不含專案名），每輪 N 遞增。**
 
-Why: 同名實驗再跑一次是**整組覆寫**。`Run()` 內的 `Save()` 把這次跑的 trials 寫成 `{專案名}-{實驗名}-trial.csv` / `-meta.csv` / `-summary.csv`（有軌跡再加 `-trajectory.csv`）一組檔，同名會整組覆寫並留 `[EXPERIMENT_OVERWRITTEN]` WARN，這次沒寫到的舊檔（例：上次有軌跡這次沒有）一併刪掉，`result.Trials` 只有這次跑的內容。檔被 Excel 開著寫不進去時改寫 `-locked-<時間>.csv` 並留 WARN。**一個已 archive 到 `Experiments/` 的 `r<N>` 視為永遠不可再執行**（§3.3.1）——同名重跑會把舊結果整組蓋掉。遞增 `r<N>` 命名是為了讓每一輪的策略方向有自己獨立的一組紀錄檔，要留住結果就換實驗名（`tuning-r1` → `tuning-r2`）。
+Why: 同名實驗再跑一次是**整組覆寫**。`Run()` 內的 `Save()` 把這次跑的 trials 寫成 `{專案名}-{實驗名}-trial.csv` / `-meta.csv` / `-summary.csv`（有軌跡再加 `-trajectory.csv`）一組檔，同名會整組覆寫並留 `[實驗紀錄覆寫]` WARN，這次沒寫到的舊檔（例：上次有軌跡這次沒有）一併刪掉，`result.Trials` 只有這次跑的內容。檔被 Excel 開著寫不進去時改寫 `-locked-<時間>.csv` 並留 WARN。**一個已 archive 到 `Experiments/` 的 `r<N>` 視為永遠不可再執行**（§3.3.1）——同名重跑會把舊結果整組蓋掉。遞增 `r<N>` 命名是為了讓每一輪的策略方向有自己獨立的一組紀錄檔，要留住結果就換實驗名（`tuning-r1` → `tuning-r2`）。
 
 #### 3.3.1 每輪 exp 設定保存契約
 
@@ -715,14 +715,14 @@ Phase 3 在其上額外要求：
 
 在 R0 之後、R1 之前跑一次。CPLEX 自帶 tuning tool，**所有 API 與 Interactive Optimizer 皆可用**。框架未封裝 `TuneParam`（附錄 B 缺口），但這條路**繞得過去**：
 
-`ProjectConfig.ExportLP = true` 已在 `bin/.../Model/` 產出 `.lp` 檔 → 拿它到 CPLEX Interactive Optimizer 跑 `tune`，**一行程式都不用改**。
+`ProjectConfig.ExportLP = true` 已在 `bin/.../Model/` 產出 `.lp` 檔 → 拿它到 CPLEX Interactive Optimizer 跑 `tools tune`，**一行程式都不用改**。
 
 ```text
 read <ProjectName>_LP_<timestamp>.lp
 set timelimit <契約值>
 set mip tolerances mipgap <契約值>
 set tune repeat <N>
-tune
+tools tune
 display settings changed
 ```
 
@@ -1004,7 +1004,7 @@ phase2Status / phase2Objective / phase2Bound / phase2Gap / verifiedOn / modelTyp
 
 #### 6.2.2 `TUNING-FACTS` 機械事實區塊（防止亂填數字）
 
-每個 R<N> 節 MUST 在敘事分析前放入一個**逐欄抄自 archive `<Project>-tuning-r<N>-trial.csv` + `-meta.csv`（同一個實驗；用 CSV 解析器讀，例如 PowerShell `Import-Csv`，NEVER 用逗號切字串）** 的 machine facts block；它是 History 中所有 Trial 原始數值的唯一來源，**不得手寫估計值或事後編輯數字**。格式固定如下（欄位與框架範本 `OptimFoundation/Templates/ModelTuner/Tuning/RoundFacts.cs` 的 facts 相同，markdown 表不是 JSON）：
+每個 R<N> 節 MUST 在敘事分析前放入一個**逐欄抄自 archive `<Project>-tuning-r<N>-trial.csv` + `-meta.csv`（同一個實驗；用 CSV 解析器讀，例如 PowerShell `Import-Csv`，NEVER 用逗號切字串）** 的 machine facts block；它是 History 中所有 Trial 原始數值的唯一來源，**不得手寫估計值或事後編輯數字**。格式固定如下（欄位來源見 [`optimfoundation-api-guide.md`](../coding/optimfoundation-api-guide.md) §9.2 `OptExperiment` 的輸出說明，markdown 表不是 JSON）：
 
 ```text
 <!-- TUNING-FACTS:R<N>:BEGIN -->
@@ -1207,7 +1207,7 @@ T5 用 `second-opinion` 的理由：promotion 會改寫 production baseline，�
 目標：讀 IIS 輸出，找出最小衝突約束集合，判斷是模型錯還是資料錯。
 動機：Infeasible 幾乎都是模型或資料的錯，不是 solver 的錯。你產出的是「該退回哪裡、退回去要修什麼」的證據，不是修法本身。
 
-輸入：solver log 的 `[OptEngine] Conflict constraints (N): …` 那一行（名稱數 = N）；要看式子內容才用名稱 grep Projects/{{Project}}/bin/Debug/net8.0/IIS/*.ilp。
+輸入：solver log 的 `[衝突限制式摘要] 數量=N 名稱=…` 那一行（名稱數 = N）；要看式子內容才用名稱 grep Projects/{{Project}}/bin/Debug/net8.0/IIS/*.ilp。
 NEVER 整檔讀 .ilp；拿到名稱後回 Constraint/ 找對應 .cs 與 Model.md 條目。
 規範：讀 .claude/skills/tuning/solver-tuning-guide.md 的 §1.1（只讀這節）
 
@@ -1236,9 +1236,9 @@ NEVER 建議改成 soft constraint。NEVER 自己動手修任何檔案。
 
 過關條件：
 1. 每個 variant 相對 baseline 只有一處差異（逐項比對，寫在表上）
-2. experiment name 為 {{Project}}-tuning-r{{N}}，與歷史不重名
+2. builder 的 experiment name 為 `tuning-r{{N}}`，與歷史不重名；`OptExperiment.FullName` 與檔名前綴才是 `{{Project}}-tuning-r{{N}}`
 3. baseline 來自 productionBaseline.Clone()
-4. 每個旋鈕名都在 cplex-parameter-reference.md 查得到，且落在「搜尋策略」那五組（其餘為凍結類，不可掃）
+4. 每個旋鈕先由 cplex-parameter-reference.md 分類，再到 sibling `OptimFoundation/OptimFoundation/src/OptimFoundation.Cplex/CplexConfig.cs` 核對實際 property、型別與語意
 5. 每個 variant 都有可追溯的 evidence-to-config 理由；沒有重試已否證方向，除非明列剖面／契約／環境的變化
 6. 本輪目標可由當輪 Trial 與 trajectory 機械判定達成或失敗
 
@@ -1428,10 +1428,7 @@ RETAIN 則跳過寫回，只做 TuningHistory 記錄。
 
 ## 附錄 A · 旋鈕查表（已移出本檔）
 
-全 182 顆的官方參數路徑、型別、值域與預設在
-[`cplex-parameter-reference.md`](cplex-parameter-reference.md)，依 §2.0 的五分類分組。
-
-**查表用，不必通讀**——要寫欄位名或設值時 grep 那一份即可。
+[`cplex-parameter-reference.md`](cplex-parameter-reference.md) 只提供調校分類導航。實際 property、型別與語意一律查 sibling `OptimFoundation/OptimFoundation/src/OptimFoundation.Cplex/CplexConfig.cs` 或 developer guide；NEVER 從本文件推測欄位。
 
 分類與「能不能進 variant 池」的判準仍在 §2.0；搜尋策略的全池清單在 §2.2.1。
 

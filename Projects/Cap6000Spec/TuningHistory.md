@@ -1,5 +1,7 @@
 # Cap6000Spec — TuningHistory
 
+> **Legacy experiment format**：本文件與既有數字來自舊版累積 CSV，需用 `Experiment + RunId` 篩選；只作歷史 provenance，不可當現行實作範例。現行格式是一個實驗一組三個必備 CSV，有收集到軌跡才有第四個檔；同名整組覆寫。請從 [AI-Modeling 新版框架用法入口](../../.claude/README.md#新版框架用法入口) 開始。
+
 > Phase 3 決策紀錄（solver-tuning-guide §6）。模型是 `Data/cap6000.mps.gz`（MIPLIB cap6000），以 `read-model` 讀入，沒有 Phase 1/2。
 > 契約區塊整期固定 → S1 / R0 / S2.5 → 每輪一節，只追加，NEVER 改寫歷史節。
 > 每輪的目標、依據、假設、預測都在跑之前寫；TUNING-FACTS 用 `Import-Csv` 從 `Experiments/Cap6000Spec-trial.csv` 逐欄抄出，NEVER 手填數字。

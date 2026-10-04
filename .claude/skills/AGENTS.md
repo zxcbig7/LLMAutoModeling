@@ -87,7 +87,7 @@
 - NEVER 自己比勝負或重算狀態筆數，NEVER 算平均或統計指標（sgm、PAR10、θ、gap 平均、改善量一律不用）：主表每列的 `VsBaseline` 是跟同一個 seed 的 baseline 比（`win` / `lose` / `tie` / `n/a`），`-summary.csv` 直接提供每組設定的 `Wins` / `Losses` / `Ties` / `NotCompared` 與 `FoundSolution`——判定只讀這些
   Why: 逐列對 seed、分辨誰有解誰沒解的步驟多，自己比很容易對錯列；比錯一格就會把 retain 判成 promote
 - 讀 CSV 用 CSV 解析器（例如 PowerShell `Import-Csv`）—— NEVER 用逗號切字串（欄位內含逗號時會被加引號，切字串會錯位）
-- 讀 log 用精確的事件 tag 抽行（例如 `[變數建立完成]`、`[限制式建立]`、`rows=`、`Issues (`、`[DATA_VALIDATION_WARNING]`、`[OptEngine] Conflict constraints (`），並先確認讀的是**本次執行**的檔：log 取時間戳最新的那份，實驗 CSV 檔（`<Project>-<實驗名>-*.csv`）的修改時間要對得上本次執行時間
+- 讀 log 用精確的事件 tag 抽行（例如 `[變數建立完成]`、`[限制式建立完成]`、`[集合載入完成]`、`[資料載入摘要]`、`[資料不合法]`、`[衝突限制式摘要]`），並先確認讀的是**本次執行**的檔：log 取時間戳最新的那份，實驗 CSV 檔（`<Project>-<實驗名>-*.csv`）的修改時間要對得上本次執行時間
 - 要確認「某件事沒發生」時用正面證據計數，NEVER 用「沒看到」當證據：例如 dynamic search 用 `MIP search method: dynamic search.` 出現次數 = trial 數，而不是「沒看到停用 warning」
 
 ## Canonical 寫法（不得從相容範例反推）
@@ -269,7 +269,7 @@ Projects/<Project>/
 | 資源                   | 路徑                                                                                         | 用途                                                                                                   |
 | ---------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Phase 1 唯一規範       | [`modeling/model-design-guide.md`](modeling/model-design-guide.md)                           | 四階段降維、Model.md 契約、線性化 pattern、multi-agent                                                 |
-| Phase 2 唯一標準       | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md)                 | 端到端轉譯規範；§9 = 框架簽名 + 黑名單，§8 = Experiment API                                            |
+| Phase 2 唯一標準       | [`coding/optimfoundation-api-guide.md`](coding/optimfoundation-api-guide.md)                 | 端到端轉譯規範；§9 = AI 白名單 + 黑名單，runtime 簽名見 sibling OptimFoundation developer guide/source |
 | Phase 2 產出一致性契約 | [`coding/checklist.md`](coding/checklist.md)                                                 | AI 交付前機械驗收，逐條核對                                                                            |
 | Phase 2 multi-agent    | [`coding/agent-workflow-prompts.md`](coding/agent-workflow-prompts.md)                       | C0–C9 / V1–V3 拓樸與派工 prompt                                                                        |
 | Phase 3 唯一規範       | [`tuning/solver-tuning-guide.md`](tuning/solver-tuning-guide.md)                             | 進場 gate、旋鈕全表、promotion 閉環、multi-agent                                                       |

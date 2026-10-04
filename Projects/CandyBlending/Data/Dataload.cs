@@ -36,7 +36,6 @@ namespace CandyBlending
         /// import-data 能力，載入現行標準 CSV 後由 Export() 原樣寫回（round-trip 自檢）。</summary>
         public Dataload(string rawFile) : this(new CsvDataSource())
         {
-            Logging.Info($"[import] 本專案無 raw 攤平步驟（canonical CSV 由 Model.md 表格逐格謄寫）；rawFile='{rawFile}' 僅記錄不使用。");
         }
 
         /// <summary>把積木寫成標準 CSV，成為求解模式的 input。檔名 MUST 與上面讀取時一致。</summary>
@@ -50,9 +49,6 @@ namespace CandyBlending
             CsvCtrl.WriteRows(parameter_SellingPrice, "Parameter_SellingPrice");
             CsvCtrl.WriteRows(parameter_MinContentRatio, "Parameter_MinContentRatio");
             CsvCtrl.WriteRows(parameter_MaxContentRatio, "Parameter_MaxContentRatio");
-            Logging.Info("[import] exported: Set_RawMaterial, Set_CandyBrand, Parameter_MaterialCost, " +
-                         "Parameter_MonthlySupplyLimit, Parameter_ProcessingCost, Parameter_SellingPrice, " +
-                         "Parameter_MinContentRatio, Parameter_MaxContentRatio");
         }
     }
 }

@@ -4,13 +4,25 @@
 
 `Template/` 與 `Projects/<Project>/` 不建立或保留 `CLAUDE.md`；它們不應有獨立 AI 規則。所有問題一律回到本資料夾查閱。
 
+## 新版框架用法入口
+
+canonical lifecycle 先走 `OptData.Load` → `ValidateData` → `OptModel`，之後分流：正式求解用 `OptProject.LoadConfig(ProjectConfig)` → `Solve`；實驗用 `OptProject.Experiment(...)` 取得 `OptExperiment`，需要改輸出政策時呼叫 `OptExperiment.LoadConfig(ProjectConfig)`，再 `Run`。先讀 [`skills/coding/optimfoundation-api-guide.md`](skills/coding/optimfoundation-api-guide.md#新版框架最短路徑)，再照 [`../Template/Program.cs`](../Template/Program.cs) 實作。
+
+| 要查什麼 | canonical source |
+| --- | --- |
+| AI workflow、專案結構、允許 API 與產碼政策 | 本 repo 的 `skills/AGENTS.md` 與三個 phase guide |
+| runtime API 簽名、CSV schema、中文事件名與實際行為 | [`../../OptimFoundation/OptimFoundation/specs/developer-guide.md`](../../OptimFoundation/OptimFoundation/specs/developer-guide.md)；有疑義再查 sibling `src/` |
+| 可直接複製的 consumer 寫法 | [`../Template/`](../Template/)；完整例子是 [`../Projects/CandyBlending/`](../Projects/CandyBlending/) |
+
+AI-Modeling 文件只維護 workflow、白名單與可執行範例，不維護完整 framework API 鏡像。
+
 ## 快速入口（四份檔就是全部）
 
 | 需求                                                                         | 請讀                                                                                       |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | **總流程**：天條、三階段契約、正式交付物、`status.json` schema               | [`skills/AGENTS.md`](skills/AGENTS.md)                                                     |
 | **Phase 1 建模**：四階段降維、Model.md 契約、線性化 pattern、multi-agent     | [`skills/modeling/model-design-guide.md`](skills/modeling/model-design-guide.md)           |
-| **Phase 2 轉譯**：專案結構、資料/變數/模型層、`Program.cs`、解驗證、API 簽名 | [`skills/coding/optimfoundation-api-guide.md`](skills/coding/optimfoundation-api-guide.md) |
+| **Phase 2 轉譯**：專案結構、資料/變數/模型層、`Program.cs`、解驗證、常用 API 白名單 | [`skills/coding/optimfoundation-api-guide.md`](skills/coding/optimfoundation-api-guide.md) |
 | **Phase 3 調校**：進場 gate、旋鈕全表、promotion 閉環、multi-agent           | [`skills/tuning/solver-tuning-guide.md`](skills/tuning/solver-tuning-guide.md)             |
 
 **一階段一份權威 guide。** Phase 2 另有兩份非權威輔助檔：交付前機械驗收用 [`skills/coding/checklist.md`](skills/coding/checklist.md)、派工用 [`skills/coding/agent-workflow-prompts.md`](skills/coding/agent-workflow-prompts.md)。

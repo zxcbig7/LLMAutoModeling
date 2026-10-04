@@ -28,6 +28,9 @@ namespace Template
         /// framework 只驗 key 重複與數值 sanity；全格矩陣與跨表關聯一律是專案責任，而且 MUST 在建模之前跑完。</summary>
         public static void ValidateData(Dataload data)
         {
+            if (data.DataIssues.Count > 0)
+                throw new InvalidOperationException($"資料不合法：框架資料檢查發現 {data.DataIssues.Count} 個問題");
+
             foreach (var item in data.set_Item)
             {
                 RequireRow(data.parameter_Demand.Any(row => row.Item == item.Item), "Parameter_Demand", item.Item);
@@ -50,29 +53,27 @@ namespace Template
             _ = data.parameter_ShortagePenalty.Single().QTY;
             _ = data.parameter_BigMProduce.Single().QTY;
 
-            Logging.Info("[ValidateData] 全格 Parameter 與跨表關聯檢查通過。");
         }
 
         private static void RequireRow(bool exists, string source, string key)
         {
             if (!exists)
-                throw new InvalidOperationException($"[Data] {source} 缺少 {key}——缺格代表資料漏了，不是「值為 0」。");
+                throw new InvalidOperationException($"[資料不合法] {source} 缺少 {key}——缺格代表資料漏了，不是「值為 0」。");
         }
 
-        public static TemplateSolution ReadAndValidate(OptEngine engine, Dataload data)
+        public static TemplateSolution ReadAndValidate(OptEngine engine, Dataload data, ISolutionSink sink)
         {
-            Logging.Info($"Status={engine.Status} Obj={engine.GetObjectiveValue():F4} " +
-                         $"BestBound={engine.LastMetrics.BestBound:F4} Gap={engine.LastMetrics.Gap:P2}");
-
             var produce = engine.GetSetVarValues<VariableI_Produce>();
             var use = engine.GetSetVarValues<VariableB_Use>();
             var shortage = engine.GetSetVarValues<VariableC_Shortage>();
 
             ValidateRules(produce, use, shortage, data);
 
-            CsvCtrl.WriteSolution<VariableI_Produce>(engine, "Template", "SYSTEM");
-            CsvCtrl.WriteSolution<VariableB_Use>(engine, "Template", "SYSTEM");
-            CsvCtrl.WriteSolution<VariableC_Shortage>(engine, "Template", "SYSTEM");
+            using var batch = sink.BeginBatch("Template", "SYSTEM");
+            batch.Write<VariableI_Produce>(engine);
+            batch.Write<VariableB_Use>(engine);
+            batch.Write<VariableC_Shortage>(engine);
+            batch.Commit();
             return new TemplateSolution(produce, use, shortage);
         }
 
@@ -142,7 +143,6 @@ namespace Template
                         $"[C3] ({slot.Item}, {slot.Date:yyyy-MM-dd}) 違反 ProduceOnlyWhenUsed：{produced:F6} > {allowed:F6}。");
             }
 
-            Logging.Info("[Validate] [C1]-[C5] 全數成立。");
         }
 
         // 組 key 一律明寫 row 的 property；NEVER 直接內插 row 物件（多維 row 沒有隱式字串轉換，會查不到）

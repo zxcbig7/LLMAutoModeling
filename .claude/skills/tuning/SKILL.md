@@ -18,7 +18,7 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 | [`../AGENTS.md`](../AGENTS.md) | 天條、三階段契約、`status.json` schema | 動手前 |
 | [`solver-tuning-guide.md`](solver-tuning-guide.md) | **Phase 3 唯一規範**：進場情境、可寫白名單、旋鈕分類、實驗設計、champion 判定、promotion、停損 | 每個 S 步驟依標註的節次讀那一節 |
 | [`checklist.md`](checklist.md) | 交付前自檢 | 宣告完成前逐條跑 |
-| [`cplex-parameter-reference.md`](cplex-parameter-reference.md) | 旋鈕查表（欄位名、型別、值域、預設） | **查表用，不必通讀**；要寫欄位名或設值時搜尋它，NEVER 憑記憶寫 |
+| [`cplex-parameter-reference.md`](cplex-parameter-reference.md) | 旋鈕分類導航 | 實際 property、型別與值域查 sibling `CplexConfig.cs` / developer guide，NEVER 憑記憶寫 |
 
 **本 skill 不依賴任何外部腳本**（沒有 `.ps1` / `.py` 要跑）：每輪的 archive 驗證是 `checklist.md`「每輪 archive 逐項驗收」那一節，逐項開檔比對。
 
@@ -76,7 +76,7 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 
 **exp 分支的形狀由 Phase 2 交付**（api-guide §8.4）：名稱、`r0-` label、marker、5 個 seed 都已就位。**NEVER 重寫 code**，直接 `dotnet run --project <project.csproj> -- exp`。形狀不符 → 記 finding 並就地補正（在白名單內），不退回 Phase 2。
 
-★ 同名 experiment 是**整組覆寫**：Phase 2 驗證管線若已跑過 `-- exp`（實驗名 `tuning-r0`），bin 會有 `<Project>-tuning-r0-*.csv`；Phase 3 正式跑 R0 會整組覆寫這些檔（留 `[EXPERIMENT_OVERWRITTEN]` WARN），不必先刪（Phase 2 不 archive，所以沒有衝突）。
+★ 同名 experiment 是**整組覆寫**：Phase 2 驗證管線若已跑過 `-- exp`（實驗名 `tuning-r0`），bin 會有 `<Project>-tuning-r0-*.csv`；Phase 3 正式跑 R0 會整組覆寫這些檔（留 `[實驗紀錄覆寫]` WARN），不必先刪（Phase 2 不 archive，所以沒有衝突）。
 
 三個產出（baseline 對照組與情境確認、瓶頸剖面、契約健檢探針）一律照 §3.0。**R0 沒跑完不准進 S3。**
 
@@ -86,7 +86,7 @@ description: Phase 3 調校 orchestrator——模型與資料凍結、正確性�
 
 ## S2.5 · CPLEX 內建 tune 基準（規範 §3.6）
 
-拿 `bin/.../Model/*.lp` 到 CPLEX Interactive Optimizer 跑 `tune`，零成本、不改程式。建議值**拆成獨立 variant** 進 S3 驗證，NEVER 直接 promote。工具不可用 → **跳過不中斷**，記一行理由。
+拿 `bin/.../Model/*.lp` 到 CPLEX Interactive Optimizer 跑 `tools tune`，零成本、不改程式。建議值**拆成獨立 variant** 進 S3 驗證，NEVER 直接 promote。工具不可用 → **跳過不中斷**，記一行理由。
 
 ## S3 · 策略輪循環 R1..RN
 

@@ -43,7 +43,6 @@ namespace Template
         /// ——這是全專案唯一允許出現迴圈、Random 與日期運算的地方。</summary>
         public Dataload(string rawFile) : this(new CsvDataSource())
         {
-            Logging.Info($"[import] 本範本無 raw 攤平步驟；rawFile='{rawFile}' 僅記錄不使用。");
         }
 
         /// <summary>把積木寫成標準 CSV，成為求解模式的 input。檔名 MUST 與上面讀取時一致（compiler 不會驗這件事）。</summary>
@@ -58,9 +57,6 @@ namespace Template
             CsvCtrl.WriteRows(parameter_MaxShortage, "Parameter_MaxShortage");
             CsvCtrl.WriteRows(parameter_ShortagePenalty, "Parameter_ShortagePenalty");
             CsvCtrl.WriteRows(parameter_BigMProduce, "Parameter_BigMProduce");
-            Logging.Info("[import] exported: Set_Item, Set_Date, Set_AllowedSlot, Parameter_Demand, " +
-                         "Parameter_DailyCapacity, Parameter_MinActiveDays, Parameter_MaxShortage, " +
-                         "Parameter_ShortagePenalty, Parameter_BigMProduce");
         }
     }
 }

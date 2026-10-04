@@ -81,7 +81,7 @@ Projects/<Project>/
 | Path | Role |
 | --- | --- |
 | `.claude/skills/AGENTS.md` | phase gates 與治理 |
-| `.claude/skills/coding/optimfoundation-api-guide.md` | Phase 2 API 權威 |
+| `.claude/skills/coding/optimfoundation-api-guide.md` | Phase 2 AI usage policy、常用白名單與可執行範例；runtime API 以 sibling OptimFoundation developer guide/source 為準 |
 | `.claude/skills/coding/checklist.md` | 驗收 |
 | `tutorial(for developer)/` | 人類向教學與 prompt |
 | `Template/` | consumer scaffold |

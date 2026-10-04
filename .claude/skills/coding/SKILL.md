@@ -16,7 +16,7 @@ description: Phase 2 轉譯 orchestrator——把已確認的 Model.md 純機械
 | 文件 | 管什麼 | 何時讀 |
 | --- | --- | --- |
 | [`../AGENTS.md`](../AGENTS.md) | 天條、三階段契約、`status.json` schema | 動手前 |
-| [`optimfoundation-api-guide.md`](optimfoundation-api-guide.md) | **Phase 2 唯一標準**：端到端轉譯規範，§9 = API 簽名權威 + 黑名單 | 每個 Step 依下表定位該節 |
+| [`optimfoundation-api-guide.md`](optimfoundation-api-guide.md) | **Phase 2 唯一標準**：端到端轉譯規範，§9 = AI 白名單 + 黑名單；runtime 簽名見 sibling OptimFoundation developer guide/source | 每個 Step 依下表定位該節 |
 | [`checklist.md`](checklist.md) | 交付前的機械驗收契約 | 宣告完成前逐條跑 |
 | [`agent-workflow-prompts.md`](agent-workflow-prompts.md) | C0–C9 / V1–V3 派工拓樸 | 走 multi-agent 時 |
 

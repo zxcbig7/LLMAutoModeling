@@ -148,8 +148,8 @@ Projects/<Project>/
 - [ ] import-data 段與設定段之間固定含 CLI 解析（`isExperiment`、`read-model` 參數）與唯一一次 `using var project = new OptProject("<Project>")`（名稱、log、FolderDir 資料夾、保留期都由它管）。
 - [ ] 設定段固定含具名 `ProjectConfig`、唯一具名 `productionBaseline`（`CplexConfig`，明設 `ParallelMode` / `Seed` / 實測定版的 `Threads`）。
 - [ ] 模型來源段固定含：`modelFile != null` 時 `OptModel.ReadModel(modelFile)`；否則唯一一次 `OptData.Load(() => new Dataload())` → 緊接其後的 `<Project>Solution.ValidateData(data)` → 唯一 `BuildModel(data)`；canonical 組裝抽成 `private static OptModel BuildModel(Dataload data)`，內含唯一 `new OptModel("Canonical")` chain。
-- [ ] 環境段的 `if (isExperiment)` 分支固定含至少一次 `productionBaseline.Clone()`、`project.Experiment(...)`、`.AddModel(model)`、至少一個 `.AddConfig(...)`、`.Run()` 與 `return 0`；不得以「尚未 tuning」省略；read-model 的實驗名附加模型名，紀錄檔跟 canonical 同一輪分得開。
-- [ ] 環境段的正式求解分支固定含 `project.LoadConfig(projectConfig)`、`project.Solve(model, productionBaseline, onSolved: ...)` 與成功 0／失敗 1 的 exit code；`modelFile != null`（read-model，沒有資料）時 `onSolved` 為 `null`，不跑解驗證。
+- [ ] 環境段的 `if (isExperiment)` 分支固定含至少一次 `productionBaseline.Clone()`、canonical 的 `tuning-r0` 與 read-model 的 `tuning-r0-{model.Name}` 分流、明確 `.CaptureTrajectory(...)`、`.AddModel(model)`、至少一個 `.AddConfig(...)`、`.Run()` 與 `return 0`；不得以「尚未 tuning」省略。
+- [ ] 環境段的正式求解分支固定含 `project.LoadConfig(projectConfig)`、`project.Solve(model, productionBaseline, onSolved: ..., beforeSolve: engine => engine.EnableTrajectory())` 與成功 0／失敗 1 的 exit code；`modelFile != null`（read-model，沒有資料）時 `onSolved` 為 `null`，不跑解驗證。
 - [ ] 四段（含段間的 CLI 解析與 `new OptProject`）直接平坦存在 `Main`；沒有包裝任何一段或模型組裝的 helper、factory、local function（canonical 組裝的 `BuildModel` 除外），也沒有替代 CLI 命令或額外 mode。
 - [ ] 每個 variable family / Objective / 每條 Constraint 各占一個 fluent call。
 - [ ] `OptEngine` 從 `Build(engine)` 或 canonical 第一參數進來，不從別處偷渡。
@@ -250,7 +250,7 @@ Projects/<Project>/
 
 | 查什麼 | 怎麼查 | 期望值 |
 | --- | --- | --- |
-| 變數數量 | log 用精確 tag 抽：每個變數類別一行 `[變數建立完成] type=<類別> count=實際/預期`；各 Set 的筆數抽 `===== Data load summary =====` 區塊的 `rows=N`（NEVER 為了數筆數去讀 `Input/*.csv`） | 每個類別「實際 = 預期」；且預期數 = Model.md 該 VAR 的 domain 各 Set `rows` 相乘（稀疏 domain 就是那個 Set 本身的 `rows`） |
-| 限制式數量 | log 用精確 tag 抽：每個 Constraint 類別一行 `[限制式建立] 群組=<類別> 已建立=實際/預期`，總數看 `[限制式建立摘要]` 的 `solver 實際持有` | 每個群組「實際 = 預期」；且逐條對 Model.md `[Cn]` 的 `∀` 展開數（用 `rows=N` 相乘，逐條列算式，不要只看總數） |
+| 變數數量 | log 用精確 tag 抽：每個變數類別一行 `[變數建立完成] 變數類別=<類別> 數量=實際/預期`；各 Set 的筆數抽 `[集合載入完成]` 的 `資料列數量=N`（NEVER 為了數筆數去讀 `Input/*.csv`） | 每個類別「實際 = 預期」；且預期數 = Model.md 該 VAR 的 domain 各 Set `資料列數量` 相乘（稀疏 domain 就是那個 Set 本身的 `資料列數量`） |
+| 限制式數量 | log 用精確 tag 抽：每個 Constraint 類別一行 `[限制式建立完成] 限制式類別=<類別> 數量=實際/預期`，總數看 `[限制式建立摘要]` 的 `模型內限制式數量` | 每個群組「實際 = 預期」；且逐條對 Model.md `[Cn]` 的 `∀` 展開數（用 `資料列數量=N` 相乘，逐條列算式，不要只看總數） |
 | 目標值 | 看 `Status` 與 `ObjVal` | 與 Model.md 小例或手算對照吻合；純 LP 時 `BestBound` / `Gap` 是佔位值，不當品質指標 |
 | 解驗證 | 看 `ValidateRules` 的 log | 印出「全數成立」，且**已做過故意改壞測試**確認它真的會 throw（§11.5） |

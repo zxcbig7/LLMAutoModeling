@@ -17,7 +17,7 @@
 | Phase 2 Coding | [`coding`](.claude/skills/coding/SKILL.md) | [`optimfoundation-api-guide.md`](.claude/skills/coding/optimfoundation-api-guide.md) | 八資料夾專案，build 綠 + 解已驗證 |
 | Phase 3 Tuning | [`tuning`](.claude/skills/tuning/SKILL.md) | [`solver-tuning-guide.md`](.claude/skills/tuning/solver-tuning-guide.md) | promotion 後的 baseline + `TuningHistory.md`（使用者提出才做） |
 
-**先讀 [`.claude/skills/AGENTS.md`](.claude/skills/AGENTS.md)**（天條 + 三階段 I/O 契約 + 交接物 + `status.json` schema），再依當前 phase 讀上表對應的那一份。一階段一檔，讀那一份就夠；Phase 2 的 API 簽名權威在其 §9。文件全圖見 [`.claude/README.md`](.claude/README.md)。
+**先讀 [`.claude/skills/AGENTS.md`](.claude/skills/AGENTS.md)**（天條 + 三階段 I/O 契約 + 交接物 + `status.json` schema），再依當前 phase 讀上表對應的那一份。Phase 2 的 AI usage policy 與白名單在其 §9；runtime 簽名以 sibling OptimFoundation 的 developer guide/source 為準。文件全圖見 [`.claude/README.md`](.claude/README.md)。
 
 ## 換機器設置（clone 後唯一要做的事）
 

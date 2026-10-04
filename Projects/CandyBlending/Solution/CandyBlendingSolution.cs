@@ -23,39 +23,40 @@ namespace CandyBlending
         /// MinContentRatio / MaxContentRatio 屬稀疏語意（沒有列 = 沒有這條限制），不在此檢查。</summary>
         public static void ValidateData(Dataload data)
         {
+            if (data.DataIssues.Count > 0)
+                throw new InvalidOperationException($"資料不合法：框架資料檢查發現 {data.DataIssues.Count} 個問題");
+
             foreach (var material in data.set_RawMaterial)
             {
                 if (!data.parameter_MaterialCost.Any(row => row.RawMaterial == material.RawMaterial))
-                    throw new InvalidOperationException($"[Data] Parameter_MaterialCost 缺少 {material.RawMaterial}。");
+                    throw new InvalidOperationException($"[資料不合法] Parameter_MaterialCost 缺少 {material.RawMaterial}。");
 
                 if (!data.parameter_MonthlySupplyLimit.Any(row => row.RawMaterial == material.RawMaterial))
-                    throw new InvalidOperationException($"[Data] Parameter_MonthlySupplyLimit 缺少 {material.RawMaterial}。");
+                    throw new InvalidOperationException($"[資料不合法] Parameter_MonthlySupplyLimit 缺少 {material.RawMaterial}。");
             }
 
             foreach (var brand in data.set_CandyBrand)
             {
                 if (!data.parameter_SellingPrice.Any(row => row.CandyBrand == brand.CandyBrand))
-                    throw new InvalidOperationException($"[Data] Parameter_SellingPrice 缺少 {brand.CandyBrand}。");
+                    throw new InvalidOperationException($"[資料不合法] Parameter_SellingPrice 缺少 {brand.CandyBrand}。");
 
                 if (!data.parameter_ProcessingCost.Any(row => row.CandyBrand == brand.CandyBrand))
-                    throw new InvalidOperationException($"[Data] Parameter_ProcessingCost 缺少 {brand.CandyBrand}。");
+                    throw new InvalidOperationException($"[資料不合法] Parameter_ProcessingCost 缺少 {brand.CandyBrand}。");
             }
 
-            Logging.Info("[ValidateData] 全格 Parameter 覆蓋完整。");
         }
 
-        public static CandyBlendingSolution ReadAndValidate(OptEngine engine, Dataload data)
+        public static CandyBlendingSolution ReadAndValidate(OptEngine engine, Dataload data, ISolutionSink sink)
         {
-            Logging.Info($"Status={engine.Status} Obj={engine.GetObjectiveValue():F4} " +
-                         $"BestBound={engine.LastMetrics.BestBound:F4} Gap={engine.LastMetrics.Gap:P2}");
-
             var blend = engine.GetSetVarValues<VariableC_Blend>();
             var produce = engine.GetSetVarValues<VariableC_Produce>();
 
             ValidateRules(blend, produce, data);
 
-            CsvCtrl.WriteSolution<VariableC_Blend>(engine, "CandyBlending", "SYSTEM");
-            CsvCtrl.WriteSolution<VariableC_Produce>(engine, "CandyBlending", "SYSTEM");
+            using var batch = sink.BeginBatch("CandyBlending", "SYSTEM");
+            batch.Write<VariableC_Blend>(engine);
+            batch.Write<VariableC_Produce>(engine);
+            batch.Commit();
             return new CandyBlendingSolution(blend, produce);
         }
 
@@ -110,7 +111,6 @@ namespace CandyBlending
                         $"[C4] ({ratio.RawMaterial}, {ratio.CandyBrand}) 違反 MaxContent：投入 {actual:F6} > 上限 {allowed:F6}。");
             }
 
-            Logging.Info("[Validate] [C1]–[C4] 全數成立。");
         }
 
         private static double BlendOf(Dictionary<string, double> blend, string rawMaterial, string candyBrand) =>
