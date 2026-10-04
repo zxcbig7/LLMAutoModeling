@@ -6,6 +6,9 @@ updated: 2026-08-25
 modules: [framework-core, framework-cplex, skills-docs, projects]
 ---
 
+> [!IMPORTANT]
+> 這是 2026-08-25 當時版本的交付紀錄，不是現行 API 使用手冊。文中的 `DiffKnobs`、JSON 輸出與 API 範例應按當時版本理解；目前請以 `.claude/skills/coding/optimfoundation-api-guide.md` 與 OptimFoundation source 為準，現行主表欄位名稱是 `ConfigChanges`。
+
 # 過夜工作驗收報告
 
 **時間**：2026-08-24 23:00 – 2026-08-25 07:40

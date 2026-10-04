@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- read-model 專案：模型是 Data/cap6000.mps.gz（MIPLIB cap6000），沒有 CSV 資料、沒有 Phase 1/2 的建模類別。
+       結構照 Template.csproj，差別只有複製的輸入檔：模型檔複製到輸出的 Model/（= FolderDir.Model，read-model 相對路徑的基準）。 -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Cap6000Spec</RootNamespace>
+    <AssemblyName>Cap6000Spec</AssemblyName>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Generated/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Data/*.mps.gz 複製到輸出的 Model/；Data/ 是版控的原始檔，Model/ 是執行時的副本 -->
+    <None Remove="Data\**\*.mps.gz" />
+    <None Include="Data\**\*.mps.gz" CopyToOutputDirectory="PreserveNewest" Link="Model\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ILOG.Concert"><HintPath>..\..\dlls\ILOG.Concert.dll</HintPath></Reference>
+    <Reference Include="ILOG.CPLEX"><HintPath>..\..\dlls\ILOG.CPLEX.dll</HintPath></Reference>
+    <Reference Include="NLog"><HintPath>..\..\dlls\NLog.dll</HintPath></Reference>
+    <Reference Include="OptimFoundation.Core"><HintPath>..\..\dlls\OptimFoundation.Core.dll</HintPath></Reference>
+    <Reference Include="OptimFoundation.Cplex"><HintPath>..\..\dlls\OptimFoundation.Cplex.dll</HintPath></Reference>
+  </ItemGroup>
+
+</Project>

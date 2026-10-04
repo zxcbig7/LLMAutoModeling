@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\**\*.csv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Data/*.csv 複製到輸出的 Input/（= FolderDir.Input，框架唯一讀取位置）；Data/ 是版控的原始檔，Input/ 是執行時的副本 -->
+    <None Remove="Data\**\*.csv" />
+    <None Include="Data\**\*.csv" CopyToOutputDirectory="PreserveNewest" Link="Input\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

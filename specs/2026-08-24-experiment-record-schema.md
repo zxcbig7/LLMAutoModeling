@@ -2,9 +2,15 @@
 title: Experiment 紀錄格式 v1 —— baseline 全量一次、每個 trial 只記 delta，並補齊調參決策所需的診斷指標
 status: approved
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-09-29
 modules: [framework-core, framework-cplex, skills-docs, projects]
 ---
+
+> [!IMPORTANT]
+> 這是 2026-08-24 的歷史設計與驗收紀錄，不是現行 API 使用手冊。現在請以
+> `.claude/skills/coding/optimfoundation-api-guide.md` 與 OptimFoundation source 為準；
+> 例如實驗由 `OptProject.Experiment(...)` 建立、執行批次使用 `ExperimentId`，
+> `SolveMetrics.TrajectoryPoints` 也是唯讀的計算結果。
 
 # Experiment Record Schema v1
 

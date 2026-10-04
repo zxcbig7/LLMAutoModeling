@@ -5,7 +5,7 @@ using HospitalRostering_Generator.Variable;
 
 namespace HospitalRostering_Generator.Constraint
 {
-    /// <summary>C6 不良班別轉換指示：s^ntd[e,d] ≥ y[e,d-1,g'] + y[e,d,g] - 1，∀(g',g)∈R。（CreateGreatEqual）</summary>
+    /// <summary>C6 不良班別轉換指示：s^ntd[e,d] ≥ y[e,d-1,g'] + y[e,d,g] - 1，∀(g',g)∈R。（CreateGreaterEqual）</summary>
     public class Constraint_NightToDay : ConstraintBase
     {
         private readonly OptEngine optEngine;
@@ -36,7 +36,7 @@ namespace HospitalRostering_Generator.Constraint
                             optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = preD, Employee = e, Group = rule.PreGroup });
                             optEngine.AddRHS(1, new VariableB_ShiftAssign { Date = d,    Employee = e, Group = rule.Group });
                             optEngine.AddRHS(-1);
-                            optEngine.CreateGreatEqual(this, d, e, rule.PreGroup, rule.Group);
+                            optEngine.CreateGreaterEqual(this, d, e, rule.PreGroup, rule.Group);
                         });
                     });
                 });

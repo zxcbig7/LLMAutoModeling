@@ -1,0 +1,247 @@
+﻿RecordedAt,Experiment,RunId,Section,Key,Value
+2026-10-03 01:04:35,sizing,20261003-010432,schema,version,10
+2026-10-03 01:04:35,sizing,20261003-010432,legend,off,沒有收集：這次求解沒開收斂軌跡
+2026-10-03 01:04:35,sizing,20261003-010432,legend,none,有收集但沒發生：沒找到可行解、界從未變動、與基準無差異、求解前就失敗
+2026-10-03 01:04:35,sizing,20261003-010432,legend,n/a,求解器不提供（例：軌跡開了但 CPLEX 沒呼叫 callback，presolve 或 root 就解完）、框架沒量到（自己呼叫 Trial.Capture 時的 BuildAndSolveTimeMs），或無法跟基準比較（暖機、同一個 seed 沒有基準 trial、基準本身求解失敗）
+2026-10-03 01:04:35,sizing,20261003-010432,legend,baseline,這一列就是基準：主表的 ConfigChanges 與 VsBaseline、-summary.csv 的 Wins / Losses / Ties / NotCompared
+2026-10-03 01:04:35,sizing,20261003-010432,legend,win,VsBaseline：同一個 seed 比基準好。依序比：有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap
+2026-10-03 01:04:35,sizing,20261003-010432,legend,lose,VsBaseline：同一個 seed 比基準差（本身求解失敗也算輸）
+2026-10-03 01:04:35,sizing,20261003-010432,legend,tie,VsBaseline：同一個 seed 跟基準一樣（例：兩邊都沒找到解）
+2026-10-03 01:04:35,sizing,20261003-010432,legend,#N/A,-trajectory.csv：該時刻還沒有值（例：尚無可行解時的 ObjectiveValue / Gap）
+2026-10-03 01:04:35,sizing,20261003-010432,experiment,description,S1 sizing：Threads 12/11/10 vs 現行值，3 seeds
+2026-10-03 01:04:35,sizing,20261003-010432,run,startedAt,2026-10-03 01:04:33
+2026-10-03 01:04:35,sizing,20261003-010432,run,trialCount,12
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.modelType,BP
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.varCount,6000
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.binaryVarCount,6000
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.integerVarCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.continuousVarCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.semiContinuousVarCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.semiIntegerVarCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.constraintCount,2176
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.quadraticConstraintCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.indicatorConstraintCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.sosCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.lazyConstraintCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,model,cap6000.userCutCount,0
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.result,MATCH
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.source,Imported
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.variables,framework=6000 index=6000 solver=6000
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.types,binary 6000/6000 integer 0/0 continuous 0/0
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.constraints,framework=2176 index=2176 solver=2176
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.specialElements,framework=0 solver=0 (SOS=0 QC=0 indicator=0 semiCont=0 semiInt=0 lazy=0 userCut=0)
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.objective,framework=Minimize solver=Minimize
+2026-10-03 01:04:35,sizing,20261003-010432,modelStats,cap6000.mismatchTrials,0/12
+2026-10-03 01:04:35,sizing,20261003-010432,environment,solver,Cplex
+2026-10-03 01:04:35,sizing,20261003-010432,environment,machine,VICLAI
+2026-10-03 01:04:35,sizing,20261003-010432,baseline,label,s1-threads8-baseline-s11
+2026-10-03 01:04:35,sizing,20261003-010432,baseline,MipGap,0.0001
+2026-10-03 01:04:35,sizing,20261003-010432,baseline,ParallelMode,1
+2026-10-03 01:04:35,sizing,20261003-010432,baseline,Seed,11
+2026-10-03 01:04:35,sizing,20261003-010432,baseline,Threads,8
+2026-10-03 01:04:35,sizing,20261003-010432,baseline,TimeLimit,300
+2026-10-03 01:04:51,tuning-r0,20261003-010450,schema,version,10
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,off,沒有收集：這次求解沒開收斂軌跡
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,none,有收集但沒發生：沒找到可行解、界從未變動、與基準無差異、求解前就失敗
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,n/a,求解器不提供（例：軌跡開了但 CPLEX 沒呼叫 callback，presolve 或 root 就解完）、框架沒量到（自己呼叫 Trial.Capture 時的 BuildAndSolveTimeMs），或無法跟基準比較（暖機、同一個 seed 沒有基準 trial、基準本身求解失敗）
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,baseline,這一列就是基準：主表的 ConfigChanges 與 VsBaseline、-summary.csv 的 Wins / Losses / Ties / NotCompared
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,win,VsBaseline：同一個 seed 比基準好。依序比：有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,lose,VsBaseline：同一個 seed 比基準差（本身求解失敗也算輸）
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,tie,VsBaseline：同一個 seed 跟基準一樣（例：兩邊都沒找到解）
+2026-10-03 01:04:51,tuning-r0,20261003-010450,legend,#N/A,-trajectory.csv：該時刻還沒有值（例：尚無可行解時的 ObjectiveValue / Gap）
+2026-10-03 01:04:51,tuning-r0,20261003-010450,experiment,description,R0 基準：baseline × 5 seeds，當對照組並看瓶頸剖面
+2026-10-03 01:04:51,tuning-r0,20261003-010450,run,startedAt,2026-10-03 01:04:51
+2026-10-03 01:04:51,tuning-r0,20261003-010450,run,trialCount,5
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.modelType,BP
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.varCount,6000
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.binaryVarCount,6000
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.integerVarCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.continuousVarCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.semiContinuousVarCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.semiIntegerVarCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.constraintCount,2176
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.quadraticConstraintCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.indicatorConstraintCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.sosCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.lazyConstraintCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,model,cap6000.userCutCount,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.result,MATCH
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.source,Imported
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.variables,framework=6000 index=6000 solver=6000
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.types,binary 6000/6000 integer 0/0 continuous 0/0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.constraints,framework=2176 index=2176 solver=2176
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.specialElements,framework=0 solver=0 (SOS=0 QC=0 indicator=0 semiCont=0 semiInt=0 lazy=0 userCut=0)
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.objective,framework=Minimize solver=Minimize
+2026-10-03 01:04:51,tuning-r0,20261003-010450,modelStats,cap6000.mismatchTrials,0/5
+2026-10-03 01:04:51,tuning-r0,20261003-010450,environment,solver,Cplex
+2026-10-03 01:04:51,tuning-r0,20261003-010450,environment,machine,VICLAI
+2026-10-03 01:04:51,tuning-r0,20261003-010450,baseline,label,r0-baseline-s11
+2026-10-03 01:04:51,tuning-r0,20261003-010450,baseline,MipGap,0.0001
+2026-10-03 01:04:51,tuning-r0,20261003-010450,baseline,ParallelMode,1
+2026-10-03 01:04:51,tuning-r0,20261003-010450,baseline,Seed,11
+2026-10-03 01:04:51,tuning-r0,20261003-010450,baseline,Threads,8
+2026-10-03 01:04:51,tuning-r0,20261003-010450,baseline,TimeLimit,300
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,schema,version,10
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,off,沒有收集：這次求解沒開收斂軌跡
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,none,有收集但沒發生：沒找到可行解、界從未變動、與基準無差異、求解前就失敗
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,n/a,求解器不提供（例：軌跡開了但 CPLEX 沒呼叫 callback，presolve 或 root 就解完）、框架沒量到（自己呼叫 Trial.Capture 時的 BuildAndSolveTimeMs），或無法跟基準比較（暖機、同一個 seed 沒有基準 trial、基準本身求解失敗）
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,baseline,這一列就是基準：主表的 ConfigChanges 與 VsBaseline、-summary.csv 的 Wins / Losses / Ties / NotCompared
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,win,VsBaseline：同一個 seed 比基準好。依序比：有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,lose,VsBaseline：同一個 seed 比基準差（本身求解失敗也算輸）
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,tie,VsBaseline：同一個 seed 跟基準一樣（例：兩邊都沒找到解）
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,legend,#N/A,-trajectory.csv：該時刻還沒有值（例：尚無可行解時的 ObjectiveValue / Gap）
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,experiment,description,R0 產出 C：MipGap = 0 契約健檢探針
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,run,startedAt,2026-10-03 01:05:44
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,run,trialCount,1
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.modelType,BP
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.varCount,6000
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.binaryVarCount,6000
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.integerVarCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.continuousVarCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.semiContinuousVarCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.semiIntegerVarCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.constraintCount,2176
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.quadraticConstraintCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.indicatorConstraintCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.sosCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.lazyConstraintCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,model,cap6000.userCutCount,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.result,MATCH
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.source,Imported
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.variables,framework=6000 index=6000 solver=6000
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.types,binary 6000/6000 integer 0/0 continuous 0/0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.constraints,framework=2176 index=2176 solver=2176
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.specialElements,framework=0 solver=0 (SOS=0 QC=0 indicator=0 semiCont=0 semiInt=0 lazy=0 userCut=0)
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.objective,framework=Minimize solver=Minimize
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,modelStats,cap6000.mismatchTrials,0/1
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,environment,solver,Cplex
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,environment,machine,VICLAI
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,baseline,label,probe-mipgap0-s11
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,baseline,MipGap,0
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,baseline,ParallelMode,1
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,baseline,Seed,11
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,baseline,Threads,8
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,baseline,TimeLimit,300
+2026-10-03 01:09:18,tuning-r1,20261003-010916,schema,version,10
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,off,沒有收集：這次求解沒開收斂軌跡
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,none,有收集但沒發生：沒找到可行解、界從未變動、與基準無差異、求解前就失敗
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,n/a,求解器不提供（例：軌跡開了但 CPLEX 沒呼叫 callback，presolve 或 root 就解完）、框架沒量到（自己呼叫 Trial.Capture 時的 BuildAndSolveTimeMs），或無法跟基準比較（暖機、同一個 seed 沒有基準 trial、基準本身求解失敗）
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,baseline,這一列就是基準：主表的 ConfigChanges 與 VsBaseline、-summary.csv 的 Wins / Losses / Ties / NotCompared
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,win,VsBaseline：同一個 seed 比基準好。依序比：有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,lose,VsBaseline：同一個 seed 比基準差（本身求解失敗也算輸）
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,tie,VsBaseline：同一個 seed 跟基準一樣（例：兩邊都沒找到解）
+2026-10-03 01:09:18,tuning-r1,20261003-010916,legend,#N/A,-trajectory.csv：該時刻還沒有值（例：尚無可行解時的 ObjectiveValue / Gap）
+2026-10-03 01:09:18,tuning-r1,20261003-010916,experiment,description,R1：GomoryCuts=-1（S2.5 tune 建議）vs baseline
+2026-10-03 01:09:18,tuning-r1,20261003-010916,run,startedAt,2026-10-03 01:09:17
+2026-10-03 01:09:18,tuning-r1,20261003-010916,run,trialCount,10
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.modelType,BP
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.varCount,6000
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.binaryVarCount,6000
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.integerVarCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.continuousVarCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.semiContinuousVarCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.semiIntegerVarCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.constraintCount,2176
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.quadraticConstraintCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.indicatorConstraintCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.sosCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.lazyConstraintCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,model,cap6000.userCutCount,0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.result,MATCH
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.source,Imported
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.variables,framework=6000 index=6000 solver=6000
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.types,binary 6000/6000 integer 0/0 continuous 0/0
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.constraints,framework=2176 index=2176 solver=2176
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.specialElements,framework=0 solver=0 (SOS=0 QC=0 indicator=0 semiCont=0 semiInt=0 lazy=0 userCut=0)
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.objective,framework=Minimize solver=Minimize
+2026-10-03 01:09:18,tuning-r1,20261003-010916,modelStats,cap6000.mismatchTrials,0/10
+2026-10-03 01:09:18,tuning-r1,20261003-010916,environment,solver,Cplex
+2026-10-03 01:09:18,tuning-r1,20261003-010916,environment,machine,VICLAI
+2026-10-03 01:09:18,tuning-r1,20261003-010916,baseline,label,r1-baseline-s11
+2026-10-03 01:09:18,tuning-r1,20261003-010916,baseline,MipGap,0.0001
+2026-10-03 01:09:18,tuning-r1,20261003-010916,baseline,ParallelMode,1
+2026-10-03 01:09:18,tuning-r1,20261003-010916,baseline,Seed,11
+2026-10-03 01:09:18,tuning-r1,20261003-010916,baseline,Threads,8
+2026-10-03 01:09:18,tuning-r1,20261003-010916,baseline,TimeLimit,300
+2026-10-03 01:10:56,tuning-r2,20261003-011054,schema,version,10
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,off,沒有收集：這次求解沒開收斂軌跡
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,none,有收集但沒發生：沒找到可行解、界從未變動、與基準無差異、求解前就失敗
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,n/a,求解器不提供（例：軌跡開了但 CPLEX 沒呼叫 callback，presolve 或 root 就解完）、框架沒量到（自己呼叫 Trial.Capture 時的 BuildAndSolveTimeMs），或無法跟基準比較（暖機、同一個 seed 沒有基準 trial、基準本身求解失敗）
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,baseline,這一列就是基準：主表的 ConfigChanges 與 VsBaseline、-summary.csv 的 Wins / Losses / Ties / NotCompared
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,win,VsBaseline：同一個 seed 比基準好。依序比：有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,lose,VsBaseline：同一個 seed 比基準差（本身求解失敗也算輸）
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,tie,VsBaseline：同一個 seed 跟基準一樣（例：兩邊都沒找到解）
+2026-10-03 01:10:56,tuning-r2,20261003-011054,legend,#N/A,-trajectory.csv：該時刻還沒有值（例：尚無可行解時的 ObjectiveValue / Gap）
+2026-10-03 01:10:56,tuning-r2,20261003-011054,experiment,description,R2：Emphasis=1（Primal-search）vs baseline
+2026-10-03 01:10:56,tuning-r2,20261003-011054,run,startedAt,2026-10-03 01:10:55
+2026-10-03 01:10:56,tuning-r2,20261003-011054,run,trialCount,10
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.modelType,BP
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.varCount,6000
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.binaryVarCount,6000
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.integerVarCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.continuousVarCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.semiContinuousVarCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.semiIntegerVarCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.constraintCount,2176
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.quadraticConstraintCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.indicatorConstraintCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.sosCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.lazyConstraintCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,model,cap6000.userCutCount,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.result,MATCH
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.source,Imported
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.variables,framework=6000 index=6000 solver=6000
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.types,binary 6000/6000 integer 0/0 continuous 0/0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.constraints,framework=2176 index=2176 solver=2176
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.specialElements,framework=0 solver=0 (SOS=0 QC=0 indicator=0 semiCont=0 semiInt=0 lazy=0 userCut=0)
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.objective,framework=Minimize solver=Minimize
+2026-10-03 01:10:56,tuning-r2,20261003-011054,modelStats,cap6000.mismatchTrials,0/10
+2026-10-03 01:10:56,tuning-r2,20261003-011054,environment,solver,Cplex
+2026-10-03 01:10:56,tuning-r2,20261003-011054,environment,machine,VICLAI
+2026-10-03 01:10:56,tuning-r2,20261003-011054,baseline,label,r2-baseline-s11
+2026-10-03 01:10:56,tuning-r2,20261003-011054,baseline,MipGap,0.0001
+2026-10-03 01:10:56,tuning-r2,20261003-011054,baseline,ParallelMode,1
+2026-10-03 01:10:56,tuning-r2,20261003-011054,baseline,Seed,11
+2026-10-03 01:10:56,tuning-r2,20261003-011054,baseline,Threads,8
+2026-10-03 01:10:56,tuning-r2,20261003-011054,baseline,TimeLimit,300
+2026-10-03 01:12:20,tuning-r3,20261003-011218,schema,version,10
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,off,沒有收集：這次求解沒開收斂軌跡
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,none,有收集但沒發生：沒找到可行解、界從未變動、與基準無差異、求解前就失敗
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,n/a,求解器不提供（例：軌跡開了但 CPLEX 沒呼叫 callback，presolve 或 root 就解完）、框架沒量到（自己呼叫 Trial.Capture 時的 BuildAndSolveTimeMs），或無法跟基準比較（暖機、同一個 seed 沒有基準 trial、基準本身求解失敗）
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,baseline,這一列就是基準：主表的 ConfigChanges 與 VsBaseline、-summary.csv 的 Wins / Losses / Ties / NotCompared
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,win,VsBaseline：同一個 seed 比基準好。依序比：有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,lose,VsBaseline：同一個 seed 比基準差（本身求解失敗也算輸）
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,tie,VsBaseline：同一個 seed 跟基準一樣（例：兩邊都沒找到解）
+2026-10-03 01:12:20,tuning-r3,20261003-011218,legend,#N/A,-trajectory.csv：該時刻還沒有值（例：尚無可行解時的 ObjectiveValue / Gap）
+2026-10-03 01:12:20,tuning-r3,20261003-011218,experiment,description,R3：RinsHeuristicFrequency=10（Primal-search）vs baseline
+2026-10-03 01:12:20,tuning-r3,20261003-011218,run,startedAt,2026-10-03 01:12:18
+2026-10-03 01:12:20,tuning-r3,20261003-011218,run,trialCount,10
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.modelType,BP
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.varCount,6000
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.binaryVarCount,6000
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.integerVarCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.continuousVarCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.semiContinuousVarCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.semiIntegerVarCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.constraintCount,2176
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.quadraticConstraintCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.indicatorConstraintCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.sosCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.lazyConstraintCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,model,cap6000.userCutCount,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.result,MATCH
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.source,Imported
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.variables,framework=6000 index=6000 solver=6000
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.types,binary 6000/6000 integer 0/0 continuous 0/0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.constraints,framework=2176 index=2176 solver=2176
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.specialElements,framework=0 solver=0 (SOS=0 QC=0 indicator=0 semiCont=0 semiInt=0 lazy=0 userCut=0)
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.objective,framework=Minimize solver=Minimize
+2026-10-03 01:12:20,tuning-r3,20261003-011218,modelStats,cap6000.mismatchTrials,0/10
+2026-10-03 01:12:20,tuning-r3,20261003-011218,environment,solver,Cplex
+2026-10-03 01:12:20,tuning-r3,20261003-011218,environment,machine,VICLAI
+2026-10-03 01:12:20,tuning-r3,20261003-011218,baseline,label,r3-baseline-s11
+2026-10-03 01:12:20,tuning-r3,20261003-011218,baseline,MipGap,0.0001
+2026-10-03 01:12:20,tuning-r3,20261003-011218,baseline,ParallelMode,1
+2026-10-03 01:12:20,tuning-r3,20261003-011218,baseline,Seed,11
+2026-10-03 01:12:20,tuning-r3,20261003-011218,baseline,Threads,8
+2026-10-03 01:12:20,tuning-r3,20261003-011218,baseline,TimeLimit,300

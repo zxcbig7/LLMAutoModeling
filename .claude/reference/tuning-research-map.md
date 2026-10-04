@@ -34,10 +34,10 @@
 | --- | --- | --- |
 | 0 | 過正確性 gate | §0.0 |
 | 1 | 手動診斷 | §2 |
-| 2 | baseline：default 各 3–5 seed，量出 variability | §3.4 |
+| 2 | baseline：default 各 3–5 seed，當對照組 | §3.0、§3.4 |
 | 3 | 手動掃 10–20 個旋鈕的少數 variant，一次一個 | §3 |
 | 4 | 仍不達標才上 irace / SMAC3 包 `dotnet run -- exp` | 需新寫 CLI wrapper |
-| 5 | hold-out instance 驗收，報 shifted geometric mean | §4.3 |
+| 5 | hold-out 驗收：同一個 seed 跟 baseline 比，一個都不能輸（文獻多報 shifted geometric mean，本規範改用逐 seed 比大小，較好懂） | §4.6 |
 
 ## C.4 引用清單
 

@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────
 # Build output
-# OptimFoundation 求解輸出（Logs/ Sols/ Models/ IISs/ Solution/
-# Experiments/）都寫到 AppDomain.BaseDirectory = bin/ 底下，
+# OptimFoundation 求解輸出（Log/ Model/ IIS/ Solution/ Output/
+# Experiment/）都寫到 AppDomain.BaseDirectory = bin/ 底下，
 # 所以這條已一併涵蓋跑完才產生的求解資料夾。
 # ─────────────────────────────────────────────
 [Bb]in/

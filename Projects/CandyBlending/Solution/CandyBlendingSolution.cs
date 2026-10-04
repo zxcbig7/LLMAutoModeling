@@ -47,7 +47,7 @@ namespace CandyBlending
         public static CandyBlendingSolution ReadAndValidate(OptEngine engine, Dataload data)
         {
             Logging.Info($"Status={engine.Status} Obj={engine.GetObjectiveValue():F4} " +
-                         $"BestBound={engine.LastMetrics.BestBound:F4} MIPGap={engine.LastMetrics.MipGap:P2}");
+                         $"BestBound={engine.LastMetrics.BestBound:F4} Gap={engine.LastMetrics.Gap:P2}");
 
             var blend = engine.GetSetVarValues<VariableC_Blend>();
             var produce = engine.GetSetVarValues<VariableC_Produce>();

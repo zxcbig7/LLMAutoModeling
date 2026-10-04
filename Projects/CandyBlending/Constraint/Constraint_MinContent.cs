@@ -30,7 +30,7 @@ namespace CandyBlending
                 // 右式：MinContentRatio_{material,brand} · Produce_brand
                 engine.AddRHS(ratio.QTY, new VariableC_Produce { CandyBrand = ratio.CandyBrand });
 
-                engine.CreateGreatEqual(this, ratio.RawMaterial, ratio.CandyBrand);
+                engine.CreateGreaterEqual(this, ratio.RawMaterial, ratio.CandyBrand);
             }
         }
     }

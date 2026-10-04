@@ -5,7 +5,7 @@ namespace Template
 {
     /// <summary>[C4] MinActiveDays [LB] ∀ item ∈ Item：
     /// Σ_{(item,date) ∈ AllowedSlot} Use_{item,date} ≥ MinActiveDays_item
-    /// 每個品項至少要開工的天數。示範 CreateGreatEqual。</summary>
+    /// 每個品項至少要開工的天數。示範 CreateGreaterEqual。</summary>
     public sealed class Constraint_MinActiveDays : ConstraintBase
     {
         private readonly List<Set_Item> items;
@@ -33,7 +33,7 @@ namespace Template
                     .FindParameterOrLog(row => row.Item == item.Item, item.Item)?.QTY ?? 0.0;
                 engine.AddRHS(floor);
 
-                engine.CreateGreatEqual(this, item.Item);
+                engine.CreateGreaterEqual(this, item.Item);
             }
         }
     }

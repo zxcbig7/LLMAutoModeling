@@ -108,7 +108,7 @@ public sealed partial class VariableB_UseArc { }
 engine.BuildVars<VariableB_UseArc>(data.set_Arc);
 ```
 
-限制式與目標式依照數學式原貌建構：左側項加入 `AddLHS`，右側項加入 `AddRHS`，再用 `CreateLessEqual(this, dims...)`、`CreateGreatEqual(this, dims...)` 或 `CreateEqual(this, dims...)` 結束。不要自行移項、改號或化簡。模型數值一律取自 `Parameter_*.QTY`。
+限制式與目標式依照數學式原貌建構：左側項加入 `AddLHS`，右側項加入 `AddRHS`，再用 `CreateLessEqual(this, dims...)`、`CreateGreaterEqual(this, dims...)` 或 `CreateEqual(this, dims...)` 結束。不要自行移項、改號或化簡。模型數值一律取自 `Parameter_*.QTY`。
 
 ## 6. 實作完成前檢查
 

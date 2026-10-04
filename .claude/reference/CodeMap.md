@@ -1,6 +1,6 @@
 ---
 title: AI-Modeling architecture map
-updated: 2026-08-09
+updated: 2026-09-28
 ---
 
 # CodeMap
@@ -17,10 +17,12 @@ flowchart TD
     Model --> Vars[BuildVars]
     Model --> Objective[ObjectiveFunction]
     Model --> Constraints[Constraint classes]
-    Model --> Project[OptProject]
-    Model --> Experiment[OptExperiment]
-    Project --> Solution[ISolutionSink]
-    Experiment --> Metrics[Experiment / Trial / SolveMetrics]
+    Project[OptProject] -->|Solve model, config| Solve[OptEngine.RunModel]
+    Model --> Solve
+    Project -->|Experiment name| Experiment[OptExperiment]
+    Model --> Experiment
+    Solve --> Solution[ISolutionSink / Trial]
+    Experiment -->|Run| Metrics[Experiment / Trial / SolveMetrics]
 ```
 
 `OptData.Load` 自動驗證 Set／Parameter duplicate key 與 Parameter numeric sanity，再 freeze framework-controlled registration。Parameter→Set relation 由開發者掌握；`FindParameterOrLog` 在缺值時留下 Warning。
@@ -50,7 +52,7 @@ Projects/<Project>/
 | `[OptParam]` + primitive `OptDim` | 零到多維 Parameter row + QTY |
 | `IDataSource.Load<T>` | Set/Parameter 共用 typed load |
 | `CsvCtrl.WriteRows<T>` | Set/Parameter 共用 canonical CSV output |
-| `CsvDataSource` | `Data/{name}.csv` |
+| `CsvDataSource` | `Input/{name}.csv`（= `FolderDir.Input`，執行檔目錄下） |
 | `InMemoryDataSource` | `AddRows` 註冊資料 |
 | `DbDataSource` | query-only source；名稱引數是 SQL |
 
@@ -69,10 +71,10 @@ Projects/<Project>/
 
 | Symbol | Role |
 | --- | --- |
-| `ProjectConfig` | 專案身分、log、輸出 |
-| `CplexConfig` / `GurobiConfig` | solver 行為 |
-| `OptProject` | 單一模型 production execute + OnSolved |
-| `OptExperiment` | model × config trials，不執行 production callback |
+| `ProjectConfig` | 專案輸出開關（`EnableSolverLog` / `Export*`），不含專案身分 |
+| `CplexConfig : ISolverConfig` | solver 行為（182 顆旋鈕） |
+| `OptProject` | 專案（名稱、FolderDir 全部資料夾、log、保留期）；`LoadConfig` + `Solve(model, config, onSolved, beforeSolve)` 跑一次，留 `Trial` |
+| `OptExperiment` | 由 `project.Experiment(name)` 建立；model × config trials，`Run()` 後 `Experiment.Save()` 輸出 CSV |
 
 ## Repository references
 

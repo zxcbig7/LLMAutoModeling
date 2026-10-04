@@ -8,13 +8,15 @@ using HospitalRostering_Generator.Constraint;
 using HospitalRostering_Generator.Objective;
 
 // 架構 B（Generator + 注入 Action）唯一進入點：solve / experiment 兩模式
-//   dotnet run                → 一般求解（OptProject）
-//   dotnet run -- experiment  → 參數掃描（OptExperiment，與 solve 共用 data / model）
+//   dotnet run → 一般求解（project.Solve）
+//   dotnet run -- experiment → 參數掃描（project.Experiment，與 solve 共用 data / model）
+// 專案：名稱、log、FolderDir 資料夾、保留期都由它管；兩種模式都從它出發
+using var project = new OptProject("HospitalRostering_Generator");
+
 var data = OptData.Load(() => new Dataload());
 
 var projectConfig = new ProjectConfig
 {
-    ProjectName = "HospitalRostering_Generator",
     EnableSolverLog = true,
     ExportSol = true,
     ExportLP = true,
@@ -56,12 +58,12 @@ var model = new OptModel("HospitalRostering_Generator")
 
 if (args.Contains("experiment"))
 {
-    // R2 — HospitalRostering-tuning-r2
+    // R2 — 紀錄接在 Experiment/HospitalRostering_Generator-trial.csv 等累積檔（Experiment 欄 = tuning-r2）；2026-10-01 前是每輪一組 HospitalRostering_Generator-tuning-r2.* 檔，2026-09-28 前檔名為 HospitalRostering-tuning-r2
     // R1 已否證：強分支 VariableSelect=3 反而慢 4 倍、node 更多，一個種子還撞時限。
     // 重新看 R0 的數字：首解 0.4 秒就有了，之後全部時間都花在「證明這就是最佳解」，
     // 也就是把界往上推那 0.30。所以這輪改用重視界限的搜尋重點。
-    var exp = new OptExperiment(
-        "HospitalRostering-tuning-r2",
+    var exp = project.Experiment(
+        "tuning-r2",
         "R2：時間都花在證明最佳性 → 試 Emphasis=3（重視界限）");
     exp.AddModel(model);
 
@@ -83,10 +85,6 @@ if (args.Contains("experiment"))
     return;
 }
 
-using var project = new OptProject(model)
-    .UseConfig(() => projectConfig)
-    .UseConfig(() => baseline)
-    .OnSolved(e => data.WriteToCSV(e));
-
-bool ok = project.Execute();
+project.LoadConfig(projectConfig);
+bool ok = project.Solve(model, baseline, onSolved: e => data.WriteToCSV(e));
 Logging.Info($"求解結果：{(ok ? "成功" : "失敗")}  Status={project.Engine.Status}");

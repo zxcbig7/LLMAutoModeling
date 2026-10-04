@@ -41,7 +41,7 @@ C0 orchestrator（主對話，不寫 code）
  ├─ C4 variable ──────────► Variable/Variable[B|C|I]_*.cs
  ├─ C5 constraint × N ────► Constraint/Constraint_*.cs   （fan-out，一條或一群一個）
  ├─ C6 objective ─────────► Objective/ObjectiveFunction.cs
- ├─ C7 program ───────────► Program.cs（不可變四段：import → 模型 → 實驗 → 正式跑）
+ ├─ C7 program ───────────► Program.cs（不可變四段：import-data → 設定 → 模型來源 → 環境）
  ├─ C8 solution ──────────► Solution/<Project>Solution.cs
  ├─ C9 builder ───────────► build + fix loop ≤5
  ├─ V1 checklist-verifier ► 直接回報 checklist 結論
@@ -142,7 +142,7 @@ Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs�
 規範：以 `rg` 定位並讀 API guide 的 §0（心智模型）、§1（建立專案 / csproj / DLL）與 §5（Program.cs 四段模板）
 
 做法：照 §1 建結構與 csproj、照 §5 建 Program.cs 骨架，規則不在本檔重述。本 agent 專屬邊界：
-1. Program.cs 骨架無條件建立不可變四段 `import → 模型 → 實驗 → 正式跑`，保留四個逐字段落標記與固定控制流；import 與 exp 是固定能力，NEVER 因 Model.md、manifest 或現有 CSV 而省略
+1. Program.cs 骨架無條件建立不可變四段 `import-data → 設定 → 模型來源 → 環境`，保留四個逐字段落標記與固定控制流；import-data 與 exp 是固定能力，NEVER 因 Model.md、manifest 或現有 CSV 而省略
 2. 此時尚未有 model components，NEVER 為了讓空專案 build 過而加入假型別或假模型
 
 驗收條件：
@@ -166,7 +166,7 @@ Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs�
 做法：照 §2 全節逐項做，規則不在本檔重述。本 agent 專屬邊界：
 1. 資料來源由 manifest 指定；未指定才用預設 CsvDataSource + Data/*.csv，NEVER 為通過檢查而建立假的 CSV
 2. CSV / SQL 取得的值與 Model.md 逐筆一致，NEVER 四捨五入或填佔位值
-3. 需要「算」出來的資料一律不進 Dataload(IDataSource) —— 該由 import 階段先產 CSV；Model.md 缺值就停止回報
+3. 需要「算」出來的資料一律不進 Dataload(IDataSource) —— 該由 import-data 階段先產 CSV；Model.md 缺值就停止回報
 
 驗收條件：
 1. manifest 的每個 SET / PARAM 列都有對應 .cs 檔，檔名 = 類別名
@@ -208,6 +208,7 @@ Projects/<Project>/               ← 只有八資料夾 + csproj + Program.cs�
 
 你負責的 unit：{{manifest 列號}}
 Model.md 節錄：只讀 Projects/<Project>/Model/<Project>_Model.md 的第 {{起}}-{{迄}} 行（用 Read offset/limit）。NEVER 讀整份 Model.md。
+讀完先核對節錄頭尾：第一行 MUST 是工單寫的那個元素（符號 / 條號）的開頭，最後一行之後 MUST 是下一個元素或段落標題；對不上代表行號區間錯了，停下回報 manifest 錯誤，NEVER 照著錯位的片段寫。
 
 規範：
 1. 以 `rg` 定位並讀 API guide §4（Objective、pool、owner overload、保留 overload）與附錄 A
@@ -238,8 +239,8 @@ Model.md 節錄：只讀 Projects/<Project>/Model/<Project>_Model.md 的第 {{�
 同 C5 格式，差異只在讀的節與驗收條件：
 
 - **C6 objective**：讀 §4；驗收＝「是 Model.md OBJ 段的逐項轉譯、方向正確、無未宣告的資料 magic number；Model.md 無 OBJ 段則停止退回 Phase 1」
-- **C7 program**：讀 §5 + manifest **全表**（它需要全域視圖才組裝得起來）；驗收＝「不可變四段 `import → 模型 → 實驗 → 正式跑` 均存在且順序正確、AddObjective 先於 AddConstraints、manifest 每個 unit 都被註冊；import / exp 永遠保留」
-- **C8 solution**：讀 §6；驗收＝「ValidateRules 逐條把解代回 Model.md 每條 constraint、透過 `ISolutionSink` 或 `CsvCtrl.WriteSolution` 輸出；CSV 寫入端會自行建立 `Solution/`」
+- **C7 program**：讀 §5 + manifest **全表**（它需要全域視圖才組裝得起來）；驗收＝「不可變四段 `import-data → 設定 → 模型來源 → 環境` 均存在且順序正確、AddObjective 先於 AddConstraints、manifest 每個 unit 都被註冊；import-data / exp 永遠保留」
+- **C8 solution**：讀 §6；驗收＝「ValidateRules 逐條把解代回 Model.md 每條 constraint、透過 `ISolutionSink` 或 `CsvCtrl.WriteSolution` 輸出；CSV 寫入端會自行建立 `Output/`」
 
 C7 是唯一拿到 manifest 全表的 coding agent——它的工作本質就是組裝，給它局部視圖反而做不出來。
 
@@ -316,9 +317,9 @@ E. 迴圈範圍錯（∀ 的 set 與 code 的 foreach 對象不一致、缺內�
 四步（逐步回報）：
 1. Status 七態診斷（依框架 `SolveStatus`，NEVER 只認 Optimal）：
    - Optimal → 往下
-   - Feasible（有 incumbent、未證明最佳，可能撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`）→ **照樣往下**，對 incumbent 驗 2-4，另記 MipGap 與 BestBound。「太慢」不是 Phase 2 的 FAIL，是 Phase 3 的進場條件
-   - TimeLimit（中止且無任何可用解，ObjectiveValue / MipGap 皆 NaN）→ 沒有解可驗；用同一份 schema 縮小目前資料來源成小 instance，求到 Optimal 後完成 2-4，回報 verifiedOn: "small-instance:<說明>"
-   - Infeasible → 讀 bin/Debug/net8.0/IISs/*.ilp 找最小衝突集
+   - Feasible（有 incumbent、未證明最佳，可能撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`）→ **照樣往下**，對 incumbent 驗 2-4，另記 Gap 與 BestBound。「太慢」不是 Phase 2 的 FAIL，是 Phase 3 的進場條件
+   - TimeLimit（中止且無任何可用解，ObjectiveValue / Gap 皆 NaN）→ 沒有解可驗；用同一份 schema 縮小目前資料來源成小 instance，求到 Optimal 後完成 2-4，回報 verifiedOn: "small-instance:<說明>"
+   - Infeasible → 讀 bin/Debug/net8.0/IIS/*.ilp 找最小衝突集
    - Unbounded → 查漏掉的上限 constraint
    - Error → 修正 solver / adapter 執行錯誤，不得當成無解
    - NotSolved → 尚未完成 `Solve()`，不得進入解驗證
@@ -330,7 +331,7 @@ NEVER 把 solver log 全文讀進來——用 `rg` 抓 Status、objective、gap�
 
 回報格式：
 | 步驟 | 判定 | 數值證據 |
-另附：Status 落在七態哪一態、目標值、MipGap / BestBound、關鍵變數摘要（≤5 行）、輸出檔路徑、
+另附：Status 落在七態哪一態、目標值、Gap / BestBound、關鍵變數摘要（≤5 行）、輸出檔路徑、
 verifiedOn（production 或 small-instance:<說明>）。總長 ≤30 行。
 ```
 

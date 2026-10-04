@@ -30,7 +30,7 @@ description: Phase 1 建模 orchestrator——把自然語言最佳化題目降�
 | 參數形式 | 動作 |
 | --- | --- |
 | 自然語言題目敘述 | 直接當題目原文，進 Step 0 |
-| 檔案路徑（`.md` / `.txt` / `.csv`） | 先 `Read` 該檔，內容當題目原文；讀不到就停下回報，NEVER 用檔名猜內容 |
+| 檔案路徑（`.md` / `.txt` / `.csv`） | 先看大小（行數），再 `Read` 該檔當題目原文；讀不到就停下回報，NEVER 用檔名猜內容。超過約 2000 行或讀檔結果顯示被截斷時，分段讀完全文（`offset` / `limit`）再開始降維，NEVER 只憑前段建模（天條「讀檔」） |
 | 空 | 停下問使用者要題目，NEVER 從既有 `Projects/` 挑一題來做 |
 
 參數同時是 `<Project>` 命名的依據：由題目語意取 PascalCase 名（醫院排班 → `HospitalRostering`），Step 0 回報時把取的名字講出來讓使用者當場否決。

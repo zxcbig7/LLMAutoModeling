@@ -47,7 +47,7 @@ namespace HospitalRostering_Generator.Constraint
                         optEngine.AddRHS(1);
                         window.ForEach(sd =>
                             optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = sd, Employee = e, Group = "O" }));
-                        optEngine.CreateGreatEqual(this, "Lower", d, e);
+                        optEngine.CreateGreaterEqual(this, "Lower", d, e);
                     });
                 });
             }

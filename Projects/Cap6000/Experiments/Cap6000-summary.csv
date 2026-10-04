@@ -1,0 +1,13 @@
+﻿RecordedAt,Experiment,RunId,Model,Config,IsBaseline,Trials,Seeds,Optimal,Feasible,NoSolution,Failed,FoundSolution,Wins,Losses,Ties,NotCompared
+2026-10-03 01:04:35,sizing,20261003-010432,cap6000,s1-threads8-baseline,true,3,11 22 33,3,0,0,0,3,baseline,baseline,baseline,baseline
+2026-10-03 01:04:35,sizing,20261003-010432,cap6000,s1-threads12,false,3,11 22 33,3,0,0,0,3,2,1,0,0
+2026-10-03 01:04:35,sizing,20261003-010432,cap6000,s1-threads11,false,3,11 22 33,3,0,0,0,3,1,1,1,0
+2026-10-03 01:04:35,sizing,20261003-010432,cap6000,s1-threads10,false,3,11 22 33,3,0,0,0,3,1,1,1,0
+2026-10-03 01:04:51,tuning-r0,20261003-010450,cap6000,r0-baseline,true,5,11 22 33 44 55,5,0,0,0,5,baseline,baseline,baseline,baseline
+2026-10-03 01:05:44,probe-mipgap0,20261003-010544,cap6000,probe-mipgap0,true,1,11,1,0,0,0,1,baseline,baseline,baseline,baseline
+2026-10-03 01:09:18,tuning-r1,20261003-010916,cap6000,r1-baseline,true,5,11 22 33 44 55,5,0,0,0,5,baseline,baseline,baseline,baseline
+2026-10-03 01:09:18,tuning-r1,20261003-010916,cap6000,r1-GomoryCuts=-1,false,5,11 22 33 44 55,5,0,0,0,5,1,3,1,0
+2026-10-03 01:10:56,tuning-r2,20261003-011054,cap6000,r2-baseline,true,5,11 22 33 44 55,5,0,0,0,5,baseline,baseline,baseline,baseline
+2026-10-03 01:10:56,tuning-r2,20261003-011054,cap6000,r2-Emphasis=1,false,5,11 22 33 44 55,5,0,0,0,5,2,1,2,0
+2026-10-03 01:12:20,tuning-r3,20261003-011218,cap6000,r3-baseline,true,5,11 22 33 44 55,5,0,0,0,5,baseline,baseline,baseline,baseline
+2026-10-03 01:12:20,tuning-r3,20261003-011218,cap6000,r3-RinsHeuristicFrequency=10,false,5,11 22 33 44 55,5,0,0,0,5,2,3,0,0

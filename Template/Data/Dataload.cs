@@ -36,7 +36,7 @@ namespace Template
             parameter_BigMProduce = source.Load<Parameter_BigMProduce>("Parameter_BigMProduce");
         }
 
-        /// <summary>import 模式：攤平 Data/raw/ 的不規則來源，或依生成規格產出 instance。rawFile 相對於 Data/、不帶副檔名。
+        /// <summary>import-data 模式：攤平 Data/raw/ 的不規則來源，或依生成規格產出 instance。rawFile 相對於 Data/、不帶副檔名。
         /// 本範本的 canonical CSV 是直接寫好的，沒有 raw 來源需要攤平，因此採 api-guide §2.4 的退化形式：
         /// 委派給標準來源，讓 Export() 變成 round-trip 自檢。真的有 raw 檔要攤平時，把
         /// `new CsvDataSource().LoadData(rawFile)` 讀進來的 DataTable 在這裡展開成 List<Set_*> / List<Parameter_*>

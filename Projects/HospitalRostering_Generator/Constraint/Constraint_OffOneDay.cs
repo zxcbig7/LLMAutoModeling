@@ -5,7 +5,7 @@ using HospitalRostering_Generator.Variable;
 
 namespace HospitalRostering_Generator.Constraint
 {
-    /// <summary>C7 做一休一做指示：s^off1[e,d] ≥ (1-y[e,d-2,O]) + y[e,d-1,O] + (1-y[e,d,O]) - 2。（CreateGreatEqual）</summary>
+    /// <summary>C7 做一休一做指示：s^off1[e,d] ≥ (1-y[e,d-2,O]) + y[e,d-1,O] + (1-y[e,d,O]) - 2。（CreateGreaterEqual）</summary>
     public class Constraint_OffOneDay : ConstraintBase
     {
         private readonly OptEngine optEngine;
@@ -39,7 +39,7 @@ namespace HospitalRostering_Generator.Constraint
                         optEngine.AddRHS(1);
                         optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" }); // (1 - 前天休)
                         optEngine.AddRHS(-(duration - 1));
-                        optEngine.CreateGreatEqual(this, d, e);
+                        optEngine.CreateGreaterEqual(this, d, e);
                     });
                 });
             }

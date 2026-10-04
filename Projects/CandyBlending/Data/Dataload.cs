@@ -31,9 +31,9 @@ namespace CandyBlending
             parameter_MaxContentRatio = source.Load<Parameter_MaxContentRatio>("Parameter_MaxContentRatio");
         }
 
-        /// <summary>import 模式：把 Data/raw/ 的不規則來源攤平成標準 CSV。rawFile 相對於 Data/、不帶副檔名。
+        /// <summary>import-data 模式：把 Data/raw/ 的不規則來源攤平成標準 CSV。rawFile 相對於 Data/、不帶副檔名。
         /// 本題的 canonical CSV 直接由 Model.md 的表格逐格謄寫而來，沒有 raw 來源需要攤平；此建構子維持四段模板要求的
-        /// import 能力，載入現行標準 CSV 後由 Export() 原樣寫回（round-trip 自檢）。</summary>
+        /// import-data 能力，載入現行標準 CSV 後由 Export() 原樣寫回（round-trip 自檢）。</summary>
         public Dataload(string rawFile) : this(new CsvDataSource())
         {
             Logging.Info($"[import] 本專案無 raw 攤平步驟（canonical CSV 由 Model.md 表格逐格謄寫）；rawFile='{rawFile}' 僅記錄不使用。");

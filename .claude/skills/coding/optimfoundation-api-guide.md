@@ -108,14 +108,14 @@ pattern tag 是附錄 A 的 8 類之一；轉譯前先用附錄 A 對一次式�
 ① 資料層   Data/*.csv                     input，已就位
            Set_*（維度）+ Parameter_*（係數與結構常數）
            └ Data/Dataload.cs : DataContext
-             └ OptData.Load(...)          唯一建構入口 → 驗證不過當場丟例外
+             └ OptData.Load(...)          唯一建構入口 → 驗證問題記入 DataIssues 並警告；專案 ValidateData 決定是否丟例外
 ② 變數層   VariableB_/C_/I_*              決策變數宣告（前綴決定型別）
              └ engine.BuildVars<T>        把宣告 × sets 展開成實際變數
 ③ 模型層   ObjectiveFunction              目標式（先於 constraints 註冊，§4.3）
            Constraint_*                   限制式（AddLHS / AddRHS / CreateXxx）
 ④ 組裝     Program.cs 的 OptModel chain   唯一組裝點，唯一知道 Dataload 的地方
-⑤ 執行環境 OptProject                     一個模型 × 一組設定；可掛 OnSolved
-           OptExperiment                  m 個模型 × n 組 solver 設定
+⑤ 執行環境 OptProject                     專案：Solve(model, config, onSolved) 正式求解，可 Solve 多次
+           OptExperiment                  由 project.Experiment(name) 建立：m 個模型 × n 組 solver 設定
 ⑥ 解讀層   Solution/<Project>Solution.cs  ReadAndValidate + Print
 ```
 
@@ -217,7 +217,9 @@ namespace MyProject
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\**\*.csv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Data/*.csv 複製到輸出的 Input/（= FolderDir.Input，框架唯一讀取位置）；Data/ 是版控的原始檔，Input/ 是執行時的副本 -->
+    <None Remove="Data\**\*.csv" />
+    <None Include="Data\**\*.csv" CopyToOutputDirectory="PreserveNewest" Link="Input\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -237,7 +239,7 @@ namespace MyProject
 
 - 三處要改：`RootNamespace`、`AssemblyName`、資料夾名與 `.csproj` 檔名 → `<Project>`
 - `Generated/` 是 generator 產碼落地供人檢視，MUST `Compile Remove`，否則與編譯期輸出撞名
-- `Data\**\*.csv` MUST 複製到輸出，否則執行時在 bin 讀不到 input
+- `Data\**\*.csv` MUST 複製並 `Link` 到輸出目錄的 `Input\`，否則執行時 `FolderDir.Input` 讀不到 input
 - DLL 唯一來源是 repo 根的 `dlls/` —— NEVER 用 NuGet、NEVER 用 `ProjectReference` 指向框架 src、NEVER 從 CPLEX Studio 安裝路徑抓 DLL —— Why: `ProjectReference` 只在框架 repo 內部成立，`Projects/` 底下編不過；指向安裝路徑則綁死本機環境。**限定例外**：`$SIB/OptimFoundation/Templates/*` 位於框架 repo 與 solution 內，MUST 保留 framework source / generator 的 `ProjectReference` 及 solver 的 `$(CplexDir)` HintPath，讓 template 隨框架 API 一起 build；例外不得複製到 `Projects/*`。
 
 **✅ 過關條件**：`dotnet build` 成功（此時還沒寫模型，只驗環境）。
@@ -362,7 +364,7 @@ public sealed partial class Parameter_ChangeoverCost { }
 ```
 
 - **`[OptSet]` / `[OptParam]` / `[OptVar]` 一律裸寫**，維度全部靠 `[OptDim]` 表達
-- **`[OptDim<T>` 的 `T` 是該維度的資料型別**：`string` / `DateTime` / `int` / `long` / `double` / `decimal` —— ★ 這個泛型參數不做型別檢查，填錯不會 compile error，generator 會直接拿它當 property 型別，所以填的必須是資料型別本身
+- **`[OptDim<T>` 的 `T` 是該維度的資料型別**：`string` / `DateTime` / `int` / `long` / `double` / `decimal` —— ★ 填六種以外的型別會 compile error（`OPTF007`）；但填成別的合法型別（例如該填 `int` 卻填 `long`）不算違規，generator 照樣拿它當 property 型別產出，所以填的必須是資料型別本身
 - **Set 至少要有一個 `[OptDim]`**；Parameter 可以零維（scalar），且一律自動補 `QTY`
 - 全專案只用這一套宣告法，NEVER 混用其他形式
 
@@ -489,7 +491,7 @@ MILP 的 parameter 本來就多半稀疏——沒列到的組合代表「這組�
 
 - **所有 input CSV MUST 寫表頭**：Set 與 Parameter 以表頭對齊積木維度；以 `LoadData` 讀取的 raw CSV 則以表頭定義其獨立 `DataTable` 欄位。
 - Set 的 CSV 是單欄、表頭為 Set 名、保序；多維 Set 的欄名是 attribute 指定的分量名（例如 `From`,`To`），讀取時依完整欄名對齊積木維度，不依 CSV 欄位位置，檔名固定 `Set_<名>.csv`。
-- `Solution/*.csv` 的表頭欄名就是 property 名，所以在欄位相容時可由 `Load` 讀回當下一輪的輸入（多出來的 `VAR_TYPE` 欄會被自動忽略）。
+- `Output/*.csv`（`CsvCtrl.WriteSolution` 的輸出）表頭欄名就是 property 名，所以在欄位相容時可由 `Load` 讀回當下一輪的輸入（多出來的 `VAR_TYPE` 欄會被自動忽略）。
 
 **culture 與日期的邊界**：數值一律採 invariant culture、小數點為 `.`、不寫千分位；日期正式契約一律 `yyyy-MM-dd`。parser 額外接受的 invariant 日期格式只屬實作容忍度，不可作為 CSV schema 或範例的依據，避免不同機器／資料來源產生不可重現的解析結果。
 
@@ -529,12 +531,12 @@ ItemA,2026-01-01,10
 
 **「已就位」是哪裡**：`Data/` 這個名字對到兩個實體位置，執行期讀的永遠是後者。
 
-| 位置                        | 誰放進去                         | 角色                                                                        |
-| --------------------------- | -------------------------------- | --------------------------------------------------------------------------- |
-| 專案 `Data/*.csv`           | 你手維護，或從 bin 搬回          | 版控裡的事實來源；csproj `Data\**\*.csv` PreserveNewest 在 build 時複製過去 |
-| `bin/<Config>/net8.0/Data/` | build 複製，或 `Export()` 直接寫 | **`CsvDataSource` 實際讀的資料夾**                                          |
+| 位置 | 誰放進去 | 角色 |
+| --- | --- | --- |
+| 專案 `Data/*.csv` | 你手維護，或從 bin 搬回 | 版控裡的事實來源；csproj 把 `Data\**\*.csv` 複製並 Link 到輸出目錄的 `Input\`（§1.4） |
+| `bin/<Config>/net8.0/Input/` | build 複製，或 `Export()` 直接寫 | **`CsvDataSource` 實際讀的資料夾（= `FolderDir.Input`）** |
 
-`FolderDir.Data` 的路徑根是 `AppDomain.BaseDirectory`（執行檔目錄），不是專案目錄。`new CsvDataSource()` 建構時就會把該資料夾建好，所以缺檔會是明確的 `FileNotFoundException`，不是 `DirectoryNotFoundException`。
+`FolderDir.Input` 的路徑根是 `AppDomain.CurrentDomain.BaseDirectory`（執行檔目錄），不是專案目錄。`new CsvDataSource()` 建構時就會把該資料夾建好，所以缺檔會是明確的 `FileNotFoundException`，不是 `DirectoryNotFoundException`。
 
 **CSV 還不存在 → `import` 模式（選用）**：寫一個 `Dataload(string rawFile)` 建構子，跑一次 import 產出上表的標準 CSV。兩種情境都走這條，寫在同一個建構子裡：
 
@@ -546,10 +548,10 @@ ItemA,2026-01-01,10
 生成情境也 MUST 有 rawFile：把「用什麼條件生的」寫成 `Data/raw/<instance>.csv`，否則這批資料無法重現。
 
 ```powershell
-dotnet run -- import raw/Puzzle_SHC279
+dotnet run -- import-data raw/Puzzle_SHC279
 ```
 
-原始檔放 `Data/raw/`，產出的 CSV 落在 `bin/.../Data/`（`FolderDir.Data`）。**這是資料準備工序，不是求解流程的一部分**——CSV 一旦就位，求解模式就只讀不算。
+原始檔放專案 `Data/raw/`（經 csproj copy 規則映射到執行期 `Input/raw/`），產出的 CSV 落在 `bin/.../Input/`（`FolderDir.Input`）。**這是資料準備工序，不是求解流程的一部分**——CSV 一旦就位，求解模式就只讀不算。
 
 ⚠️ `Export()` 只寫到 bin 的輸出目錄，`dotnet clean` 或換 configuration 就沒了。這批 CSV 要長期當 input（進版控、之後每次求解都用同一份）→ MUST 手動搬回專案 `Data/`，讓 csproj 的 `Data\**\*.csv` copy 規則接手；只是這一輪拋棄式試跑就留在 bin。
 
@@ -892,15 +894,15 @@ parameter_Cost = raw.Select(r => new Parameter_Cost { QTY = r.Price * 1.05 }).To
 - MUST `public sealed partial class Dataload : DataContext`（`partial` + 繼承缺一不可）—— Why: generator 是靠「有 `partial` 且繼承 `DataContext`」兩個條件掃出這個類別的，少任一個它**連被掃到都沒有**——不是報錯，是直接跳過。沒有 compile error、沒有 warning、執行時也不會抱怨，這顆 Dataload 就是一輩子不受驗證。這是本規範裡唯一完全沒有訊號的坑
 - MUST 建構走 `OptData.Load(() => new Dataload())` —— NEVER 把裸 `new Dataload()` 當終點 —— Why: 裸 new 仍可編譯，但會跳過 Set／Parameter key 重複與 Parameter 數值 sanity 驗證，壞資料可能直接進 solver 產出「看起來最佳」的錯答案
 - MUST 把 penalty、capacity、bound、Big-M 輸入等模型數值都做成 Parameter CSV —— NEVER 寫成 Dataload 的 hardcode public field
-- framework 已處理 key 重複與數值 sanity；跨 Set 關聯、完整矩陣與業務 domain 則必須由專案驗收明確實作，不能假設 framework 會自動推導
-- NEVER `try/catch` 吞 `DataValidationException` —— 它刻意一次列出全部問題後 fail-fast
-- 由資料推導的比值（Big-M 之類）用 `Numeric.SafeRatio(分子, 分母, context: "BigM")`，NEVER 手寫裸除法
+- framework 已處理 key 重複與數值 sanity，但**只 WARN、不擋**：每筆問題逐一印 `[DATA_VALIDATION_WARNING]`（`OptData.Load` 後可讀 `data.DataIssues`），照常繼續建模——NEVER 誤以為它會 fail-fast。要讓壞資料真正擋下來，MUST 靠 §6 的 `<Project>Solution.ValidateData(data)` 自己丟例外
+- 跨 Set 關聯、完整矩陣與業務 domain 一律必須由專案驗收明確實作，不能假設 framework 會自動推導或擋下
+- 由資料推導的比值（Big-M 之類）框架不代為把關：除零、非有限值、量級過大由專案自行檢查
 
 真的需要加工 → 搬到 **import 建構子**（`Dataload(string rawFile)`），先跑一次把結果 `Export()` 成標準 CSV，再由上面這個建構子原封讀進來。加工的痕跡就落在檔案上，看得見也比得了：
 
 ```powershell
-dotnet run --project <project.csproj> -- import raw/<file>   # 加工 → 產 CSV
-dotnet run --project <project.csproj>                        # 只讀，不算
+dotnet run --project <project.csproj> -- import-data raw/<file>   # 加工 → 產 CSV
+dotnet run --project <project.csproj>                              # 只讀，不算
 ```
 
 一句話：**`Dataload(IDataSource)` 只讀不算，要算的都得先變成檔案。**
@@ -964,7 +966,7 @@ engine.BuildVars<VariableB_UseArc>(arcs);
 
 ★ **唯一例外：Model.md 自己把限制式的 domain 宣告成某個 Parameter 的 domain**（寫成 `∀ (a, b) ∈ dom(SomeRatio)`，語意是「表格沒填 = 這條限制不存在」，而不是「係數缺漏」）。這時**忠實的機械轉譯就是直接迭代該 Parameter 的 rows**——反而不可以自己另建一顆 Set 或補齊笛卡兒積，那是在改 Model.md 宣告的模型。判準：**domain 是誰宣告的**——Model.md 明寫的照抄，Model.md 沒寫而你想從資料推出來的一律禁止。這種 Parameter MUST 在類別 `<summary>` 寫明稀疏語意（「沒有列 = 沒有這條限制，不是值為 0」）。
 
-前兩項都會產生「build 過、solve 過、Status = Optimal、數字看起來合理」的結果，事後極難回溯。驗證是唯一能在 solve 之前把它變成 fail-fast 的機制，所以它綁在 `OptData.Load` 而不是可選步驟。
+前兩項都會產生「build 過、solve 過、Status = Optimal、數字看起來合理」的結果，事後極難回溯。**framework 的檢查只 WARN、不會幫你 fail-fast**——它綁在 `OptData.Load`（不是可選步驟）只保證問題一定被記錄成 `[DATA_VALIDATION_WARNING]` 且可從 `data.DataIssues` 讀到，但不會中止流程；真正要在 solve 之前擋下壞資料，MUST 靠 §6 的 `<Project>Solution.ValidateData(data)` 自己判斷並丟例外。
 
 **Set 載入方式**：
 
@@ -981,7 +983,8 @@ engine.BuildVars<VariableB_UseArc>(arcs);
 位置固定在**同一個 `Data/Dataload.cs`**，就在 `Dataload(IDataSource)` 旁邊當第二個建構子 —— NEVER 另開 `DataGenerator.cs` 或 `Data/import/` 資料夾（違反八資料夾與一型別一檔）。生成邏輯再長也留在這裡：它是同一顆積木的另一種來源，分檔只會讓「這批 CSV 哪來的」變難追。
 
 ```csharp
-/// <summary>import 模式：攤平 Data/raw/ 的不規則來源，或依生成規格產出 instance。rawFile 相對於 Data/、不帶副檔名。</summary>
+/// <summary>import-data 模式：攤平 Data/raw/ 的不規則來源，或依生成規格產出 instance。
+/// rawFile 不帶副檔名，執行期經 FolderDir.Input 讀取（來源檔位於專案 Data/raw/，由 csproj copy 規則映射過去）。</summary>
 public Dataload(string rawFile)
 {
     var grid = new CsvDataSource().LoadData(rawFile);
@@ -1000,10 +1003,10 @@ public void Export()
 **檔名對齊靠人**：`Export()` 寫的每個名稱都要在 `Dataload(IDataSource)` 對應 `source.Load<T>("sourceName")`。compiler 不會驗證這件事；少寫一顆時 import 仍可能 exit 0，所以 MUST 保留產出清單 log，並在交付 checklist 逐一核對。
 
 ★ **專案沒有 raw 來源時的唯一寫法**（canonical CSV 直接由 Model.md 的表格逐格謄寫，沒有東西要攤平）：
-import 段與 `Dataload(string rawFile)` 仍 MUST 保留（§5 四段模板不可刪減），但**不得為了「讓它有事做」而發明加工邏輯**。照抄下面這個退化形式——委派給標準來源，讓 `Export()` 變成 round-trip 自檢，並把「本專案無攤平步驟」寫進 log：
+import-data 段與 `Dataload(string rawFile)` 仍 MUST 保留（§5 四段模板不可刪減），但**不得為了「讓它有事做」而發明加工邏輯**。照抄下面這個退化形式——委派給標準來源，讓 `Export()` 變成 round-trip 自檢，並把「本專案無攤平步驟」寫進 log：
 
 ```csharp
-/// <summary>import 模式：本專案的 canonical CSV 由 Model.md 表格逐格謄寫，沒有 raw 來源需要攤平；
+/// <summary>import-data 模式：本專案的 canonical CSV 由 Model.md 表格逐格謄寫，沒有 raw 來源需要攤平；
 /// 此建構子維持四段模板要求的 import 能力，載入現行標準 CSV 後由 Export() 原樣寫回（round-trip 自檢）。</summary>
 public Dataload(string rawFile) : this(new CsvDataSource())
 {
@@ -1013,7 +1016,7 @@ public Dataload(string rawFile) : this(new CsvDataSource())
 
 ★ **`CsvDataSource` 只有無參數建構子**（§9.2.4）。`new CsvDataSource(rawFile)` 不存在，要讀 raw 表格是 `new CsvDataSource().LoadData(rawFile)`。
 
-寫出位置是 `FolderDir.Data`（bin 下的輸出目錄），不是專案 `Data/`。要保留成正式 input 就把產物搬回專案 `Data/`（同名覆蓋），下次 build 由 copy 規則帶回 bin；不搬 = 這批資料隨 bin 一起丟掉。
+寫出位置是 `FolderDir.Input`（bin 下的輸出目錄），不是專案 `Data/`。要保留成正式 input 就把產物搬回專案 `Data/`（同名覆蓋），下次 build 由 copy 規則帶回 bin；不搬 = 這批資料隨 bin 一起丟掉。
 
 **✅ 過關條件**：
 
@@ -1045,8 +1048,8 @@ namespace MyProject
 | 前綴         | 型別       | `BuildVars<T>` 給的界限                                                      |
 | ------------ | ---------- | ---------------------------------------------------------------------------- |
 | `VariableB_` | Binary     | `[0, 1]`                                                                     |
-| `VariableC_` | Continuous | `[0, 1E100]`（1E100 = 框架的「無上限」慣用值，不是 solver 的 infinity 常數） |
-| `VariableI_` | Integer    | `[0, 1E100]`                                                                 |
+| `VariableC_` | Continuous | `[0, 1E20]`（1E20 = `OptBounds.Infinity`，CPLEX 的無上限） |
+| `VariableI_` | Integer | `[0, 1E20]` |
 
 **前綴被讀兩次，兩次都會影響變數怎麼被建出來**：
 
@@ -1110,7 +1113,7 @@ engine.AddLHS(1.0, new VariableB_Assign { Item = item, Date = date });
 | ----------------------------------------------------------- | ------------------------------------------ |
 | 這組維度值有被 `BuildVars` 建過                             | 正常對到那顆變數                           |
 | 沒建過（Set 裡沒有這個成員，或整個型別忘了 `AddVariables`） | 丟 `KeyNotFoundException`                  |
-| 同一個型別 `BuildVars` 呼叫兩次                             | 變數會**追加**，不是覆蓋 —— NEVER 重複呼叫 |
+| 同一個型別 `BuildVars` 呼叫兩次 | 不同維度值會追加；已存在的同名變數略過、沿用原本那顆，並寫 `[VARIABLE_DUPLICATE]` WARN（Set 有重複成員也一樣）—— NEVER 重複呼叫 |
 
 - MUST 先建變數才建目標式與限制式 —— 框架永遠依 **variables → objective → constraints** 執行，與 `.AddXxx` 的註冊順序無關
 - MUST 每種變數在 `Program.cs` 各占一行；NEVER 在 Constraint 或 Objective 內呼叫 `BuildVars`
@@ -1180,9 +1183,9 @@ engine.AddRHS(1.0, new VariableI_Batch { Item = item, Machine = machine });
 | `VariableB_Assign`   | Binary `[0, 1]`         | Item × Date       | `VariableB_Assign@ItemA@2026-01-01` | Item 數 × Date 數    |
 | `VariableB_Open`     | Binary `[0, 1]`         | Facility          | `VariableB_Open@F1`                 | Facility 數          |
 | `VariableB_Sequence` | Binary `[0, 1]`         | Lot × Lot（同源） | `VariableB_Sequence@LotA@LotB`      | Lot 數的平方         |
-| `VariableC_Produce`  | Continuous `[0, 1E100]` | Item              | `VariableC_Produce@ItemA`           | Item 數              |
-| `VariableC_Makespan` | Continuous `[0, 1E100]` | 無                | `VariableC_Makespan`（**無 `@`**）  | 1                    |
-| `VariableI_Batch`    | Integer `[0, 1E100]`    | Item × Machine    | `VariableI_Batch@ItemA@M1`          | Item 數 × Machine 數 |
+| `VariableC_Produce` | Continuous `[0, 1E20]` | Item | `VariableC_Produce@ItemA` | Item 數 |
+| `VariableC_Makespan` | Continuous `[0, 1E20]` | 無 | `VariableC_Makespan`（**無 `@`**） | 1 |
+| `VariableI_Batch` | Integer `[0, 1E20]` | Item × Machine | `VariableI_Batch@ItemA@M1` | Item 數 × Machine 數 |
 
 **0 維的額外注意事項**
 
@@ -1213,14 +1216,14 @@ engine.AddRHS(coef, new VariableB_Open { Item = item }); // RHS 變數項（框�
 engine.AddRHS(constant); // RHS 常數
 
 engine.CreateLessEqual(this, item); // <=
-engine.CreateGreatEqual(this, item); // >=
+engine.CreateGreaterEqual(this, item); // >=
 engine.CreateEqual(this, item); // ==
-engine.CreateRange(lb, ub, this, item); // lb <= LHS <= ub（只吃 LHS）
+engine.CreateRange(lb, ub, this, item); // lb <= LHS <= ub（只吃 LHS；RHS pool 有內容 → warn [POOL_RHS_IGNORED] 後捨棄）
 ```
 
 **新模型的 paved path 是 owner overload：`CreateXxx(this, dims...)`。** 字串命名與 RHS overload 仍是公開介面；但 RHS overload 會覆蓋已累積的 RHS 常數，所以一般模型一律先用 `AddRHS(常數)`，再以 owner overload 出池，避免靜默覆蓋。
 
-**天條：Model.md 左邊的項進 `AddLHS`、右邊的項進 `AddRHS`，`>=` 就用 `CreateGreatEqual`。NEVER 自行移項 / 改號 / 翻轉方向 / 合併化簡** —— Why: 轉譯必須能逐條對回 Model.md 驗證，動過手腳就驗不了。
+**天條：Model.md 左邊的項進 `AddLHS`、右邊的項進 `AddRHS`，`>=` 就用 `CreateGreaterEqual`。NEVER 自行移項 / 改號 / 翻轉方向 / 合併化簡** —— Why: 轉譯必須能逐條對回 Model.md 驗證，動過手腳就驗不了。
 
 限制式群組與實際建立數量由 framework 自動記錄。`ConstraintBase` 上沒有專案端計數欄位 —— NEVER 手動累加或另維護第二份計數，避免與 framework build summary 脫節。
 
@@ -1347,7 +1350,7 @@ engine.AddLHS(1.0, new VariableB_Product { … });
 engine.AddRHS(1.0, new VariableB_Z1 { … });
 engine.AddRHS(1.0, new VariableB_Z2 { … });
 engine.AddRHS(-1.0); // ← pattern 自帶的常數，Model.md 就是這樣寫
-engine.CreateGreatEqual(this);
+engine.CreateGreaterEqual(this);
 
 // Model: Sequence_{lot,lot} = 0（禁止自己接自己）
 engine.AddLHS(1.0, new VariableB_Sequence { LotFrom = lot, LotTo = lot });
@@ -1373,9 +1376,9 @@ Why: 具名符號寫死成數字，「改一個係數」就變成全專案搜尋
 
 ### 4.5 Phase 2 禁止 soft constraint
 
-正式模型的 `Constraint_*.cs` MUST 只使用 hard constraint API：`CreateLessEqual` / `CreateGreatEqual` / `CreateEqual` / `CreateRange`。
+正式模型的 `Constraint_*.cs` MUST 只使用 hard constraint API：`CreateLessEqual` / `CreateGreaterEqual` / `CreateEqual` / `CreateRange`。
 
-- NEVER 在 Phase 2 或 canonical 組裝 pipeline 使用 `CreateLeSoft` / `CreateGeSoft` / `CreateEqSoft`
+- NEVER 在 Phase 2 或 canonical 組裝 pipeline 使用 `CreateLessEqualSoft` / `CreateGreaterEqualSoft` / `CreateEqualSoft`
 - NEVER 因為模型 infeasible、需求不確定或想讓 solver「比較容易有解」就自行改成 soft；這會改變數學模型，不是實作細節
 - Soft constraint 是**建模決定**：使用者明確要求放鬆某條限制式 → 回 Phase 1 寫進 Model.md（含 penalty 的具名 PARAM 與被放鬆的條目），確認後由 Phase 2 照常轉譯。Phase 3 只調 solver 旋鈕，NEVER 由它引入 soft
 - soft 版模型不得覆蓋、取代或混入 canonical hard model；它是 Model.md 上的另一個版本，報告時 MUST 標出被放鬆的限制式、penalty 與違反量
@@ -1384,13 +1387,15 @@ Why: 具名符號寫死成數字，「改一個係數」就變成全專案搜尋
 
 ---
 
-## §5 Program.cs — 唯一組裝點 + 三態 CLI
+## §5 Program.cs — 唯一組裝點 + CLI
 
-所有層級關係直接寫在這一個檔。**Phase 2 的每一個交付專案與本文件的每一個 `Program.cs` 範例，都 MUST 使用同一個、不可刪減或重排的四段模板：`import → 模型 → 實驗 → 正式跑`。**
+所有層級關係直接寫在這一個檔。**Phase 2 的每一個交付專案與本文件的每一個 `Program.cs` 範例，都 MUST 使用同一個、不可刪減或重排的四段模板：`import-data → 設定 → 模型來源 → 環境`。** 完整範例照抄 [`../../../Template/Program.cs`](../../../Template/Program.cs)，本節只是同一份骨架逐段解釋；兩者不一致時以 `Template/Program.cs` 為準。
 
-這不是「題目有需要才加入」的選項：即使 canonical CSV 已存在，仍 MUST 保留 import 段與 `Dataload(string rawFile)`；即使尚未開始 tuning，仍 MUST 保留 experiment 段與至少一組由 `productionBaseline.Clone()` 取得的 config。未來只准替換各段的專案型別、Set / Parameter、模型組成及 solver 值；不得省略段落、另造 CLI、以 helper 包裝段落，或把段落合併／改序。這使所有 Phase 2 成果可以機械比對。
+這不是「題目有需要才加入」的選項：即使 canonical CSV 已存在，仍 MUST 保留 import-data 段與 `Dataload(string rawFile)`；即使尚未開始 tuning，仍 MUST 保留環境段的 exp 分支與至少一組由 `productionBaseline.Clone()` 取得的 config。未來只准替換各段的專案型別、Set / Parameter、模型組成及 solver 值；不得省略段落、另造 CLI、以 helper 包裝段落，或把段落合併／改序。這使所有 Phase 2 成果可以機械比對。
 
-四段均平坦寫在 `Main` 內，且保留以下**逐字段落標記**；材料宣告屬於「模型段落」的前置材料，模型 chain 仍是唯一組裝點。每種變數、目標式與每條限制式各占一個 fluent call。
+四段均平坦寫在 `Main` 內，且保留以下**逐字段落標記**；canonical 組裝抽成獨立的 `private static OptModel BuildModel(Dataload data)`，是唯一組裝點。每種變數、目標式與每條限制式各占一個 fluent call。
+
+CLI 是**兩軸自由組合**：模型來源（預設讀 `FolderDir.Input` 的 CSV 建構 canonical；`read-model <file>` 改讀既有模型檔 `.lp`/`.mps`/`.sav`，不讀 CSV）× 執行方式（預設正式求解；`exp` 做實驗），例如 `dotnet run -- read-model <file> exp`。`import-data <raw>` 是獨立的資料前處理，不與另外兩軸組合。
 
 ```csharp
 using OptimFoundation.Core;
@@ -1398,83 +1403,114 @@ using OptimFoundation.Cplex;
 
 namespace MyProject
 {
+    // CLI：import-data 是獨立的資料前處理；其餘為「模型來源 × 執行方式」兩軸自由組合
+    //   模型來源：預設讀 FolderDir.Input 的 CSV 建構 canonical；read-model <file> 改讀既有模型檔（.lp / .mps / .sav），不讀 CSV
+    //   執行方式：預設正式求解；exp 做實驗
+    //   例：dotnet run、dotnet run -- exp、dotnet run -- read-model <file>、dotnet run -- read-model <file> exp、dotnet run -- import-data <raw>
     internal static class Program
     {
         private static int Main(string[] args)
         {
-            // 1. import 段落（固定保留；只在 import 模式執行）
-            // 模式 1：import —— 攤平或生成，產出標準 CSV（CSV 還不存在時才需要）
-            if (args.Length >= 2 && args[0] == "import")
+            // 1. import-data 段落（固定保留；只在 import-data 模式執行）
+            // 攤平或生成，產出標準 CSV 到 FolderDir.Input（CSV 還不存在時才需要）
+            if (args.Length >= 2 && args[0] == "import-data")
             {
                 string rawFile = args[1];
                 OptData.Load(() => new Dataload(rawFile)).Export();
                 return 0;
             }
 
-            // 2. 模型段落（固定保留：材料 + canonical OptModel 組裝）
-            // exp 的 log 檔名 MUST 在第一次寫入前設定，整次執行才收在同一包
             bool isExperiment = args.Any(arg => string.Equals(arg, "exp", StringComparison.OrdinalIgnoreCase));
-            if (isExperiment)
-                Logging.SetLogFileName("MyProject_exp");
+            int readModelAt = Array.IndexOf(args, "read-model");
+            string? modelFile = readModelAt >= 0 && readModelAt + 1 < args.Length ? args[readModelAt + 1] : null;
+            if (readModelAt >= 0 && modelFile == null)
+            {
+                Console.Error.WriteLine("read-model 需要模型檔路徑，例：dotnet run -- read-model <file> [exp]");
+                return 2;
+            }
 
-            // ── 材料 ───────────────────────────────────────────────
-            var data = OptData.Load(() => new Dataload());
-            MyProjectSolution.ValidateData(data); // 資料驗收：全格矩陣 / 跨表關聯；MUST 緊接 Load 之後、建模之前
-            double shortagePenalty = data.parameter_ShortagePenalty.Single().QTY;
+            // 專案：名稱、log、FolderDir 資料夾、保留期都由它管；exp 與正式求解都從它出發
+            using var project = new OptProject("MyProject");
 
+            // 2. 設定段落（固定保留）
             var projectConfig = new ProjectConfig
             {
-                ProjectName = "MyProject",
                 EnableSolverLog = true,
                 ExportLP = true,
                 ExportSol = true,
-                DataId = "MyProject",
-                UserId = "SYSTEM",
             };
             // 唯一 production baseline/champion；experiment clone 它，prod 直接使用它。
+            // Seed 與 ParallelMode 無條件明設——這兩顆是交棒給 Phase 3 的環境契約。
             var productionBaseline = new CplexConfig
             {
                 MipGap = 0.03,
                 TimeLimit = 300,
                 Threads = 8,
+                ParallelMode = 1,
+                Seed = 11,
             };
 
-            // ── 模型 ───────────────────────────────────────────────
-            var model = new OptModel("Canonical")
+            // 3. 模型來源段落（固定保留）
+            // read-model：模型從檔案來（相對路徑以 FolderDir.Model 為基準），不讀 CSV；否則材料 → canonical。
+            // 之後的 exp 與正式求解都只拿 model，不管它從哪來。
+            Dataload? data = null;
+            OptModel model;
+            if (modelFile != null)
+            {
+                model = OptModel.ReadModel(modelFile);
+            }
+            else
+            {
+                data = OptData.Load(() => new Dataload());
+                MyProjectSolution.ValidateData(data); // 資料驗收：全格矩陣 / 跨表關聯；MUST 緊接 Load 之後、建模之前
+                model = BuildModel(data);
+            }
+
+            // 4. 環境段落（固定保留）
+            // exp —— 交棒給 Phase 3 的 R0 形狀，NEVER 在這裡混掃多顆旋鈕
+            if (isExperiment)
+            {
+                // R0 — MyProject-tuning-r0（紀錄寫成 Experiment/MyProject-tuning-r0-trial.csv 等四個檔）
+                // read-model 的實驗另外命名，紀錄檔跟 canonical 同一輪分得開
+                string experimentName = modelFile == null ? "tuning-r0" : $"tuning-r0-{model.Name}";
+                var exp = project.Experiment(experimentName, "R0 校準：baseline × 5 seeds");
+                exp.AddModel(model);
+
+                foreach (var seed in new[] { 11, 22, 33, 44, 55 })
+                {
+                    var config = productionBaseline.Clone();
+                    config.Seed = seed;
+                    exp.AddConfig($"r0-baseline-s{seed}", config);
+                }
+
+                var result = exp.Run();
+
+                foreach (var trial in result.Trials)
+                    Logging.Info($"[Experiment] {trial.Label} status={trial.Metrics.Status} solveTimeMs={trial.Metrics.SolveTimeMs:F0}");
+                return 0;
+            }
+
+            // 預設：正式求解（read-model 沒有資料，不跑解驗證）
+            project.LoadConfig(projectConfig);
+            bool solved = project.Solve(model, productionBaseline,
+                onSolved: data == null ? null : engine => MyProjectSolution.ReadAndValidate(engine, data).Print());
+            return solved ? 0 : 1;
+        }
+
+        /// <summary>
+        /// canonical 模型：每種變數、目標式、每條限制式各占一個 fluent call；AddObjective MUST 在 AddConstraints 之前。
+        /// read-model 時不會呼叫。
+        /// </summary>
+        private static OptModel BuildModel(Dataload data)
+        {
+            double shortagePenalty = data.parameter_ShortagePenalty.Single().QTY;
+
+            return new OptModel("Canonical")
                 .AddVariables(engine => engine.BuildVars<VariableB_Assign>(data.set_Item, data.set_Date))
                 .AddVariables(engine => engine.BuildVars<VariableC_Shortage>(data.set_Item))
                 .AddObjective(engine => new ObjectiveFunction(data.set_Item, shortagePenalty).Build(engine))
                 .AddConstraints(engine => new Constraint_MaxDays(data.set_Item, data.set_Date, data.parameter_MaxDays).Build(engine))
                 .AddConstraints(engine => new Constraint_Coverage(data.set_Item, data.set_Date, data.parameter_Demand).Build(engine));
-
-            // 3. 實驗段落（固定保留；只在 exp 模式執行）
-            // 模式 2：exp —— 掃 solver 設定，不做正式求解
-            if (isExperiment)
-            {
-                var baseline = productionBaseline.Clone();
-                var emphasis = baseline.Clone();
-                emphasis.Emphasis = 2;
-
-                var result = new OptExperiment("MyProject-tuning-r1", "baseline vs emphasis")
-                    .AddModel(model)
-                    .AddConfig("r1-baseline", baseline)
-                    .AddConfig("r1-emphasis=optimal", emphasis)
-                    .Run();
-
-                foreach (var trial in result.Trials)
-                    Logging.Info($"[Experiment] {trial.Label} status={trial.Metrics.Status} runTimeMs={trial.Metrics.RunTimeMs:F0}");
-                return 0;
-            }
-
-            // 4. 正式跑段落（固定保留；無參數時執行）
-            // 模式 3（預設）：正式求解
-            using var project = new OptProject(model)
-                .UseConfig(() => projectConfig)
-                .UseConfig(() => productionBaseline)
-                .OnSolved(engine => MyProjectSolution.ReadAndValidate(engine, data).Print());
-
-            bool solved = project.Execute();
-            return solved ? 0 : 1;
         }
     }
 }
@@ -1482,116 +1518,100 @@ namespace MyProject
 
 **四段模板不變性（Phase 2 result gate）**
 
-| 固定段落  | `Program.cs` 必備元件                                                                                                                                                                                | 唯一允許的專案差異                                                                          |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| 1. import | `args.Length >= 2 && args[0] == "import"`；`OptData.Load(() => new Dataload(rawFile)).Export()`；立即 `return 0`                                                                                     | raw 來源格式與 `Dataload(string rawFile)` 內的攤平／生成細節                                |
-| 2. 模型   | `isExperiment` 判斷與 log 設定；唯一一次 canonical `OptData.Load`；緊接其後的 `<Project>Solution.ValidateData(data)`；具名 `ProjectConfig`、`productionBaseline`；唯一 `OptModel("Canonical")` chain | Set / Parameter / scalar、變數、Objective、Constraint、config 值、`ValidateData` 的檢查內容 |
-| 3. 實驗   | `if (isExperiment)`；由 `productionBaseline.Clone()` 建 config；`OptExperiment` + `.AddModel(model)` + `.AddConfig(...)` + `.Run()`；立即 `return 0`                                                 | 只有 seed 值與說明文字；名稱、label、marker 一律照 §8.4 的 R0-ready 契約，NEVER 自創        |
-| 4. 正式跑 | `using var project = new OptProject(model)`；兩個 `.UseConfig`；`.OnSolved`；`Execute()` 與 0/1 exit code                                                                                            | Solution 類別與輸出內容                                                                     |
+| 固定段落 | `Program.cs` 必備元件 | 唯一允許的專案差異 |
+| --- | --- | --- |
+| 1. import-data | `args.Length >= 2 && args[0] == "import-data"`；`OptData.Load(() => new Dataload(rawFile)).Export()`；立即 `return 0` | raw 來源格式與 `Dataload(string rawFile)` 內的攤平／生成細節 |
+| 2. 設定 | `using var project = new OptProject("<Project>")`；具名 `ProjectConfig`、`productionBaseline`（`Seed` / `ParallelMode` 無條件明設） | config 值 |
+| 3. 模型來源 | `modelFile != null` 時 `OptModel.ReadModel(modelFile)`；否則 `OptData.Load` → 緊接 `<Project>Solution.ValidateData(data)` → `BuildModel(data)`；canonical 組裝抽成 `private static OptModel BuildModel(Dataload data)` | Set / Parameter / scalar、變數、Objective、Constraint、`ValidateData` 的檢查內容 |
+| 4. 環境 | `if (isExperiment)` 用 `project.Experiment(name, desc)` + `AddModel` + `AddConfig` + `Run()` 立即 `return 0`；否則 `project.LoadConfig(projectConfig)` + `project.Solve(model, productionBaseline, onSolved: ...)` | 只有 seed 值與說明文字；名稱、label、marker 一律照 §8.4 的 R0-ready 契約，NEVER 自創 |
 
-- 四個標記 `// 1. import 段落`、`// 2. 模型段落`、`// 3. 實驗段落`、`// 4. 正式跑段落` MUST 各出現一次，順序固定；缺任一個即 Phase 2 FAIL。
-- import、experiment 是**固定能力**，不是每次都要執行的工作。三態 CLI 仍互斥：import 命中立即結束，`exp` 命中在模型建立後執行實驗並結束，無參數才正式跑。
+- 四個標記 `// 1. import-data 段落`、`// 2. 設定段落`、`// 3. 模型來源段落`、`// 4. 環境段落` MUST 各出現一次，順序固定；缺任一個即 Phase 2 FAIL。
+- import-data、`read-model`、`exp` 都是**固定能力**，不是每次都要執行的工作；三者互不相斥地自由組合（`read-model <file> exp` 合法），只有 import-data 是獨立分支、命中即 `return 0`。
 - `OptExperiment` 的結果是 Phase 3 的輸入；Phase 2 固定保留一個最小可執行比較，不得因「尚未 tuning」而刪掉。Phase 3 只擴充其 round snapshot / archive，不得變更這個四段骨架。
 
 **四段的內容邊界（MUST 照這個分，NEVER 互相跨界）**
 
 四段都在 `Main` 內、都平坦寫，順序固定：
 
-| 段           | 只能放                                                                                                                                                                                              | NEVER 放                                                                                                                                                        |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1 import** | `new Dataload(rawFile)`、`OptData.Load(...).Export()`、立即 `return 0`                                                                                                                              | canonical model、實驗或正式求解                                                                                                                                 |
-| **2 模型**   | `isExperiment` 與 log 設定；唯一一次 canonical `OptData.Load`；一行 `<Project>Solution.ValidateData(data)`；scalar、具名 `ProjectConfig` / `productionBaseline`；唯一 `OptModel("Canonical")` chain | 資料轉換；`new OptEngine(...)`；`AddLHS` / `AddRHS`（數學式留在各 Constraint / Objective 類別）；把驗收邏輯**寫在**這一段（實作放 `Solution/`，這裡只呼叫一行） |
-| **3 實驗**   | `// R0 — <Project>-tuning-r0` marker、clone baseline、`OptExperiment`、`AddModel`、`AddConfig`、`Run`、立即 `return 0`                                                                              | 改模型、改資料、正式 `OptProject`、自創 experiment 名或 label                                                                                                   |
-| **4 正式跑** | `OptProject`、兩個 `UseConfig`、`OnSolved`、`Execute`、0/1 exit code                                                                                                                                | 改模型、改資料、第二次 `OptData.Load`                                                                                                                           |
+| 段 | 只能放 | NEVER 放 |
+| --- | --- | --- |
+| **1 import-data** | `new Dataload(rawFile)`、`OptData.Load(...).Export()`、立即 `return 0` | canonical model、實驗或正式求解 |
+| **2 設定** | `new OptProject("<Project>")`；具名 `ProjectConfig`、`productionBaseline` | 資料轉換、模型組裝 |
+| **3 模型來源** | `OptModel.ReadModel(modelFile)` 或（`OptData.Load` → 一行 `<Project>Solution.ValidateData(data)` → `BuildModel(data)`） | 資料轉換；`new OptEngine(...)`；`AddLHS` / `AddRHS`（數學式留在各 Constraint / Objective 類別）；把驗收邏輯**寫在**這一段（實作放 `Solution/`，這裡只呼叫一行） |
+| **4 環境** | `// R0 — <Project>-tuning-r0` marker、clone baseline、`project.Experiment(...)`、`AddModel`、`AddConfig`、`Run`、立即 `return 0`；或 `project.LoadConfig` + `project.Solve` | 改模型、改資料、第二次 `OptData.Load`、自創 experiment 名或 label |
 
-- MUST 模型段的 canonical `OptData.Load` **整個程式只呼叫一次**，production 與 experiment 共用同一份 `data` —— Why: 兩份資料會在中途漂移，實驗結果就不能拿來回答 production 的問題
+- MUST 模型來源段的 canonical `OptData.Load` **整個程式只呼叫一次**，production 與 experiment 共用同一份 `data`（`read-model` 時沒有 `data`）—— Why: 兩份資料會在中途漂移，實驗結果就不能拿來回答 production 的問題
 - MUST 緊接 `OptData.Load` 之後呼叫一行 `<Project>Solution.ValidateData(data)`；沒有專案級資料驗收需求時，該方法仍 MUST 存在並在 `<summary>` 寫明「本專案無全格 / 跨表要求」—— Why: framework 只驗 key 重複與數值 sanity（§2.4），全格矩陣與跨表關聯一律是專案責任，而**它 MUST 在建模之前跑**；放到 solve 之後才驗，壞資料已經生出一個「可行、最佳、但答錯」的解了
-- MUST 每個 config 都在模型段具名宣告，內容直接看得到 —— NEVER 用 factory helper 把設定藏起來
-- MUST scalar 在模型段取成區域變數再逐項傳進 model chain —— NEVER 在 fluent chain 裡才 `.Single().QTY`
-- 模型段之前只准有 import 分派，以及 exp 的 `Logging.SetLogFileName`（限定且 MUST 在 canonical `OptData.Load` 之前）
+- MUST 每個 config 都在設定段具名宣告，內容直接看得到 —— NEVER 用 factory helper 把設定藏起來
+- MUST scalar 在 `BuildModel` 取成區域變數再逐項傳進 model chain —— NEVER 在 fluent chain 裡才 `.Single().QTY`
+- `using var project = new OptProject("<Project>")` 放在 CLI 解析之後、設定段落之前；專案名、log、`FolderDir` 資料夾、保留期都由它管，NEVER 自己再呼叫 `Logging.SetLogFileName`
 
 **兩層 config 怎麼填**
 
 職責切乾淨：`ProjectConfig` = 這個專案**怎麼輸出**，`CplexConfig` = solver **怎麼解**。實驗快照只擷取 solver 那層，所以輸出開關不會混進 tuning 記錄。
 
-| `ProjectConfig` 欄位      | 規範                                                                                                                                               |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ProjectName`             | **MUST 明設**，值 = `<Project>`。它是 log / LP / MPS / SOL / IIS 的檔名前綴；不設會退回用模型名，多個專案的輸出就分不開                            |
-| `EnableSolverLog`         | 預設 `true`。開發與驗收期保持開啟；只有輸出太吵時才關，關掉只影響 Console，framework log 照寫                                                      |
-| `ExportLP`                | 建議開。`Infeasible` / 數值可疑時要靠 `.lp` 肉眼查式子（§10）                                                                                      |
-| `ExportMPS` / `ExportSol` | 預設關，有交換檔或存解的需求才開                                                                                                                   |
-| `DataId` / `UserId`       | 專案 metadata。★ **框架不會自動帶進 `CsvCtrl.WriteSolution`**——那支方法的兩個字串要自己傳，MUST 與這裡的值一致，否則同一次執行的解檔會標成不同來源 |
-| `RetentionDays`           | 不設 = 30 天。輸出檔保留策略，一般照預設                                                                                                           |
+| `ProjectConfig` 欄位 | 規範 |
+| --- | --- |
+| 專案名 / 保留期 | 不在 `ProjectConfig` 上——由 `new OptProject(name, retentionDays: 30)` 的建構子參數決定 |
+| `EnableSolverLog` | 預設 `true`。開發與驗收期保持開啟；只有輸出太吵時才關，關掉只影響 Console，framework log 照寫 |
+| `ExportLP` | 建議開。`Infeasible` / 數值可疑時要靠 `.lp` 查式子（§10）；AI 只用限制式名 grep 那幾行，NEVER 整份讀、NEVER 據此判斷模型類型（天條「讀檔」） |
+| `ExportMPS` / `ExportSol` | 預設關，有交換檔或存解的需求才開 |
+| `ExportIIS` | 目前未接線，設了不會生效；IIS 在 Infeasible 時一律自動匯出（§9.2.6），不受這顆控制 |
+| `DataId` / `UserId` | 不在 `ProjectConfig` 上——`CsvCtrl.WriteSolution<T>(engine, dataId, userId)` 等 sink 方法的參數，呼叫端自己傳 |
 
 | `CplexConfig`                  | 規範                                                                                                                                                                       |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 顆數                           | 整個 `Program.cs` **只有一顆具名 `productionBaseline`**；experiment 的 variant 一律從它 `Clone()`（§8.2）                                                                  |
-| `TimeLimit`                    | MUST 明設，NEVER 留 `null`（無限）—— Why: 沒有停點的 production 執行沒辦法納入流程，也無從比較                                                                             |
-| `MipGap`                       | 依專案可接受的品質明設；留 `null` 會用 CPLEX 自己的 `1e-4`，對多數排程題偏嚴，會白花時間收最後那點 gap                                                                     |
-| `Threads`                      | **MUST 明設**，依實機核心數設定並實測。`CplexConfig` 自 2026-08-25 起不帶任何預設值，留 `null` = CPLEX 自行決定執行緒數 = 每台機器不一樣，baseline 不可比。此列與下一列合起來就是**環境契約**，Phase 3 同一台實機沿用，不重跑 sizing |
-| `Seed` / `ParallelMode`        | **無條件 MUST 明設**：`ParallelMode = 1` + 固定 `Seed` —— Why: 這兩顆決定 Phase 3 量得準不準。留 `null` 等於交出一個不可比的 baseline，Phase 3 進場第一件事就得回頭改 code |
-| `ITunableConfig` 與 CPLEX 設定 | `CplexConfig` 仍實作 `ITunableConfig`，但公開設定一律是同一套 PascalCase property；不再有 camelCase 對應欄位                                                               |
-| 其餘旋鈕                       | 一律留 `null` 用 CPLEX 預設 —— NEVER 一開始就塞滿參數，那會讓 Phase 3 分不出是哪個旋鈕造成差異                                                                             |
+| --- | --- |
+| 顆數 | 整個 `Program.cs` **只有一顆具名 `productionBaseline`**；experiment 的 variant 一律從它 `Clone()`（§8.2） |
+| `TimeLimit` | MUST 明設，NEVER 留 `null`（無限）—— Why: 沒有停點的 production 執行沒辦法納入流程，也無從比較 |
+| `MipGap` | 依專案可接受的品質明設；留 `null` 會用 CPLEX 自己的 `1e-4`，對多數排程題偏嚴，會白花時間收最後那點 gap |
+| `Threads` | **MUST 明設**，依實機核心數設定並實測。留 `null` = CPLEX 自行決定執行緒數 = 每台機器不一樣，baseline 不可比。此列與下一列合起來就是**環境契約**，Phase 3 同一台實機沿用，不重跑 sizing |
+| `Seed` / `ParallelMode` | **無條件 MUST 明設**：`ParallelMode = 1` + 固定 `Seed` —— Why: 這兩顆決定 Phase 3 量得準不準。留 `null` 等於交出一個不可比的 baseline，Phase 3 進場第一件事就得回頭改 code |
+| `ISolverConfig` 與 CPLEX 設定 | `ITunableConfig` 已併入 `ISolverConfig`；公開設定一律是同一套 PascalCase property，不再有 camelCase 對應欄位 |
+| 其餘旋鈕 | 一律留 `null` 用 CPLEX 預設 —— NEVER 一開始就塞滿參數，那會讓 Phase 3 分不出是哪個旋鈕造成差異 |
 
 ### 5.1 CLI 命令、`args` 與優先順序
 
 `dotnet run` 後面的 `--` 是分隔符：`--` 前面屬於 `dotnet`，後面才會原樣傳入 `Main(string[] args)`；`--` 本身不會出現在 `args`。
 
-三種正式支援的命令如下，一次只選一種：
+`import-data` 是獨立分支，其餘兩軸（模型來源 × 執行方式）自由組合：
 
-| 模式       | 命令                                                    | `args`                | 結果                                                                                    |
-| ---------- | ------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------- |
-| production | `dotnet run --project <project.csproj>`                 | `[]`                  | 載入 canonical CSV，正式求解並執行 `OnSolved`                                           |
-| experiment | `dotnet run --project <project.csproj> -- exp`          | `["exp"]`             | 建立同一份 canonical model，執行 `OptExperiment`，不再執行 production runner            |
-| import     | `dotnet run --project <project.csproj> -- import <raw>` | `["import", "<raw>"]` | 讀不規則來源或生成規格、`Export()` canonical CSV，完成後立即 `return 0`，不建模也不求解 |
+| 命令 | `args` | 結果 |
+| --- | --- | --- |
+| `dotnet run --project <project.csproj>` | `[]` | 讀 CSV 建 canonical model，正式求解並跑 `onSolved` |
+| `dotnet run --project <project.csproj> -- exp` | `["exp"]` | canonical model，跑 `OptExperiment`（`tuning-r0`），不進正式求解 |
+| `dotnet run --project <project.csproj> -- read-model <file>` | `["read-model", "<file>"]` | 從模型檔建 model，正式求解，`onSolved` 為 `null`（沒有 `data` 可解驗證） |
+| `dotnet run --project <project.csproj> -- read-model <file> exp` | `["read-model", "<file>", "exp"]` | 從模型檔建 model，跑 `OptExperiment`（`tuning-r0-{model.Name}`，紀錄檔跟 canonical 同輪分得開） |
+| `dotnet run --project <project.csproj> -- import-data <raw>` | `["import-data", "<raw>"]` | 讀不規則來源或生成規格、`Export()` canonical CSV，完成後立即 `return 0`，不建模也不求解 |
 
-來源路徑含空白時 MUST 加引號，例如 `-- import "raw/My Puzzle.csv"`，它仍是單一 `args[1]`。
+來源路徑含空白時 MUST 加引號，例如 `-- import-data "raw/My Puzzle.csv"`，它仍是單一 `args[1]`。
 
 判斷順序是程式行為的一部分：
 
-1. 先檢查 `args.Length >= 2 && args[0] == "import"`；命中後執行 import 並立即結束。
-2. 未命中 import 才掃描所有參數是否含不分大小寫的 `exp`。
-3. 前兩者都未命中才進 production。
+1. 先檢查 `args.Length >= 2 && args[0] == "import-data"`；命中後執行 import-data 並立即結束。
+2. 未命中才解析 `read-model <file>`（`Array.IndexOf(args, "read-model")`，缺路徑直接 `return 2`）與不分大小寫的 `exp`——兩者互不影響，可同時出現。
+3. 依模型來源（`read-model` 有值 → `OptModel.ReadModel`；否則 → CSV 建 canonical）與執行方式（`isExperiment` → exp；否則 → 正式求解）各自往下走。
 
-因此非標準組合的實際結果如下；這些寫法不屬正式 CLI contract，NEVER 用它們串接工作流程：
-
-| 寫法                  | 實際結果          | 原因／正確替代                                                                         |
-| --------------------- | ----------------- | -------------------------------------------------------------------------------------- |
-| `-- import <raw> exp` | **只 import**     | import 分支先命中且 `return 0`；若要接著實驗，分兩次執行 `-- import <raw>` 與 `-- exp` |
-| `-- exp import <raw>` | **只 experiment** | `args[0]` 不是 `import`，但掃描到 `exp`；其餘參數不會成為 import 輸入                  |
-| `-- EXP` / `-- Exp`   | experiment        | `exp` 使用 `OrdinalIgnoreCase` 比較                                                    |
-| `-- Import <raw>`     | production        | `import` 判斷目前區分大小寫；正式寫法固定使用小寫 `import`                             |
-| `-- import`           | production        | 少了 `args[1]`，不符合 import 條件；正式寫法 MUST 提供來源                             |
-| `-- <unknown>`        | production        | 未命中 import 或 exp；正式工作流程不要傳未定義參數                                     |
-
-三態沒有「import 後自動 solve／experiment」的複合模式。需要連續操作時 MUST 分成兩次命令，讓第一步產出的 canonical CSV 成為第二步明確可檢視的輸入：
-
-```powershell
-dotnet run --project <project.csproj> -- import <raw>
-dotnet run --project <project.csproj> -- exp
-```
-
-| 規則                                            | 說明                                                                                                                                                                        |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 三態互斥                                        | `import <raw>` / `exp` / 無參數，一次只做一件事                                                                                                                             |
-| exit code                                       | 求解成功 0、失敗 1；import 完成 0                                                                                                                                           |
-| `Logging.SetLogFileName`                        | 只在 exp 模式呼叫，且 MUST 在 `OptData.Load` 之前 —— Why: `OptExperiment` 自己不換 log 檔名，晚設會留下只有載入摘要的殘檔。格式固定 `{name}_{時間戳}.txt`，時間戳只能在最後 |
-| 每個組成各占一行                                | 每種變數一行 `.AddVariables(...)`；Objective 一行 `.AddObjective(...)`；每條 Constraint 一行 `.AddConstraints(...)`                                                         |
-| 順序固定                                        | variables → objective → constraints                                                                                                                                         |
-| 新增一條限制式                                  | `Constraint/` 加一檔 + pipeline 加一行，沒有第三個地方要改                                                                                                                  |
-| scalar 取值                                     | 材料段用 `.Single().QTY` 取出，再逐項傳入                                                                                                                                   |
-| `OptModel` 名稱                                 | canonical 模型一律 `"Canonical"`；Phase 3 的 variant 另取名                                                                                                                 |
-| 兩層 config 具名宣告                            | `ProjectConfig` 管專案身分與輸出、`CplexConfig` 只管 solver 旋鈕 —— NEVER 用 config factory helper 把內容藏起來                                                             |
-| `OptProject`                                    | production runner，套兩層 config、執行一次；`OnSolved` 只掛在這裡                                                                                                           |
-| `OptExperiment`                                 | experiment runner，展開 model × config，自動儲存                                                                                                                            |
-| NEVER 在 fluent call 直接寫 `AddLHS` / `AddRHS` | pipeline 只列組成；數學式留在各 Objective / Constraint class                                                                                                                |
-| NEVER 把 `Dataload` 傳進 Objective / Constraint | pipeline 逐項傳它實際使用的 Set / Parameter / scalar                                                                                                                        |
-| NEVER 包裝組裝流程                              | 禁止只負責轉呼叫的類別／函式／local function；review 必須能從這一條 chain 讀完模型組成                                                                                      |
-| 不重印 framework log                            | Status / objective / IIS 路徑與 conflict names 由 `OptEngine` 自動記錄；專案端只印業務語意訊息                                                                              |
+| 規則 | 說明 |
+| --- | --- |
+| import-data 與另外兩軸互斥 | `import-data <raw>` 命中就立即 `return 0`；不會再往下解析 `read-model` / `exp` |
+| exit code | 求解成功 0、失敗 1；import-data 完成 0；`read-model` 缺路徑 2 |
+| `Logging.SetLogFileName` | 專案 code NEVER 呼叫；`OptProject` 建立時自動設 `{專案名}`，`project.Experiment(...)` 建立時自動切到 `{專案名}-{實驗名}_exp` |
+| 每個組成各占一行 | 每種變數一行 `.AddVariables(...)`；Objective 一行 `.AddObjective(...)`；每條 Constraint 一行 `.AddConstraints(...)` |
+| 順序固定 | variables → objective → constraints |
+| 新增一條限制式 | `Constraint/` 加一檔 + `BuildModel` 加一行，沒有第三個地方要改 |
+| scalar 取值 | `BuildModel` 內用 `.Single().QTY` 取出，再逐項傳入 |
+| `OptModel` 名稱 | canonical 模型一律 `"Canonical"`；Phase 3 的 variant 另取名 |
+| 兩層 config 具名宣告 | `ProjectConfig` 管專案輸出、`CplexConfig` 只管 solver 旋鈕 —— NEVER 用 config factory helper 把內容藏起來 |
+| `project.Solve(model, config, onSolved)` | 正式求解，可 Solve 多次；`onSolved` 只在成功後執行 |
+| `project.Experiment(name, description)` | 建立 `OptExperiment`，展開 model × config，`Run()` 自動儲存 |
+| NEVER 在 fluent call 直接寫 `AddLHS` / `AddRHS` | pipeline 只列組成；數學式留在各 Objective / Constraint class |
+| NEVER 把 `Dataload` 傳進 Objective / Constraint | pipeline 逐項傳它實際使用的 Set / Parameter / scalar |
+| NEVER 包裝組裝流程 | 禁止只負責轉呼叫的類別／函式／local function；review 必須能從 `BuildModel` 讀完模型組成 |
+| 不重印 framework log | Status / objective / IIS 路徑與 conflict names 由 `OptEngine` 自動記錄；專案端只印業務語意訊息 |
 
 `productionBaseline` 是 tuning promotion 的唯一寫回點。AI 跑完實驗後若 champion 通過 §8 promotion gate，更新這顆 initializer 並重跑 production；NEVER 另建一份只給 prod 的 config，否則下一輪 experiment 會從過期 baseline 出發。
 
-`ProjectConfig.EnableSolverLog` 預設 `true`，三個 export 預設 `false`；`DataId` / `UserId` 是 solution metadata 的預設值。`CplexConfig` 仍實作 `ITunableConfig`，但 solver 設定與抽象旋鈕共用同一套 PascalCase property，例如 `Seed`、`Emphasis`、`FeasibilityTol` 與 `RootAlgorithm`。
+`ProjectConfig.EnableSolverLog` 預設 `true`，四個 export 開關預設 `false`（`ExportIIS` 目前未接線）。`CplexConfig` 只實作 `ISolverConfig`（`ITunableConfig` 已併入），solver 設定與共通旋鈕共用同一套 PascalCase property，例如 `Seed`、`Emphasis`、`FeasibilityTol` 與 `RootAlgorithm`。
 
 ---
 
@@ -1601,8 +1621,8 @@ dotnet run --project <project.csproj> -- exp
 
 | 入口                                               | 何時跑                                  | 驗什麼                                                                                               | 掛在哪                              |
 | -------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `ValidateData(Dataload data)`                      | **建模之前**（`OptData.Load` 的下一行） | 全格矩陣有沒有缺格、跨表關聯對不對得上（§2.2）——framework 只驗 key 重複與數值 sanity，其餘是專案責任 | `Program.cs` 模型段一行 static 呼叫 |
-| `ReadAndValidate(OptEngine engine, Dataload data)` | **求解之後**                            | 把解值代回 Model.md 的每一條 constraint                                                              | `OnSolved`                          |
+| `ValidateData(Dataload data)` | **建模之前**（`OptData.Load` 的下一行） | 全格矩陣有沒有缺格、跨表關聯對不對得上（§2.2）——framework 只驗 key 重複與數值 sanity，其餘是專案責任 | `Program.cs` 模型來源段一行 static 呼叫 |
+| `ReadAndValidate(OptEngine engine, Dataload data)` | **求解之後** | 把解值代回 Model.md 的每一條 constraint | `project.Solve(..., onSolved: ...)` |
 
 **解驗證用一般 C# 程式做，NEVER 只憑 solver status 宣稱成功。** 解讀層是唯一允許接收整包 `Dataload` 的地方——兩個驗證本來就要對照所有原始資料逐條檢查。
 
@@ -1637,12 +1657,12 @@ namespace MyProject
         public static MyProjectSolution ReadAndValidate(OptEngine engine, Dataload data)
         {
             Logging.Info($"Status={engine.Status} Obj={engine.GetObjectiveValue():F4} " +
-                         $"BestBound={engine.LastMetrics.BestBound:F4} MIPGap={engine.LastMetrics.MipGap:P2}");
+                         $"BestBound={engine.LastMetrics.BestBound:F4} Gap={engine.LastMetrics.Gap:P2}");
 
             var assign = engine.GetSetVarValues<VariableB_Assign>();
             ValidateRules(assign, data);
 
-            // `CsvCtrl.WriteSolution` 會自行建立 Solution/；不需手動建資料夾
+            // `CsvCtrl.WriteSolution` 寫到 Output/、會自行建立資料夾；不需手動建
             CsvCtrl.WriteSolution<VariableB_Assign>(engine, "MyProject", "SYSTEM");
             return new MyProjectSolution(assign);
         }
@@ -1702,8 +1722,8 @@ assign.TryGetValue($"VariableB_Assign@{item.Item}@{date.Date:yyyy_MM_dd}", out v
 
 Why 這裡特別要小心：`TryGetValue` 拼錯只會回 `false`，接著 `?? 0.0` 把它當成「這個變數是 0」，`ValidateRules` 於是**整段靜默通過**，你以為驗過了。驗證邏輯寫完後 MUST 故意改一個值確認它真的會 throw。
 
-輸出資料夾（都在 `bin/Debug/net8.0/` 底下）：`Data`（輸入）、`Solution`、`Logs`、`Models`（LP/MPS）、`Sols`、`IISs`、`Experiments`。
-**`new ProjFolder(...)` 不會自動建資料夾**。標準 `CsvCtrl.WriteSolution` 已自行建立 `Solution/`；只有直接操作低階檔案輸出時才由呼叫端明確建立目標資料夾。
+輸出資料夾（都在 `bin/Debug/net8.0/` 底下，見 `FolderDir`）：`Input`（輸入）、`Output`（解 CSV）、`Log`、`Model`（LP/MPS）、`Solution`（CPLEX `.sol`）、`IIS`、`Experiment`。
+**`new ProjFolder(...)` 不會自動建資料夾**。標準 `CsvCtrl.WriteSolution` 已自行建立 `Output/`；只有直接操作低階檔案輸出時才由呼叫端明確建立目標資料夾。
 
 ---
 
@@ -1713,12 +1733,12 @@ Why 這裡特別要小心：`TryGetValue` 拼錯只會回 `false`，接著 `?? 0
 
 （`SolveStatus` 共七個值；`../AGENTS.md` 的 Phase 2 出口契約列的是同一張表。）
 
-★ **模型沒有整數變數（純 LP）時**：CPLEX 不會產生 MIP bound，框架的 `LastMetrics.BestBound` / `MipGap` 會是 `-1E+75` / `1E+75` 這種佔位值，log 會印出天文數字的百分比。**那不是求解異常，是「這題沒有 gap 可言」**——純 LP 的最佳解本身就是 LP bound，第 4 步的 bound sanity 自動成立。但要注意兩件事：交付時 NEVER 把這兩個數字當成品質指標寫進報告；`status.json` 照實記 `solveStatus`，Phase 3 的進場情境判定建立在 `MipGap` 上（solver-tuning-guide §0.0.1），對純 LP 專案要先知道這個 artifact 的存在。
+★ **模型沒有整數變數（純 LP）時**：CPLEX 不會產生 MIP bound，框架的 `LastMetrics.BestBound` / `LastMetrics.Gap` 會是 `-1E+75` / `1E+75` 這種佔位值，log 會印出天文數字的百分比。**那不是求解異常，是「這題沒有 gap 可言」**——純 LP 的最佳解本身就是 LP bound，第 4 步的 bound sanity 自動成立。但要注意兩件事：交付時 NEVER 把這兩個數字當成品質指標寫進報告；`status.json` 照實記 `solveStatus`，Phase 3 的進場情境判定會讀結果 `Gap`（solver-tuning-guide §0.0.1），對純 LP 專案要先知道這個 artifact 的存在。
 
 1. **SolveStatus 七態分流**
-   - `Optimal`／`Feasible` → 有 incumbent，進第 2 步；`Feasible` 仍須記錄 `LastMetrics.MipGap` 與 `LastMetrics.BestBound`
+   - `Optimal`／`Feasible` → 有 incumbent，進第 2 步；`Feasible` 仍須記錄 `LastMetrics.Gap` 與 `LastMetrics.BestBound`
    - `TimeLimit` → 沒有任何可用解，不能做解驗證；改用小 instance 求到 `Optimal` 再完成驗收
-   - `Infeasible` → **MUST 去讀 `bin/Debug/net8.0/IISs/*.ilp`**（或 `GetConflictConstraints()`）拿最小衝突集；先自查 Big-M 是否太小、有無互斥硬約束 —— NEVER 靠猜、NEVER 改成 soft constraint 繞過
+   - `Infeasible` → **MUST 先拿最小衝突集**：grep solver log 的 `[OptEngine] Conflict constraints (N):` 那一行（名稱數 MUST 等於 N），或呼叫 `GetConflictConstraints()`；要看式子內容才用名稱 grep `bin/Debug/net8.0/IIS/*.ilp`（大檔 NEVER 整份讀）。先自查 Big-M 是否太小、有無互斥硬約束 —— NEVER 靠猜、NEVER 改成 soft constraint 繞過
    - `Unbounded` → 某個方向漏了界；查該變數缺哪條上限 constraint
    - `Error`／`NotSolved` → 不得進入解驗證；先修正執行或 lifecycle 問題
 2. **可行性代回**：在 `Solution/<Project>Solution.cs` 的 `ValidateRules` 逐條把解值代回**每一條** constraint，確認 `LHS op RHS` 成立 —— Why: solver 回 Optimal 只保證「它解的那個模型」可行，不保證那個模型 = 你的題目
@@ -1744,9 +1764,11 @@ build 失敗走 fix loop：擷取 compiler error → 修 → 重 build，**至�
 
 ### 8.1 實驗 runner
 
-`OptExperiment` 將已定義的模型與具體 solver configs 展開成笛卡兒積，擷取 Trial，最後輸出 `Experiments/<name>.csv + .json`。同一份 `OptModel` 可先交給 `OptProject` 正式求解，再交給實驗 runner。
+`project.Experiment(name, description)` 建立 `OptExperiment`：把已定義的模型與具體 solver configs 展開成笛卡兒積，擷取 Trial，最後把結果寫成 `Experiment/{專案名}-{實驗名}-trial.csv` 等一組四個檔。同一份 `OptModel` 可先交給 `project.Solve(...)` 正式求解，再交給實驗 runner。
 
-**同名實驗是 append，不是覆寫。** `Run()` 內的 `Save()` 會先讀既有 JSON，再把歷史 trials 合併回傳值的 `result.Trials`。因此 experiment 命名 MUST 用 `<Project>-tuning-r<N>`，每輪 N 加一 —— NEVER 重複用同一個名字 —— Why: 重跑同名 experiment 後直接 `foreach (result.Trials)` 會再次看到歷史資料，把舊 trial 誤報成本輪結果。
+**`name` 參數只填實驗名，NEVER 自己再接一次專案名。** log 檔名的 `{專案名}-{實驗名}` 前綴（`OptExperiment.FullName`）由 `OptExperiment` 自動組出來；紀錄檔名共用這個前綴（`project.Experiment("tuning-r0", ...)` + 專案 `"MyProject"` → log 切到 `Log/MyProject-tuning-r0_exp_*.txt`，紀錄寫成 `Experiment/MyProject-tuning-r0-trial.csv` + `-meta.csv` + `-summary.csv`（有軌跡再加 `-trajectory.csv`））。
+
+**同名實驗再跑一次是整組覆寫。** `Run()` 內的 `Save()` 把這次的 Trial 寫成該實驗的一組檔，同名會整組覆寫並留 `[EXPERIMENT_OVERWRITTEN]` WARN，這次沒寫到的舊檔（例：上次有軌跡這次沒有）一併刪掉；檔被 Excel 開著寫不進去時改寫 `-locked-<時間>.csv` 並留 WARN。要留住結果就換實驗名（`tuning-r1` → `tuning-r2`）。
 
 ```csharp
 var baseline = productionBaseline.Clone();
@@ -1757,7 +1779,7 @@ tighterGap.MipGap = 0.01;
 var threads4 = baseline.Clone();
 threads4.Threads = 4;
 
-var result = new OptExperiment("MyProject-tuning-r1", "一次只改一個 solver 旋鈕")
+var result = project.Experiment("tuning-r1", "一次只改一個 solver 旋鈕")
     .AddModel(model)
     .AddConfig("r1-baseline", baseline)
     .AddConfig("r1-emphasis=optimal", emphasis)
@@ -1769,18 +1791,20 @@ var result = new OptExperiment("MyProject-tuning-r1", "一次只改一個 solver
 | 規則                | 說明                                                                                                                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | 共用一份 data       | 所有 cell 引用同一份 `OptData.Load` 結果，載入後視為唯讀                                                                      |
-| experiment 預設安靜 | solver log、LP/MPS/Sol export 與 housekeeping 預設都 OFF                                                                      |
+| experiment 預設安靜 | `LoadConfig` 未呼叫時預設 `ProjectConfig.Quiet()`：solver console log 與 LP/MPS/Sol export 全部 OFF；保留期清理由 `OptProject` 建構時照常執行 |
 | 具體 config         | 用 `Clone()` 建 variant，NEVER 用 tune delegate 突變共用 baseline                                                             |
 | 笛卡兒積            | `.AddModel` × `.AddConfig` 自動展開；單一 cell 用 `.AddTrial(model, label, config)`                                           |
 | label               | `Trial.Label` **只放 config label**；模型名另有 `Trial.Model` 欄，NEVER 再黏成一個字串。輪次前綴（`r1-`）寫進 config label      |
-| 命名                | experiment name 一律 `<Project>-tuning-r<N>`，每輪遞增                                                                        |
+| 命名 | `project.Experiment(name, ...)` 的 `name` 一律 `tuning-r<N>`（不含專案名），每輪遞增 |
 | baseline 可重現     | 固定 `Threads` / `ParallelMode` / `Seed`，讓每次跑的停點一致                                                                  |
-| `OnSolved` 邊界     | 只屬 `OptProject`；實驗不應大量寫 solution                                                                                    |
+| `CaptureTrajectory` | 預設 `true`。要和正式求解對照的驗證（promotion、hold-out）應 `.CaptureTrajectory(false)`——軌跡 callback 會改變 CPLEX 搜尋路徑且傾向變慢（2026-09-28 實測多數 +1%~+8%） |
+| `onSolved` 邊界 | 只屬 `project.Solve(...)` 的參數；實驗不應大量寫 solution |
 | 一次只動一個旋鈕    | 同時改兩個就分不出是哪個造成差異                                                                                              |
 | label 重複          | `Run()` 在建任何 engine 前丟 `InvalidOperationException`；重複的 `AddConfig` label 在加入當下丟 `ArgumentException`           |
-| 輸出                | `bin/.../Experiments/` 下的 `<name>.csv`（主表，一列一 Trial，22 欄）+ `<name>-meta.csv`（說明檔，模型大小／環境／baseline 完整設定）+ `.json`（巢狀含 `config` / `metrics` / `convergence[]`）+ `-trajectory.csv`（**有收集到軌跡才有**；純 LP 沒有分支定界就不會有，看主表 `TrajectoryPoints` 是不是 0） |
-| archive 責任        | bin 產物會被 clean 掉。搬到專案根 `Experiments/` 是 **Phase 3 每輪的責任**，Phase 2 不做                                      |
-| log 檔名            | exp 模式 MUST 在 `OptData.Load` **之前** `Logging.SetLogFileName("<Project>_exp")`，整次執行才收在同一包                      |
+| 輸出 | `Experiment/{專案名}-{實驗名}-trial.csv`（主表，一列一 Trial）+ `-meta.csv`（說明檔：本次執行資訊／模型規模／求解環境／baseline 完整設定）+ `-summary.csv`（彙總：每組設定一列，跟 baseline 逐 seed 比的贏／輸／平手由框架判好；正式求解不寫）+ `-trajectory.csv`（**有收集到軌跡才有**；只含 CPLEX 實際呼叫 callback 時觀察到的點，框架不補點；純 LP、或 presolve / root 就解完時 callback 不會被呼叫，就不產生）。欄位固定、只有一種格式、沒有版本號；同名實驗再跑一次整組覆寫。JSON 輸出已移除，全部只有 CSV |
+| archive 責任 | `bin/.../Experiment/` 產物會被 clean 掉。搬到專案根 `Experiments/` 是 **Phase 3 每輪的責任**，Phase 2 不做 |
+| log 檔名 | 由框架自動決定：`project.Experiment(...)` 建立時就切到 `Log/{專案名}-{實驗名}_exp_{時間}.txt`；專案 code NEVER 呼叫 `Logging.SetLogFileName` |
+| 正式求解也留紀錄 | `project.Solve(...)` 每次都把 Trial 寫成 `Experiment/{專案名}-solve-trial.csv` + `-meta.csv`（實驗名 `solve` = `OptProject.SolveExperimentName`，每次 Solve 覆寫；不開軌跡，`-summary.csv` 不寫），可直接和實驗 Trial 對照 |
 
 ### 8.2 tuning 閉環（Phase 3，權威在別處）
 
@@ -1788,7 +1812,7 @@ var result = new OptExperiment("MyProject-tuning-r1", "一次只改一個 solver
 
 | 要做什麼                                               | 讀哪一節 |
 | ------------------------------------------------------ | -------- |
-| eligibility gate、lexicographic 比較、θ 門檻、hold-out | §4       |
+| eligibility gate、逐 seed 比大小與勝出規則、hold-out | §4 |
 | champion 寫回 baseline + provenance + production 驗證  | §5       |
 | `TuningHistory.md` 的契約區塊與每輪四段格式            | §6       |
 | 停損條件                                               | §7       |
@@ -1805,19 +1829,19 @@ Why: exp 分支確實在 Phase 3 的可寫白名單裡，Phase 3「改得動」�
 
 | #   | 要求                                                     | 錯的樣子                                         |
 | --- | -------------------------------------------------------- | ------------------------------------------------ |
-| 1   | experiment 名 = `<Project>-tuning-r0`                    | `"proj-tuning"`、`"test"`、`"exp1"`              |
+| 1 | `project.Experiment(...)` 的 `name` 參數 = `tuning-r0`（不含專案名）| `"proj-tuning"`、`"test"`、`"exp1"`、`"<Project>-tuning-r0"`（重複帶專案名） |
 | 2   | 每個 config label 帶 `r0-` 前綴                          | `.AddConfig("baseline", ...)`                    |
-| 3   | exp 分支開頭有 marker 註解 `// R0 — <Project>-tuning-r0` | 沒有 marker                                      |
+| 3 | exp 分支開頭有 marker 註解 `// R0 — <Project>-tuning-r0（紀錄寫成 Experiment/<Project>-tuning-r0-trial.csv 等四個檔）` | 沒有 marker |
 | 4   | r0 內容 = **baseline × 5 個固定 seed**，NEVER 混掃旋鈕   | 同一輪塞 `gap=0.01` + `threads=4` + `emphasis=2` |
 
-第 4 條最容易做錯。**R0 是校準輪**，用途是量 baseline 自己的雜訊地板 θ，所以它只有 baseline 一個 config、變的只有 `Seed`。Phase 2 交出一個混掃七顆旋鈕的 experiment，Phase 3 拿到手只能整份丟掉重寫。
+第 4 條最容易做錯。**R0 是校準輪**，用途是看清楚 baseline 自己在這組 seed 上的表現（之後每一輪都拿同一組 seed 跟它比），所以它只有 baseline 一個 config、變的只有 `Seed`。Phase 2 交出一個混掃七顆旋鈕的 experiment，Phase 3 拿到手只能整份丟掉重寫。
 
 ```csharp
-// 3. 實驗段落
+// 4. 環境段落
 if (isExperiment)
 {
-    // R0 — <Project>-tuning-r0
-    var exp = new OptExperiment("<Project>-tuning-r0", "R0 校準：baseline × 5 seeds");
+    // R0 — <Project>-tuning-r0（紀錄寫成 Experiment/<Project>-tuning-r0-trial.csv 等四個檔）
+    var exp = project.Experiment("tuning-r0", "R0 校準：baseline × 5 seeds");
     exp.AddModel(model);
 
     foreach (var seed in new[] { 11, 22, 33, 44, 55 })
@@ -1834,9 +1858,9 @@ if (isExperiment)
 
 **Phase 2 MUST 實跑一次** `-- exp` 確認管線可執行——build 綠不代表跑得動。
 
-★ 跑完的 bin 產物**不 archive**，而且 **Phase 3 執行 R0 前 MUST 先刪 `bin/.../Experiments/<Project>-tuning-r0.*`** —— Why: 同名 experiment 是 append 不是覆寫（§8.1），不刪會把 Phase 2 的驗證 trial 混進正式 R0。
+★ 跑完的 bin 產物**不 archive**。同名 experiment 再跑是**整組覆寫**（§8.1）——Phase 3 正式跑 R0 會整組覆寫 Phase 2 驗證時留下的 `Experiment/<Project>-tuning-r0-*.csv`（Phase 2 不 archive，所以沒有衝突），NEVER 需要也不必先手動刪除。
 
-**Phase 2 不做的事**：不跑 `Threads` sizing 比較、不算 θ、不判瓶頸剖面、不 archive 到專案根、不指定 holdout seeds。那些是 Phase 3 的 S1–S2——它們是**解讀**，不是轉譯。Phase 2 只負責交出一個「按下去就會產出正確 R0 資料」的殼。
+**Phase 2 不做的事**：不跑 `Threads` sizing 比較、不判勝負、不判瓶頸剖面、不 archive 到專案根、不指定 holdout seeds。那些是 Phase 3 的 S1–S2——它們是**解讀**，不是轉譯。Phase 2 只負責交出一個「按下去就會產出正確 R0 資料」的殼。
 
 
 ---
@@ -1845,7 +1869,7 @@ if (isExperiment)
 
 ### 9.1 這條流程用得到的呼叫
 
-`Program.cs` 的範例只能引用 §5 的**完整四段模板**；本節不再提供可被誤抄成 `Program.cs` 的半段組裝碼。以下僅是各責任類別可用的 API 片段，不能獨立編譯，也不得取代 import → 模型 → 實驗 → 正式跑。
+`Program.cs` 的範例只能引用 §5 的**完整四段模板**；本節不再提供可被誤抄成 `Program.cs` 的半段組裝碼。以下僅是各責任類別可用的 API 片段，不能獨立編譯，也不得取代 import-data → 設定 → 模型來源 → 環境。
 
 ```csharp
 // Objective / Constraint 的 Build(engine) 內
@@ -1854,12 +1878,12 @@ engine.AddLHS(constant);
 engine.AddRHS(coef, new VariableB_Open { Item = item });
 engine.AddRHS(constant);
 engine.CreateLessEqual(this, item);
-engine.CreateGreatEqual(this, item);
+engine.CreateGreaterEqual(this, item);
 engine.CreateEqual(this, item);
 engine.CreateRange(lb, ub, this, item);
-engine.CreateLeSoft(rhs, penalty, this, item); // 只在 Model.md 明寫 soft 時
-engine.CreateGeSoft(rhs, penalty, this, item); // 同上
-engine.CreateEqSoft(rhs, penalty, this, item); // 同上
+engine.CreateLessEqualSoft(rhs, penalty, this, item); // 只在 Model.md 明寫 soft 時
+engine.CreateGreaterEqualSoft(rhs, penalty, this, item); // 同上
+engine.CreateEqualSoft(rhs, penalty, this, item); // 同上
 
 // 目標式
 engine.AddLHS(coef, new VariableC_Shortage { Item = item });
@@ -1873,12 +1897,12 @@ var metrics = project.Engine.LastMetrics; // gap / bound / node·iter / 軌跡
 // 資料 I/O（Data/Dataload.cs）
 set_Item = source.Load<Set_Item>("Set_Item");
 parameter_Demand = source.Load<Parameter_Demand>("Parameter_Demand");
-CsvCtrl.WriteRows(set_Item, "Set_Item"); // 只在 import 模式
-CsvCtrl.WriteRows(parameter_Demand, "Parameter_Demand"); // 只在 import 模式
-// Solution/ 由 CsvCtrl.WriteSolution 自動建立
+CsvCtrl.WriteRows(set_Item, "Set_Item"); // 只在 import-data 模式
+CsvCtrl.WriteRows(parameter_Demand, "Parameter_Demand"); // 只在 import-data 模式
+// Output/ 由 CsvCtrl.WriteSolution 自動建立
 CsvCtrl.WriteSolution<VariableB_Assign>(engine, "MyProject", "SYSTEM");
 
-// 日誌：OptProject 會自動設定檔名；framework lifecycle 不在專案端重複印
+// 日誌：OptProject / OptExperiment 建立時自動設定檔名；專案 code NEVER 呼叫 Logging.SetLogFileName
 Logging.Info("業務語意或解驗證訊息");
 ```
 
@@ -1891,22 +1915,20 @@ Logging.Info("業務語意或解驗證訊息");
 ```text
 OptimFoundation.Core（不相依 CPLEX）
 ├── DesignBases.cs ModelElementBase / VariableBase / ParameterBase / ConstraintBase / SetRowBase
-├── DataContext.cs DataContext（註冊 + 驗證 + 框架受控凍結）、OptData、Numeric
-├── DataValidator.cs 四類資料檢查與 DataIssue
-├── EngineBase.cs EngineBase<TModel,TVar,TExpr,TConstr> : ISolverEngine
-├── VariableBuilder.cs 變數名稱展開（Set → 字串 → 笛卡兒積）
-├── Enums.cs / ISolverEngine.cs / Config/ProjectConfig.cs
-├── Experiment.cs Experiment / ITrajectorySource；Experiments/ Trial、ConfigSnapshot、SolveMetrics、writers
-├── IO/ CsvCtrl、IDataSource、CsvDataSource、InMemoryDataSource、DbDataSource、ISolutionSink
-├── Infrastructure/FolderDir.cs
-└── Logging/Logging.cs
+├── DataContext.cs DataContext（註冊 + 驗證 + 框架受控凍結；DataIssues 收集 DuplicateKey / Numeric / InvalidKey）、OptData
+├── EngineBase.cs ISolverConfig / ISolverEngine / enums（含 ModelType）/ OptBounds.Infinity（= 1E20）/ EngineBase<TModel,TVar,TExpr,TConstr>
+├── VariableManager.cs 變數名稱展開（Set → 字串 → 笛卡兒積）
+├── Experiments/ Experiment.cs（Experiment / Trial / ITrajectorySource）、ConfigSnapshot.cs、SolveMetrics.cs、ExpCsvWriter.cs（CSV writers）
+├── IO/ CsvCtrl、IDataSource、CsvDataSource、InMemoryDataSource、DbDataSource、ISolutionSink、DbCtrlBase / OracleDbCtrl
+├── Infrastructure/ FolderDir.cs、Logging.cs、ProjectConfig.cs、ClassInfo.cs
+└── ModelNaming.cs / ModelStats.cs / VariablePrefixNaming.cs（internal 命名與統計）
 
 OptimFoundation.Cplex（相依 Core + ILOG.Concert + ILOG.CPLEX）
-└── CplexConfig / OptEngine / OptModel / OptProject / OptExperiment
+└── CplexConfig / OptEngine（+ OptEngine.Configuration）/ OptModel / OptProject / OptExperiment
 ```
 
 ```csharp
-using OptimFoundation.Core; // ProjectConfig, DataContext, OptData, Numeric, CsvCtrl, FolderDir, Logging, enums
+using OptimFoundation.Core; // ProjectConfig, DataContext, OptData, CsvCtrl, FolderDir, Logging, enums
 using OptimFoundation.Core.IO; // IDataSource, CsvDataSource, DbDataSource, ISolutionSink
 using OptimFoundation.Modeling; // generator attributes：OptSet / OptParam / OptVar / OptDim
 using OptimFoundation.Cplex; // OptEngine, OptModel, OptProject, OptExperiment, CplexConfig
@@ -1920,8 +1942,8 @@ public abstract class ModelElementBase
     public void InitClassBySets(params object[] sets); // 按屬性順序賦值，型別自動 Convert.ChangeType
     public override string ToString(); // ClassName@p1@p2@...
 }
-public abstract class VariableBase : ModelElementBase { protected string VariableName => ElemName; }
-public abstract class ParameterBase : ModelElementBase { protected string ParameterName => ElemName; }
+public abstract class VariableBase : ModelElementBase { } // 純標記型別，不額外加成員
+public abstract class ParameterBase : ModelElementBase { } // 同上
 public abstract class ConstraintBase : ModelElementBase
 {
     protected string ConstraintName => GetType().Name; // = 類別名，限制式命名前綴
@@ -1932,7 +1954,7 @@ public abstract class ConstraintBase : ModelElementBase
 - 屬性順序 = `[OptDim]` 宣告順序 = 傳入 sets 的順序，三者 MUST 一致（接錯不報錯）
 - 例：`new VariableB_Assign { Employee = "E1", Date = new DateTime(2026,1,1) }` → `"VariableB_Assign@E1@2026_01_01"`
 - ★ **底線是實測值**（`Template/` 的 LP 輸出：`VariableI_Produce@ItemA@2026_01_01`）。**變數 key 與限制式名用同一套格式**，沒有連字號版本；`yyyy-MM-dd` 只是 CSV 的輸入格式
-- ★ **`@` 是保留字元，資料值不得含它**：Set 成員或維度值出現 `@`，框架在建變數 / 賦值當下丟 `ArgumentException`（訊息指出是哪個 Set 或哪個 property）—— Why: 它是 key 的維度分隔符，混進資料會讓兩顆不同變數組出同一個 key。CSV 裡的品項代號、員工編號含 `@` 時 MUST 在 import 階段換掉
+- ★ **`@` 是保留字元，資料值不得含它**：Set 成員或維度值出現 `@`，框架在建變數 / 賦值當下丟 `ArgumentException`（訊息指出是哪個 Set 或哪個 property）—— Why: 它是 key 的維度分隔符，混進資料會讓兩顆不同變數組出同一個 key。CSV 裡的品項代號、員工編號含 `@` 時 MUST 在 import-data 階段換掉
 - `InitClassBySets` 型別轉不過丟 `InvalidCastException`（訊息含第幾個參數與期望型別）；屬性數 ≠ 參數數丟 `ArgumentException`
 
 **9.2.2 generator attributes（唯一 paved path）**
@@ -1953,10 +1975,12 @@ public abstract class ConstraintBase : ModelElementBase
 | --------- | ------------------------------------------------------------------------- |
 | `OPTF001` | `[OptVar]` 類名前綴不是 `VariableB_` / `VariableC_` / `VariableI_`        |
 | `OPTF002` | `[OptParam]` 類名前綴不是 `Parameter_`                                    |
-| `OPTF004` | `[OptDim<T>]` 的 `T` 不是合法元素型別                                     |
+| `OPTF003` | `[OptSet]` 類名前綴不是 `Set_` |
 | `OPTF006` | 被 `Dataload : DataContext` 引用的 `Set_*` / `Parameter_*` 漏掛 attribute |
+| `OPTF007` | `[OptDim<T>]` 的 `T` 不是合法元素型別（只允許 `string`/`DateTime`/`int`/`long`/`double`/`decimal`） |
+| `OPTF008` | `[OptSet]` 一個 `[OptDim<T>]` 都沒掛（零維只允許 `[OptParam]`） |
 
-★ `[OptDim<T>]` 的泛型參數不受型別約束，填錯不會有 compile error——generator 直接拿它當 property 型別。`T` MUST 是資料型別本身（見 §1.6）。
+★ `[OptDim<T>]` 的 `T` **會**被 generator 檢查（`OPTF007`，語意型別比對，非純文字），填非六種合法型別會 compile error；填成別的支援型別（例如該填 `int` 卻填 `long`）不算違規，只是產出的 property 型別跟著錯，因此 `T` 仍 MUST 是資料型別本身（見 §1.6）。
 
 ❌ 禁用：generator 產的位置式建構子（見 §1.5）。
 
@@ -1990,7 +2014,7 @@ public interface IDataSource
     DataTable LoadData(string sourceName); // 獨立 raw table
     List<T> Load<T>(string sourceName = null) where T : ModelElementBase, new();
 }
-public sealed class CsvDataSource : IDataSource { } // 讀 AppDomain.BaseDirectory/Data 下的 CSV
+public sealed class CsvDataSource : IDataSource { } // 讀 FolderDir.Input（= AppDomain.CurrentDomain.BaseDirectory/Input）下的 CSV
 public sealed class InMemoryDataSource : IDataSource { } // 測試用，可用 AddRows 註冊 row list
 public sealed class DbDataSource : IDataSource
 {
@@ -2005,17 +2029,10 @@ public static class OptData
 
 // OptData.Load 會驗證 Set key 重複、Parameter key 重複與 Parameter 數值 sanity。
 // Parameter 對 Set 的關聯與完整笛卡兒積不是 framework schema 驗證的一部分。
-
-public static class Numeric
-{
-    public static double SafeRatio(double numerator, double denominator,
-        double magnitudeCeiling = 1e9, string context = null);
-}
 ```
 
 - `OptData.Load` 一次做完：new → generator 註冊 → 四類驗證 → 凍結框架受控 mutation API
 - 現行驗證只有三項：Set 維度 key 重複、Parameter 維度 key 重複、Parameter 數值 sanity（`NaN` / `±Infinity` / 絕對值 > `1e15`）。Parameter 對 Set 的關聯與完整矩陣需求由專案資料驗收處理。
-- `SafeRatio` 的量級門檻預設 `1e9`（衍生值如 Big-M，較嚴）與驗證器的 `1e15`（原始資料，較寬）**刻意不同，NEVER 統一**
 - 凍結只保護框架受控入口；直接寫 public field 或 `List.Add` 攔不到，因此專案 code MUST 把載入後的資料視為唯讀
 
 **9.2.5 `EngineBase` — 建變數、Pool、限制式、目標式**
@@ -2036,33 +2053,31 @@ public bool HasPool { get; }
 public void ClearPool();
 
 public bool CreateLessEqual(ConstraintBase owner, params object[] dims); // ✅ <=
-public bool CreateGreatEqual(ConstraintBase owner, params object[] dims); // ✅ >=
+public bool CreateGreaterEqual(ConstraintBase owner, params object[] dims); // ✅ >=
 public bool CreateEqual(ConstraintBase owner, params object[] dims); // ✅ ==
 public bool CreateRange(double lb, double ub, ConstraintBase owner, params object[] dims); // ✅ lb <= LHS <= ub
 public bool CreateLessEqual(double rhs, string name); // 有效；會覆蓋既有 RHS 常數
-public bool CreateGreatEqual(double rhs, string name); // 有效；會覆蓋既有 RHS 常數
+public bool CreateGreaterEqual(double rhs, string name); // 有效；會覆蓋既有 RHS 常數
 public bool CreateEqual(double rhs, string name); // 有效；會覆蓋既有 RHS 常數
 
-public void CreateMinimize(); // 把 pool 的 LHS 設為目標式
+public void CreateMinimize(); // 把 pool 的 LHS（變數項 + AddLHS 常數項）設為目標式；RHS pool → warn 後捨棄
 public void CreateMaximize();
 
-public virtual bool CreateLeSoft(double rhs, double penalty, ConstraintBase owner, params object[] dims); // Model.md 明寫 soft 時使用
-public virtual bool CreateGeSoft(double rhs, double penalty, ConstraintBase owner, params object[] dims); // 同上
-public virtual bool CreateEqSoft(double rhs, double penalty, ConstraintBase owner, params object[] dims); // 同上
+public virtual bool CreateLessEqualSoft(double rhs, double penalty, ConstraintBase owner, params object[] dims); // Model.md 明寫 soft 時使用
+public virtual bool CreateGreaterEqualSoft(double rhs, double penalty, ConstraintBase owner, params object[] dims); // 同上
+public virtual bool CreateEqualSoft(double rhs, double penalty, ConstraintBase owner, params object[] dims); // 同上
 public virtual bool SupportsSoftConstraints { get; }
 
 public int VariableCount { get; }
-public int RegisteredVariableCount { get; }
-public string[] GetAllVarNames();
-public string[] GetSetVarNames<T>();
-public void VarSetsReset();
+public string[] GetAllVarNames(); // 變數池全部變數名
+public string[] GetSetVarNames<T>(); // 以型別名篩選變數池：名稱為 T 或以 "T@" 開頭
 ```
 
 - `varSpec` 傳物件初始化器建的變數實例（`new VariableC_Produce { Item = item }`），框架取它的 `ToString()`
 - `BuildVars` 接受 row list 或其他 `IEnumerable`；Set row 的每個 `[OptDim]` 依序展開為 key token。
 - 出池公式：`(Σ lhsTerms − Σ rhsTerms) sense (rhsConst − lhsConst)`
 - `CreateXxx` 會自動 `ClearPool()`，下一條不必手動清
-- soft 版的機制（Model.md 有寫才會用到）：加彈性變數 + 建限制式 + 在目標式加 penalty。`CreateLeSoft` → `Surplus_{name}`；`CreateGeSoft` → `Deficit_{name}`；`CreateEqSoft` → `Delta_Neg_{name}` / `Delta_Pos_{name}`。違反量可用 `GetVariableValue("Deficit_…")` 取得
+- soft 版的機制（Model.md 有寫才會用到）：加彈性變數 + 建限制式 + 在目標式加 penalty。`CreateLessEqualSoft` → `Surplus_{name}`；`CreateGreaterEqualSoft` → `Deficit_{name}`；`CreateEqualSoft` → `Delta_Neg_{name}` / `Delta_Pos_{name}`。違反量可用 `GetVariableValue("Deficit_…")` 取得
 
 **9.2.6 `OptEngine` 與求解**
 
@@ -2078,12 +2093,19 @@ public void SetModelName(string name); // LP/MPS/Sol/IIS 檔名前綴；OptProje
 
 public SolveStatus Status { get; }
 public SolveMetrics LastMetrics { get; } // 未求解為 null
-// Best bound 與 MIP gap 讀取 engine.LastMetrics.BestBound / engine.LastMetrics.MipGap。
+// Best bound 與 MIP gap 讀取 engine.LastMetrics.BestBound / engine.LastMetrics.Gap。
+public ModelType ModelType { get; } // 向 solver 模型取值判定：無離散 → LP；連續 + Integer/Binary → MILP；全 Binary → BP；無連續且含 Integer → IP
 
 public override double GetObjectiveValue();
 public override double GetVariableValue(string name); // name 為含 @ 的完整變數名
 public Dictionary<string, double> GetSetVarValues<T>();
 public IReadOnlyDictionary<string, double> GetSolution(string varTypeName = null); // null = 全部
+public int AddMIPStart(IReadOnlyDictionary<string, double> values, string name = null); // Phase 3 用：MIP start（名稱同 GetSolution）；LP / 未知名稱 warn 後略過
+// OptEngine（CPLEX）起始解 pipeline —— 與 ReadModel / ExportModel 對稱
+public int ReadSolution(string fileName); // .sol → ReadSolution、.mst → ReadMIPStarts；相對路徑以 Solution/ 為基準；回傳 MIP start 數
+public string ExportSolution(string fileName); // 目前解寫成 .sol，給下一段 ReadSolution
+public MIPStartEffort MipStartEffort { get; set; } // AddMIPStart 的 effort，預設 Auto
+// OptModel：.ReadSolution(fileName) / .AddMIPStart(() => prev.GetSolution(), name) —— 在所有建模步驟之後套用
 public IReadOnlyDictionary<string, double> GetBVSolution();
 public IReadOnlyDictionary<string, double> GetCVSolution();
 public IReadOnlyDictionary<string, double> GetIVSolution();
@@ -2092,14 +2114,16 @@ public List<string> GetConflictConstraints(); // Infeasible 時的衝突集
 
 `Solve()` 的行為序列：
 
-1. `PreSolveGuard()`：`RegisteredVariableCount` 超過 `ScaleWarnThreshold`（預設 `10,000,000`）→ `Logging.Warn` 一則，**只警告不中止**
-2. `ExportLP` / `ExportMPS` 為 true → 寫 `Models/{ModelName}_LP_{timestamp}.lp` / `.mps`
-3. 求解，設定 `Status`
-4. 解可行且 `ExportSol` → 寫 `Sols/{ModelName}_Solution_{timestamp}.sol`
-5. `Infeasible` → 自動 `RefineConflict`，寫 `IISs/{ModelName}_IIS_{timestamp}.ilp`
-6. 印 `ObjVal / LastMetrics.BestBound / LastMetrics.MipGap`，回填 `LastMetrics`
+1. 印建立摘要 log（模型有變動才重印）：`[變數建立摘要]`、`[限制式建立摘要]`，以及問題類型 `[模型類型] type=MILP continuous=2 integer=1 binary=3`
+2. `PreSolveGuard()`：`VariableCount` 超過 `ScaleWarnThreshold`（預設 `10,000,000`）→ `Logging.Warn` 一則，**只警告不中止**
+3. `ExportLP` / `ExportMPS` 為 true → 寫 `Model/{ModelName}_LP_{timestamp}.lp` / `_MPS_{timestamp}.mps`
+4. 求解，設定 `Status`
+5. 解可行且 `ExportSol` → 寫 `Solution/{ModelName}_Solution_{timestamp}.sol`
+6. `Infeasible` → 自動 `RefineConflict`，寫 `IIS/{ModelName}_IIS_{timestamp}.ilp`
+7. 印 `ObjVal / LastMetrics.BestBound / LastMetrics.Gap`，回填 `LastMetrics`
 
 ```csharp
+public enum ModelType { LP, MILP, IP, BP }
 public enum VarType { Continuous, Integer, Binary }
 public enum ConstraintSense { LessEqual, Equal, GreaterEqual }
 public enum ObjectiveSense { Minimize, Maximize }
@@ -2111,20 +2135,20 @@ public enum SolveStatus { NotSolved, Optimal, Feasible, Infeasible, Unbounded, T
 **9.2.7 兩層設定**
 
 ```csharp
-public sealed class ProjectConfig // OptimFoundation.Core，PascalCase property
+public sealed class ProjectConfig // OptimFoundation.Core，PascalCase property；只剩輸出開關，不進 ConfigSnapshot
 {
-    public string ProjectName { get; set; } // 未指定時 OptProject 用模型名
-    public int? RetentionDays { get; set; } // 未指定時視為 30
     public bool EnableSolverLog { get; set; } = true;
     public bool ExportLP { get; set; } = false;
     public bool ExportMPS { get; set; } = false;
     public bool ExportSol { get; set; } = false;
-    public string DataId { get; set; }
-    public string UserId { get; set; }
+    public bool ExportIIS { get; set; } = false; // 目前未接線，設了不會生效
     public ProjectConfig Clone();
+    public static ProjectConfig Quiet(); // { EnableSolverLog = false }；OptExperiment 未 LoadConfig 時的預設
 }
+// 專案名 / 保留期：new OptProject(name, retentionDays: 30) 建構子參數，不在 ProjectConfig 上
+// DataId / UserId：CsvCtrl.WriteSolution<T>(engine, dataId, userId) 等 sink 方法的參數，不在 ProjectConfig 上
 
-public sealed class CplexConfig : ISolverConfig, ITunableConfig
+public sealed class CplexConfig : ISolverConfig
 {
     public CplexConfig Clone(); // 建立 tuning variant 的唯一方式
 
@@ -2154,12 +2178,12 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
     public bool? NumericalEmphasis { get; set; }
     public int? NodeAlgorithm { get; set; }
     public bool? PreIndicator { get; set; }
-    public int? Presolve { get; set; } // `PreIndicator` 的 ITunableConfig int 視角
+    public int? Presolve { get; set; } // `PreIndicator` 的 ISolverConfig int 視角
     public double? HeuristicEffort { get; set; }
 }
 ```
 
-`EnableSolverLog = false` 只關 Console 的 CPLEX progress，framework log 照寫。`DataId` / `UserId` 是專案 metadata，`CsvCtrl.WriteSolution` 不會自動讀，呼叫端仍要明確傳。
+`EnableSolverLog = false` 只關 Console 的 CPLEX progress，framework log 照寫。`dataId` / `userId` 是解檔的 metadata 參數，`CsvCtrl.WriteSolution` 不會自動代入（CSV 本身也不輸出這兩欄，只給 DB sink 用），呼叫端仍要明確傳。
 
 **9.2.8 `OptModel` / `OptProject` / `OptExperiment`**
 
@@ -2167,47 +2191,58 @@ public sealed class CplexConfig : ISolverConfig, ITunableConfig
 public sealed class OptModel
 {
     public string Name { get; }
+    public string SourceFile { get; } // ReadModel 建立時才有值；以 code 建模時為 null
     public OptModel(string name = "Model");
+    public static OptModel ReadModel(string fileName, string name = null); // 讀既有模型檔（.lp/.mps/.sav），走 OptEngine.ReadModel；不讀 CSV
     public OptModel AddVariables(Action<OptEngine> build);
     public OptModel AddObjective(Action<OptEngine> build);
     public OptModel AddConstraints(Action<OptEngine> build);
+    public OptModel ReadSolution(string fileName); // 起始解步驟；套用時機在所有建模步驟之後
+    public OptModel AddMIPStart(Func<IReadOnlyDictionary<string, double>> values, string name = null); // values 延遲取值，可接前段 engine 的解
 }
 
 public sealed class OptProject : IDisposable
 {
-    public OptProject(OptModel model, string projectName = null, int retentionDays = 30);
-    public OptProject UseConfig(Func<ProjectConfig> configFactory);
-    public OptProject UseConfig(Func<CplexConfig> configFactory);
-    public OptProject OnSolved(Action<OptEngine> handler);
-    public bool Execute();
-    public OptEngine Engine { get; }
-    public bool IsSuccess { get; }
-    public TimeSpan TotalElapsed { get; } // Execute() 結束後填入
-    public TimeSpan BuildModelElapsed { get; } // 建模階段耗時
+    public OptProject(string name, int retentionDays = 30); // 驗證名稱、接上 {name} log、FolderDir.CreateAll、保留期清理
+    public string Name { get; }
+    public int RetentionDays { get; }
+    public OptProject LoadConfig(ProjectConfig config); // 正式求解用的專案設定，之後每次 Solve 都套用
+    public bool Solve(OptModel model, CplexConfig config,
+        Action<OptEngine> onSolved = null, Action<OptEngine> beforeSolve = null); // 可 Solve 多次；成功才跑 onSolved
+    public OptExperiment Experiment(string name, string description = null); // 紀錄寫成 Experiment/{專案名}-{實驗名}-trial.csv 等一組四個檔，同名實驗整組覆寫
+    public const string SolveExperimentName = "solve"; // project.Solve(...) 的實驗名，紀錄寫成 {專案名}-solve-trial.csv + -meta.csv，每次 Solve 覆寫
+    public OptEngine Engine { get; } // 最近一次 Solve 的 engine
+    public bool IsSuccess { get; } // 最近一次 Solve 是否找到可用解
+    public Trial Trial { get; } // 最近一次 Solve 的紀錄，與實驗 Trial 同格式；不開軌跡
+    public TimeSpan TotalElapsed { get; } // 最近一次 Solve 的總耗時（CPLEX 時鐘，從建好 CPLEX 模型起算）
+    public TimeSpan BuildModelElapsed { get; } // 最近一次 Solve 的模型套用耗時（CPLEX 時鐘）
+    public void Dispose(); // 釋放最近一次 Solve 的 engine
 }
 
-public sealed class OptExperiment
+public sealed class OptExperiment // internal 建構子，只能經 OptProject.Experiment(...) 取得
 {
-    public OptExperiment(string name, string description);
-    public OptExperiment UseConfig(Func<ProjectConfig> configFactory);
+    public string Name { get; } // 建立時給的名稱，不含專案名
+    public string FullName { get; } // {專案名}-{實驗名}：log 檔名與紀錄檔名共用的前綴
+    public OptExperiment LoadConfig(ProjectConfig config); // 每一格各自 Clone；預設 ProjectConfig.Quiet()
+    public OptExperiment CaptureTrajectory(bool enabled); // 是否記錄收斂軌跡，預設 true
     public OptExperiment AddModel(OptModel model);
     public OptExperiment AddConfig(string label, CplexConfig config);
-    public OptExperiment AddTrial(OptModel model, string label, CplexConfig config);
+    public OptExperiment AddTrial(OptModel model, string label, CplexConfig config); // 明確加一個 cell
     public Experiment Run(); // 先 Save() 再回傳
 }
 
 public sealed class Trial
 {
-    public string RunId { get; set; }   // 這批實驗的識別 = 執行開始時間 yyyyMMdd-HHmmss
-    public int TrialId { get; set; }    // 批內序號，從 1 起
-    public string Model { get; set; }   // 模型名，獨立一欄
-    public string Label { get; set; }   // 只放 config label（NEVER 是 "模型名 | 設定名"）
-    public DateTime RunAt { get; set; } // 與 Model + Label 合起來是 Save() 的去重鍵
+    public string Label { get; set; } // 這次求解的標籤，格式 r*-description，例 "r1-GomoryCuts=2"
+    public string ExperimentId { get; set; } // 這批的識別 = 執行開始時間 yyyyMMdd-HHmmss
+    public int TrialId { get; set; } // 批內序號，從 1 起
+    public string Model { get; set; } // 模型名，獨立一欄（NEVER 黏進 Label）
+    public DateTime RunTime { get; set; } // 求解記錄的建立時間（Capture 當下）
     public ConfigSnapshot Config { get; set; } // 設定快照，只記有設的旋鈕
     public SolveMetrics Metrics { get; set; } // 評分依據，欄位見下
-    public string Note { get; set; }
-    // 自寫 runner 才需要；走 OptExperiment 時框架自動呼叫
-    public static Trial Capture(ISolverEngine engine, string label, Func<bool> solveAction, string note = null);
+    // 自寫 runner 才需要；走 OptProject.Solve / OptExperiment 時框架自動呼叫
+    public static Trial Capture(ISolverEngine engine, string label, Func<bool> solveAction,
+        bool captureTrajectory = true);
 }
 public sealed class ConfigSnapshot
 {
@@ -2215,43 +2250,93 @@ public sealed class ConfigSnapshot
     public Dictionary<string, object> Tunable { get; set; }        // 跨 solver 共通旋鈕
     public Dictionary<string, object> SolverSpecific { get; set; } // 該 solver 全部旋鈕
     // 兩者都**只放有設定的**：null = 沒設 = 用 solver 預設 = 不記錄。
-    // NEVER 期待沒設的旋鈕出現在這裡（舊版塞滿 null，已移除）。
+    public static ConfigSnapshot From(ISolverConfig config);
 }
 public sealed class SolveMetrics // = engine.LastMetrics
 {
     public SolveStatus Status { get; set; }
+    public double ObjectiveValue { get; set; } // 無解為 NaN
+    public double BestBound { get; set; } // 無解為 NaN
+    public double Gap { get; set; } // 求解結果實際達到的相對 gap（不是 CplexConfig.MipGap 那個停止門檻）；無解為 NaN
+    public double SolveTimeMs { get; set; } // 純求解，只計 Solve() 本身，不含建模；CPLEX 時鐘（GetCplexTime）前後相減
+    public double? BuildAndSolveTimeMs { get; set; } // 建模 + 求解 = 把 OptModel 套進 CPLEX 的時間（讀模型檔時含讀檔與建立查找索引）+ SolveTimeMs，兩段都用 CPLEX 時鐘；不含 beforeSolve、匯出模型 / 解檔、IIS 分析；只有經由 OptProject.Solve / OptExperiment 才有值，自己呼叫 Trial.Capture 時是 null（CSV 寫 n/a）
+    public long? NodeCount { get; set; } // null = 該 solver 未提供
+    public long? IterationCount { get; set; } // 同上；node 少不等於快，MUST 配 SolveTimeMs 判讀
+    public int? Seed { get; set; } // 實際使用的亂數種子（沒明設時是 CPLEX 預設值）；null = 讀不到
+    public bool TrajectoryEnabled { get; set; } // 這次有沒有開收斂軌跡，分辨「沒開」與「開了但沒記到」
+    // ── 模型結構：一律取自 CPLEX 模型（Ncols / Nrows / NbinVars …），不是框架建模統計；沒被引用的變數 CPLEX 不收，不計入 ──
+    public ModelType? ModelType { get; set; } // LP / MILP / IP / BP；null = 讀不到
+    public int VarCount { get; set; } // CPLEX Ncols
+    public int? BinaryVarCount { get; set; }
+    public int? IntegerVarCount { get; set; }
+    public int? ContinuousVarCount { get; set; } // 不含 semi-continuous / semi-integer
+    public int? SemiContinuousVarCount { get; set; }
+    public int? SemiIntegerVarCount { get; set; }
+    public int ConstraintCount { get; set; } // CPLEX Nrows（線性限制式）
+    public int? QuadraticConstraintCount { get; set; }
+    public int? IndicatorConstraintCount { get; set; }
+    public int? SosCount { get; set; }
+    public int? LazyConstraintCount { get; set; }
+    public int? UserCutCount { get; set; }
+    public ModelStatsReport ModelStats { get; set; } // 求解前的模型統計對帳；舊紀錄讀回為 null
+    public List<ConvergencePoint> Convergence { get; set; } // 收斂軌跡；未開 captureTrajectory 時為空；只含 CPLEX 呼叫 callback 時觀察到的點（時間取 callback 的 GetCplexTime − GetStartTime），框架不補點
+    // 以下三個是唯讀衍生值，直接從 Convergence 算，NEVER 自己另外存
+    public int TrajectoryPoints { get; }  // = Convergence.Count；0 就是這次沒收集到軌跡
+    public double? FirstSolutionMs { get; }  // 第一次找到可行解的時間
+    public double? BoundChange { get; }      // 界從頭到尾總共變了多少
+    public double? LastBoundChangeMs { get; } // 界最後一次變動的時間
+}
+public sealed class ConvergencePoint // -trajectory.csv 的一列（表頭 TrialLabel / PointIndex / ElapsedMs / ObjectiveValue / BestBound / Gap）
+{
+    public double ElapsedMs { get; set; } // 從求解開始起算
     public double ObjectiveValue { get; set; }
     public double BestBound { get; set; }
-    public double MipGap { get; set; }
-    public double RunTimeMs { get; set; }
-    public long? NodeCount { get; set; }      // 2026-08-25 起會填實際值
-    public long? IterationCount { get; set; } // 同上；node 少不等於快，MUST 配 runtime 判讀
-    public int VarCount { get; set; }
-    public int ConstraintCount { get; set; }
-    public List<ConvergencePoint> Convergence { get; set; } // 收斂軌跡；純 LP 會是空的
-    // 以下四個是唯讀衍生值，直接從 Convergence 算，NEVER 自己另外存
-    public int TrajectoryPoints { get; }  // = Convergence.Count；0 就是這次沒收集到軌跡
-    public double? TFeasMs { get; }       // 第一次找到可行解的時間
-    public double? TStallMs { get; }      // 界限最後一次變動的時間
-    public double? DeltaBound { get; }    // 界限總共推進多少
+    public double Gap { get; set; }
 }
 public class Experiment
 {
-    public Experiment(string name, string description);
+    public string Project { get; set; } // 專案名，紀錄檔名前段（{Project}-{Name}-trial.csv 等）
+    public string Name { get; set; } // 實驗名，紀錄檔名後段；不含專案名，不可含非法檔名字元
+    public string Description { get; set; }
+    public DateTime CreatedAt { get; set; }
     public List<Trial> Trials { get; set; }
+    public IReadOnlyList<ConfigSummary> Summaries { get; } // 每組設定一筆彙總，每次讀取都從 Trials 重算；內容就是 -summary.csv
+    public Experiment(string project, string name, string description); // 原本只收 name/description 兩參數
     public void AddTrial(Trial trial); // 自寫 runner 用
-    public void Save(); // 跨 run append，依 RunAt + Model + Label 去重
-    public static Experiment Load(string name);
+    public bool WriteSummary { get; set; } // 預設 true；false 時 Save() 不寫 -summary.csv（正式求解用）
+    public void Save(); // 寫成 Experiment/{Project}-{Name}-trial.csv + -meta.csv + -summary.csv（WriteSummary 為 true 才寫）+ 有軌跡才有 -trajectory.csv 四個檔；同名整組覆寫，這次沒寫到的舊檔一併刪掉
+}
+// -summary.csv 的一列：同一個實驗、同一模型、同一設定跑不同 seed 的彙總。只計數，不算任何統計指標（RunId 屬性仍存在，但不寫進 CSV）
+// 勝負 = 逐 seed 跟同一個 seed 的 baseline 比大小（主表 VsBaseline 欄，由框架判好，AI NEVER 自己比）：
+//   依序比 有沒有找到解 → 有沒有證明最佳 → 都證明最佳比 SolveTimeMs → 都沒證明比 Gap；都沒找到解算平手
+//   variant 自己求解失敗算輸；baseline 求解失敗或那個 seed 沒有 baseline trial 算無法比較
+public sealed class ConfigSummary
+{
+    public string RunId { get; set; }
+    public string Model { get; set; }
+    public string Config { get; set; } // Trial label 去掉結尾的 -s<seed>
+    public bool IsBaseline { get; set; }
+    public int Trials { get; set; } // 不含暖機（label 含 warmup 的 trial 不計入，也不當基準）
+    public string Seeds { get; set; } // 空白分隔
+    public int Optimal { get; set; }
+    public int Feasible { get; set; }
+    public int NoSolution { get; set; } // Status = TimeLimit：撞時限且沒有任何可行解
+    public int Failed { get; set; } // Infeasible / Unbounded / Error / NotSolved
+    public int FoundSolution { get; set; } // Optimal + Feasible
+    public int? Wins { get; set; } // 比同一個 seed 的 baseline 好；基準列為 null（CSV 寫 baseline）
+    public int? Losses { get; set; } // 比同一個 seed 的 baseline 差（自己求解失敗也算）
+    public int? Ties { get; set; } // 一樣（例：兩邊都沒找到解）
+    public int? NotCompared { get; set; } // 無法比較
 }
 ```
 
 - 建模階段永遠依 **variables → objective → constraints** 執行，與註冊順序無關；同階段可註冊多次並保留該階段內順序
-- `OnSolved` **只存在於 `OptProject`**；`OptExperiment` 沒有
-- `OptProject` MUST dispose（用 `using var`）；`OptExperiment` 自行 dispose 每個 cell 的 engine
-- 兩個 `UseConfig` 可交換順序；同型別重複設定時最後一個 factory 生效
-- `OptExperiment` 未呼叫 `UseConfig` 時：solver log OFF、LP/MPS/SOL 全不匯出、不做 housekeeping；solver config 在 cell 開始時先 `Clone()`
+- `onSolved` / `beforeSolve` **只存在於 `OptProject.Solve(...)` 的參數**；`OptExperiment` 沒有
+- `OptProject` MUST dispose（用 `using var`）；`OptExperiment` 每個 cell 用 `using var engine = new OptEngine(...)`，跑完即釋放
+- `OptExperiment` 只能經 `OptProject.Experiment(name, description)` 取得，NEVER `new OptExperiment(...)`
+- `OptExperiment` 未呼叫 `LoadConfig` 時：預設 `ProjectConfig.Quiet()`（solver log OFF、LP/MPS/SOL 全不匯出）；solver config 在 cell 開始時先 `Clone()`
 - Trial label 重複（cross × cross、cross × explicit、explicit × explicit）→ `Run()` 在建任何 engine 前丟 `InvalidOperationException`；重複的 `AddConfig` label 在加入當下丟 `ArgumentException`
-- 輸出：主表 CSV 一列一 Trial（給人 / Excel，含 `DiffKnobs` 直接標明「跟 baseline 差在哪」）、`-meta.csv` 說明檔（整批不變的東西只寫一次）、JSON 巢狀含 `config` / `metrics` / `convergence[]`（給 LLM）、`-trajectory.csv`（有軌跡才有）
+- 輸出：每個實驗一組四個檔 `{專案名}-{實驗名}-{trial,meta,summary,trajectory}.csv`（`{專案名}-{實驗名}` 就是 `OptExperiment.FullName`），欄位固定、只有一種格式、沒有版本號；同名實驗再跑一次整組覆寫（留 `[EXPERIMENT_OVERWRITTEN]` WARN），檔被占用時改寫 `-locked-<時間>.csv`。主表 `-trial.csv` 一列一 Trial（含 `ConfigChanges` 標明「跟同一個實驗基準差在哪」、`VsBaseline` 標明「跟同一個 seed 的基準比是 `win` / `lose` / `tie`」）、`-meta.csv` 說明檔（Section/Key/Value：開始時間與 trial 數、模型類型 / 目標式方向 / 各類數量、求解環境、基準完整設定；沒有 `schema` 區段）、`-summary.csv`（每組設定一列：各狀態與找到可行解的 trial 數，以及贏 / 輸 / 平手 / 無法比較的 trial 數；比法見上方 `ConfigSummary`，全部由框架判好；`project.Solve(...)` 的正式求解不寫這個檔）、`-trajectory.csv`（有軌跡才有，長格式一列一收斂點）。**JSON 輸出已移除**，全部只有 CSV。每一格都有值：沒有數字時寫標記 `off`（軌跡沒開）／`none`（有收集但沒發生）／`n/a`（求解器不提供，或無法跟基準比較）／`baseline`（基準列的 `ConfigChanges` 與 `VsBaseline`、`-summary.csv` 的勝負欄），同一個實驗每列的基準是誰看 `-meta.csv` 的 `baseline.label`，`Seed` 是實際使用的種子；`-trajectory.csv` 還沒有值的點寫 `#N/A`（Excel 畫圖會略過）。標記定義也寫在 `-meta.csv` 的 `legend.*`。主表 `-trial.csv` 共 18 欄：`TrialId, Model, ModelType, TrialLabel, ConfigChanges, Seed, VsBaseline, Status, ObjectiveValue, BestBound, Gap, BuildAndSolveTimeMs, SolveTimeMs, FirstSolutionMs, LastBoundChangeMs, BoundChange, NodeCount, IterationCount`；`-summary.csv` 14 欄：`Model, Config, IsBaseline, Trials, Seeds, Optimal, Feasible, NoSolution, Failed, FoundSolution, Wins, Losses, Ties, NotCompared`；`-trajectory.csv` 7 欄：`TrialId, TrialLabel, PointIndex, ElapsedMs, ObjectiveValue, BestBound, Gap`。主表另有 `ModelType`（LP / MILP / IP / BP）欄；各類變數 / 限制式數量（`VarCount`、`BinaryVarCount`、`IntegerVarCount`、`ContinuousVarCount`、`SemiContinuousVarCount`、`SemiIntegerVarCount`、`ConstraintCount`、`QuadraticConstraintCount`、`IndicatorConstraintCount`、`SosCount`、`LazyConstraintCount`、`UserCutCount`）同一模型每列一樣、不在主表，取自 CPLEX 模型本身（不是框架建模統計），列在 `-meta.csv` 的 `model.<Model>.*`。
 
 **9.2.9 I/O：`CsvCtrl` / `ISolutionSink` / `FolderDir` / `Logging`**
 
@@ -2261,6 +2346,7 @@ public static class CsvCtrl
     public static void WriteRows<T>(IReadOnlyList<T> rows, string fileName = null)
         where T : ModelElementBase;
     public static void WriteSolution<T>(ISolverEngine engine, string dataId, string userId);
+        // 寫到 Output/{型別名}.csv（表頭 VAR_TYPE,set…,QTY）；dataId / userId 不輸出到 CSV，只給 DB sink 用
 }
 
 public interface ISolutionSink
@@ -2274,21 +2360,24 @@ public interface ISolutionBatch : IDisposable
     void Commit(); // 未 Commit 就 Dispose = rollback
 }
 
-public class FolderDir // 路徑根 = AppDomain.BaseDirectory，即 bin/Debug/net8.0/
+public class FolderDir // 路徑根 = AppDomain.CurrentDomain.BaseDirectory，即 bin/Debug/net8.0/
 {
-    public static ProjFolder Data; // 輸入 CSV
-    public static ProjFolder Solution; // 解 CSV
-    public static ProjFolder Log; // Logs
-    public static ProjFolder Model; // LP / MPS
-    public static ProjFolder IIS; // .ilp
-    public static ProjFolder Sol; // CPLEX .sol
-    public static ProjFolder Experiment; // Experiments CSV / JSON
+    public static ProjFolder Input; // 輸入 CSV（唯一的讀資料夾，保留期清理不掃它）
+    public static ProjFolder Output; // 解輸出的 CSV（CsvCtrl.WriteSolution 寫這裡）
+    public static ProjFolder Log; // 框架與 solver 的 log 檔
+    public static ProjFolder Model; // 模型匯出（.lp / .mps）
+    public static ProjFolder IIS; // infeasible 時的 conflict / IIS 分析（.ilp）
+    public static ProjFolder Solution; // CPLEX 原生解檔（.sol）
+    public static ProjFolder Experiment; // 實驗紀錄（每個實驗一組 -trial.csv / -meta.csv / -summary.csv / -trajectory.csv 四個檔；保留期清理不掃它）
+    public static void CreateAll(); // 建立全部七個資料夾；OptProject 建立時自動呼叫
+    public static int PurgeAllOutputs(int retentionDays); // 清 Log/Model/Solution/IIS/Output 的舊檔；不清 Input 與 Experiment
     public class ProjFolder
     {
-        public void CreateFolder(); // 低階自訂寫檔可呼叫；CsvCtrl.WriteSolution 會自行建立 Solution/
+        public void CreateFolder(); // idempotent；低階自訂寫檔可呼叫，CsvCtrl.WriteSolution 會自行建立 Output/
         public string GetPath();
-        public string GetFilePath(string fileName);
-        public bool TryCreateFile(string fileName);
+        public string GetPathFile(string fileName);
+        public bool TryCreateFile(string fileName); // 已存在不覆寫，回 false
+        public int PurgeOlderThan(int retentionDays);
     }
 }
 
@@ -2299,12 +2388,12 @@ public static class Logging
     public static void Warn(string message);
     public static void Error(string message);
     public static void Info(string message, Stopwatch sw); // 印完自動 sw.Restart()
-    public static void SetLogFileName(string name); // 之後寫到 Logs/{name}_{timestamp}.txt
+    public static void SetLogFileName(string name); // 之後寫到 Log/{name}_{時間}.txt；專案 code NEVER 呼叫，OptProject / OptExperiment 建立時自動呼叫
     public static void ClearLogs();
 }
 ```
 
-`CsvSolutionSink` 是 `ISolutionSink` 的標準 CSV 實作；單筆輸出與批次輸出都會寫入 `Solution/`。CSV batch 的每次 `Write` 都立即落檔，`Commit()` 是為了與可交易的 DB sink 保持相同介面而保留的 no-op。
+`CsvSolutionSink` 是 `ISolutionSink` 的標準 CSV 實作；單筆輸出與批次輸出都會寫入 `Output/`。CSV batch 的每次 `Write` 都立即落檔，`Commit()` 是為了與可交易的 DB sink 保持相同介面而保留的 no-op。
 
 ```csharp
 ISolutionSink sink = new CsvSolutionSink();
@@ -2318,29 +2407,27 @@ batch.Commit();
 
 | 操作                              | 是否需要呼叫端先建資料夾？ |
 | --------------------------------- | -------------------------- |
-| `CsvCtrl.WriteSolution`           | ❌ 自行建立 `Solution/`     |
+| `CsvCtrl.WriteSolution` | ❌ 自行建立 `Output/` |
 | `Logging.*`                       | ❌ 內部自建                 |
 | `Solve()` 寫 LP / MPS / Sol / IIS | ❌ 框架已處理               |
 
-log 格式：`2026-05-26 23:33:51.4433 | INFO | [Namespace.Of.Caller] message`。標準流程由 `OptProject.Execute()` 依 `ProjectConfig.ProjectName` 自動設定 log 檔名；只有 §5 的 exp 模式與自管低階 `OptEngine` 才需要自己 `SetLogFileName`。
+log 格式：`2026-05-26 23:33:51 | INFO  | message`。log 檔名一律由框架自動設定：`new OptProject(name)` 建立時設成 `Log/{name}_{時間}.txt`，`project.Experiment(name, ...)` 建立時切到 `Log/{專案名}-{實驗名}_exp_{時間}.txt`；**專案 code NEVER 自己呼叫 `Logging.SetLogFileName`**。
 
 **9.2.10 內部機制與 protected API（本流程用不到，讀舊 code 或除錯時查）**
 
 照本規範寫的專案 **NEVER 直接呼叫本節任何東西**。列出來是為了兩件事：看得懂變數名怎麼被組出來，以及碰到「明明資料對卻報錯」時知道是哪一層在擋。
 
-**`VariableBuilder`（`BuildVars` 內部就是它）**
+**`VariableManager`（`BuildVars` 內部就是它）**
 
 ```csharp
-public static class VariableBuilder
+public static class VariableManager
 {
-    public static IEnumerable<string> GetVarNames<TVariable>(object[] sets); // 主入口，直接組字串不建實例
-    public static IEnumerable<string> GenVarCombinations(params List<string>[] lists); // 笛卡兒積
-    public static List<string>[] ConvertSetsToStringLists(params object[] lists); // Set → 字串，規則見下
-    public static void BuildVars<TVariable>(Action<object> createVarMethod, object[] sets);
+    public static IEnumerable<string> ComposeNames(string typeName, object[] sets); // 主入口，直接組字串不建實例；BuildVars<T> 先比對維度數量與型別，再以類別名呼叫它
+    public static List<string>[] ConvertSetsToTokens(params object[] sets); // Set → 字串，規則見下
 }
 ```
 
-`ConvertSetsToStringLists` 的轉換規則（決定變數名長什麼樣，也決定你在 `Solution` 手拼 key 時要寫什麼）：
+`ConvertSetsToTokens` 的轉換規則（決定變數名長什麼樣，也決定你在 `Solution` 手拼 key 時要寫什麼）：
 
 | Set 元素型別         | 轉字串方式                                 |
 | -------------------- | ------------------------------------------ |
@@ -2364,7 +2451,7 @@ protected void SetVarUB(object searchData, double ub);
 protected void SetVarRange(object searchData, double lb, double ub);
 
 // OptEngine：直接對 ILOG 物件操作的低階入口，Pool API 底下就是它們
-protected INumVar CreateVar(string name, double lb = 0, double ub = double.MaxValue, VarType type = VarType.Continuous);
+protected INumVar CreateVar(string name, double lb = 0, double ub = OptBounds.Infinity, VarType type = VarType.Continuous);
 protected ILinearNumExpr Expr(IEnumerable<(double coef, INumVar var)> terms);
 protected IRange AddLE(string name, ILinearNumExpr lhs, double rhs);
 protected IRange AddGE(string name, ILinearNumExpr lhs, double rhs);
@@ -2396,7 +2483,7 @@ public interface ITrajectorySource
 | `engine.GetSetVarSol<T>()`                | `engine.GetSetVarValues<T>()`                      | 不存在                                                                            |
 | `CSVCtrl.SaveToCSV<T>(...)`               | `CsvCtrl.WriteSolution<T>(engine, dataId, userId)` | 不存在                                                                            |
 | `CSVCtrl.xxx`（大寫 V）                   | `CsvCtrl.xxx`                                      | 大小寫錯                                                                          |
-| `FolderDir.Result`                        | `FolderDir.Solution`                               | 不存在                                                                            |
+| `FolderDir.Result` | `FolderDir.Output` | 不存在；`CsvCtrl.WriteSolution` 的 CSV 寫到 `Output/`，`FolderDir.Solution` 是 CPLEX 原生 `.sol` |
 | `new OptEngineConfig { ... }`             | `new CplexConfig { ... }`                          | 不存在                                                                            |
 | `engine.AddPool` / `AddPoolRHS`           | `engine.AddLHS` / `AddRHS`                         | 不存在                                                                            |
 | `BuildBVs(typeof(T), sets)`               | `BuildBVs<T>(sets)`                                | 非泛型型別引數寫法不存在                                                          |
@@ -2411,9 +2498,31 @@ public interface ITrajectorySource
 | file-scoped `namespace X;`                | block `namespace X { }`                            |                                                                                   |
 | `Model/` 放 `.cs`                         | 只放 `.md`；組裝碼在 `Program.cs`                  |                                                                                   |
 | 假設變數名分隔符是 `\|`                   | 是 `@`                                             |                                                                                   |
-| 假設 `ProjFolder` 建構子會建資料夾        | `CsvCtrl.WriteSolution` 會自行建立 `Solution/`     | 自訂低階輸出才自行管理資料夾                                                      |
+| 假設 `ProjFolder` 建構子會建資料夾 | `CsvCtrl.WriteSolution` 會自行建立 `Output/` | 自訂低階輸出才自行管理資料夾 |
 | `override Build()` / `override Solve()`   | 已非 virtual；改覆寫 `BuildCore()` / `SolveCore()` |                                                                                   |
 | `ProjectReference` 指向框架 src           | `..\..\dlls\` HintPath                             | 只允許 `$SIB/OptimFoundation/Templates/*` 內部 template；AI-Modeling 專案一律禁用 |
+| `new OptProject(model).UseConfig(...).OnSolved(...)` + `.Execute()` | `new OptProject("<Project>")` + `.LoadConfig(projectConfig)` + `project.Solve(model, config, onSolved: ...)` | 2026-09-28 前 API；`UseConfig` / `OnSolved` / `Execute()` 已不存在 |
+| `new OptExperiment(name, desc)` | `project.Experiment(name, desc)` | 已改 internal 建構子，只能經 `OptProject.Experiment` 取得 |
+| `CreateGreatEqual` | `CreateGreaterEqual`（含 Thread 版） | 已改名 |
+| `CreateLeSoft` / `CreateGeSoft` / `CreateEqSoft` | `CreateLessEqualSoft` / `CreateGreaterEqualSoft` / `CreateEqualSoft` | 已改名，NEVER 縮寫 |
+| `OptModel.FromFile(file, name)` | `OptModel.ReadModel(file, name)` | 已改名，與 `ReadSolution` 同一組讀檔命名 |
+| `OptEngine.ImportModel(file)` | `OptEngine.ReadModel(file)` | 已改名（CPLEX 原生 `Cplex.ImportModel` 呼叫與 log event code 不變） |
+| `engine.ExportModelFile(file)` | `engine.ExportModel(file)` | 已改名 |
+| `engine.VarSetsReset()` / `engine.ResetVarSets()` | （已移除） | 變數池單一化，沒有分組可清；整個重來請建新 engine |
+| `engine.RegisteredVariableCount` | `engine.VariableCount` | 已移除，變數池只有一個 |
+| `engine.GetAllVarNames(includeUnregistered)` | `engine.GetAllVarNames()` | 已移除，無參數版即列出整個變數池 |
+| `engine.VariableMerge(...)` | `engine.MergeVariables(...)` | 已改名，動詞在前 |
+| `DBCtrlBase` / `OracleDBCtrl` | `DbCtrlBase` / `OracleDbCtrl` | 縮寫詞已改為只首字大寫（`Db`，不是 `DB`） |
+| `ProjectConfig.ProjectName = ...` | `new OptProject("<Project>")` 的建構子參數 | `ProjectConfig` 已不再有 `ProjectName` |
+| `ProjectConfig.RetentionDays = ...` | `new OptProject(name, retentionDays: 30)` | `ProjectConfig` 已不再有 `RetentionDays` |
+| `ProjectConfig.DataId` / `.UserId` | `CsvCtrl.WriteSolution<T>(engine, dataId, userId)` 等 sink 的參數 | `ProjectConfig` 已不再有這兩顆 |
+| `Trial.RunId` | `Trial.ExperimentId` | 已改名 |
+| `CplexConfig : ISolverConfig, ITunableConfig` | `CplexConfig : ISolverConfig` | `ITunableConfig` 已併入 `ISolverConfig` |
+| `Numeric.SafeRatio(...)` | 專案自行檢查除零 / 非有限值 / 量級 | `Numeric` 類別已整個移除，框架不代為把關 Big-M 之類的推導比值 |
+| `BuildVars<T>` 上界 `1E100` | `1E20`（= `OptBounds.Infinity`） | 框架的「無上限」常數改成 CPLEX 自己的 infinity |
+| `JsonExperimentWriter` / `Experiment.Load(name)` / `IExperimentWriter` | 不存在，實驗紀錄只有 CSV | JSON 輸出與讀回已整個移除，同名 experiment 再跑一次整組覆寫，不讀回舊列 |
+| `FolderDir.Data` / `.Sols` / `.Models` / `.Logs` / `.IISs` / `.Experiments` | `FolderDir.Input` / `.Solution` / `.Model` / `.Log` / `.IIS` / `.Experiment` | 資料夾改名（單數、全字） |
+| `-- import <raw>`（CLI） | `-- import-data <raw>` | CLI 參數改名 |
 
 ---
 
@@ -2425,16 +2534,16 @@ public interface ITrajectorySource
 | generator 沒產碼                             | 類別漏了 `partial`，或 `Set_*` 漏掛 `[OptSet]`                                         | 補上；漏掛且被 Dataload 引用會報 `OPTF006`                              |
 | 載入摘要顯示 `Sets（0）` / `Parameters（0）` | `Dataload` 漏了 `partial` 或 `: DataContext` —— generator 掃不到它，**無任何錯誤訊息** | 補齊兩者；這是唯一的偵測訊號，見 §2.4                                   |
 | `OPTF001`                                    | 變數前綴不是 `VariableB_/C_/I_`                                                        | 依前綴表改名                                                            |
-| 找不到 CSV                                   | csproj 漏 `Data\**\*.csv` 的 copy 設定，或 CSV 根本沒放進 `Data/`                      | 補 copy 設定；不規則來源先跑 `dotnet run -- import raw/<file>`          |
-| import 產的 CSV 過一陣子不見了               | `Export()` 只寫 bin 下的 `FolderDir.Data`，被 `dotnet clean` 或換 configuration 清掉   | 要當正式 input 就搬回專案 `Data/`                                       |
+| 找不到 CSV | csproj 漏 `Data\**\*.csv` 的 copy／Link 設定，或 CSV 根本沒放進 `Data/` | 補 §1.4 的 copy 設定；不規則來源先跑 `dotnet run -- import-data raw/<file>` |
+| import 產的 CSV 過一陣子不見了 | `Export()` 只寫 bin 下的 `FolderDir.Input`，被 `dotnet clean` 或換 configuration 清掉 | 要當正式 input 就搬回專案 `Data/` |
 | `DirectoryNotFoundException`                 | 自訂低階輸出未建立目標資料夾                                                           | `CsvCtrl.WriteSolution` 無需處理；低階輸出明確建立目標資料夾            |
 | 解出來但數值離譜                             | 變數 sets 傳入順序與 `[OptDim]` 不一致                                                 | 逐一對齊順序                                                            |
 | 限制式右側值莫名消失                         | RHS overload 覆蓋掉先前 `AddRHS`                                                       | 改回 `AddRHS(...)` + `CreateEqual(this, dims)`                          |
-| `Unbounded`                                  | 界限沒寫成 constraint（`BuildVars` 上界是 1E100）                                      | 補該變數的上限 `Constraint_*`                                           |
-| Infeasible 但模型看起來對                    | Big-M 太小、或兩條硬約束互斥                                                           | 讀 `IISs/*.ilp`；以 `ProjectConfig.ExportLP = true` 開 `.lp` 檔用肉眼查 |
+| `Unbounded` | 界限沒寫成 constraint（`BuildVars` 上界是 1E20） | 補該變數的上限 `Constraint_*` |
+| Infeasible 但模型看起來對 | Big-M 太小、或兩條硬約束互斥 | grep log 的 `[OptEngine] Conflict constraints (N):` 拿衝突限制式名，再用名稱 grep `IIS/*.ilp`；以 `ProjectConfig.ExportLP = true` 匯出 `.lp`，用限制式名 grep 相關式子（AI NEVER 整份讀，天條「讀檔」） |
 | 改一個係數要改好幾個檔                       | 係數 hardcode 在 Constraint 裡                                                         | 全部移進 Parameter 的 `QTY`                                             |
 | 換資料還要改 `.cs`                           | `Dataload(IDataSource)` 裡有迴圈／判斷／補值                                           | 搬到 import 建構子，先產 CSV                                            |
-| 重跑實驗看到舊資料                           | 同名 experiment append                                                                 | 改用 `<Project>-tuning-r<N>` 遞增命名                                   |
+| 重跑實驗後舊結果不見了 | 沒改實驗名——同名 experiment 再跑一次是整組覆寫，舊結果被蓋掉 | 改用 `tuning-r<N>` 遞增命名區分輪次（`project.Experiment(...)` 的 `name` 不含專案名），要留住結果就換實驗名 |
 
 ### 反模式
 
@@ -2445,8 +2554,8 @@ public interface ITrajectorySource
 ❌ 在 Constraint class 手動 `ConstraintCount++` 或自印計數 —— `EngineBase` 已自動統計
 ❌ 用純轉呼叫 helper／local function 包裝模型組裝 —— 每個組成必須直接列在 `Program.cs` 的 chain
 ❌ 用 config factory helper 隱藏設定內容 —— 在 `Program.cs` 獨立建立具名 `ProjectConfig` 與 `CplexConfig`
-❌ 在正式 `Constraint_*.cs` 使用 `CreateLeSoft` / `CreateGeSoft` / `CreateEqSoft` —— 除非 Model.md 本身就寫了 soft（那是 Phase 1 的決定，見 §4.5）
-❌ 在 `Dataload(IDataSource)` 用迴圈、`Random`、enum 或日期運算製造模型輸入 —— 移到 import 階段先產 CSV
+❌ 在正式 `Constraint_*.cs` 使用 `CreateLessEqualSoft` / `CreateGreaterEqualSoft` / `CreateEqualSoft` —— 除非 Model.md 本身就寫了 soft（那是 Phase 1 的決定，見 §4.5）
+❌ 在 `Dataload(IDataSource)` 用迴圈、`Random`、enum 或日期運算製造模型輸入 —— 移到 import-data 階段先產 CSV
 ❌ 迴圈邊界寫字面數字（`for (int i = 0; i < 3; i++)`）—— 結構常數做成 Set / Parameter，用 `foreach` 或 `set.Count`
 ❌ 改 OptimFoundation 框架本體（`dlls/` 是唯讀的）—— 缺方法就在專案端寫 helper / extension
 
@@ -2485,7 +2594,7 @@ Model.md 每條 constraint 都標了一個 pattern tag（§0.0）。轉譯前先
 
 - ALWAYS `M` = 被約束式的**最緊合法上界**，由題目數據推導（總產能、最大需求…），且 MUST 定義成 `Parameter_*` 從 CSV 讀入
 - NEVER magic number（`99999`）：M **太小** → 砍掉合法解，solver 靜默回一個錯的「最佳解」，build / solve 都不報錯，最難抓；M **太大** → LP relaxation 鬆、B&B 節點爆增
-- 由資料推導時用 `Numeric.SafeRatio(分子, 分母, context: "BigM")`，NEVER 裸除法 —— 除零 / 非有限 / 超過量級門檻會當場丟例外，不讓壞的 M 溜進模型
+- 由資料推導時，除零 / 非有限 / 量級過大由開發者自行檢查（框架不提供 helper），不讓壞的 M 溜進模型
 - ✅ Good：`Parameter_BigMProduce.QTY = TotalCapacity`　❌ Bad：`engine.AddRHS(1000000)`
 
 ---

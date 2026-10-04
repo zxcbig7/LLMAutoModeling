@@ -7,7 +7,7 @@ namespace HospitalRostering_Generator.Constraint
 {
     /// <summary>
     /// C8 連休 2 天旗標：s^dfl[e,d] ≥ y[e,d,O] + y[e,d-1,O] + (1-y[e,d-2,O]) - 2（視窗 2 天時退化為前兩項）；
-    /// C9 每月至少一次連休 2 天：Σ_d s^dfl[e,d] + 2·s^dlt[e] ≥ 2，∀e。（CreateGreatEqual）
+    /// C9 每月至少一次連休 2 天：Σ_d s^dfl[e,d] + 2·s^dlt[e] ≥ 2，∀e。（CreateGreaterEqual）
     /// </summary>
     public class Constraint_DoubleOffLT2 : ConstraintBase
     {
@@ -52,7 +52,7 @@ namespace HospitalRostering_Generator.Constraint
                             optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = prepreD, Employee = e, Group = "O" });
                             optEngine.AddRHS(-(3 - 1));
                         }
-                        optEngine.CreateGreatEqual(this, "Window", d, e);
+                        optEngine.CreateGreaterEqual(this, "Window", d, e);
                     });
                 });
 
@@ -63,7 +63,7 @@ namespace HospitalRostering_Generator.Constraint
                         optEngine.AddLHS(1, new VariableB_DoubleOffFlag { Date = d, Employee = e }));
                     optEngine.AddLHS(2, new VariableB_DoubleOffLT2 { Employee = e });
                     optEngine.AddRHS(2);
-                    optEngine.CreateGreatEqual(this, "Monthly", e);
+                    optEngine.CreateGreaterEqual(this, "Monthly", e);
                 });
             }
             catch (Exception) { throw; }

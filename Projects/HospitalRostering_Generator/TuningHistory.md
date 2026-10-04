@@ -1,8 +1,11 @@
 # HospitalRostering_Generator — Tuning History
 
 > 這份檔案是 tuning 的**永久決策紀錄**，進版控。
-> `bin/Experiments/*.json` 會被 `dotnet clean` 清掉，不能當唯一憑證。
+> `bin/.../Experiment/*.csv` 會被 `dotnet clean` 清掉，不能當唯一憑證；每輪需搬到專案根 `Experiments/` 保存。
 > 每輪一節，格式為「假設 → 預測 → 實測 → 裁決」四段；**預測必須在跑實驗之前寫**。
+
+> [!IMPORTANT]
+> 下方早期輪次中的 `bin/.../Experiments/` 路徑與 JSON 引用是舊版歷史紀錄。現行 runtime 輸出位於 `bin/.../Experiment/`，格式為主表 `.csv`、`-meta.csv`、`-summary.csv`，以及有軌跡時才產生的 `-trajectory.csv`；永久 archive 放在專案根 `Experiments/`。
 
 ---
 
@@ -22,17 +25,17 @@
 | 項目 | 現值 | 狀態 |
 | --- | --- | --- |
 | `Threads` | 10 | ⚠️ **未定版**，待跑 S1 sizing |
-| `ParallelMode` | null（依 CPLEX 預設） | ⚠️ 應明設 `1`，否則可重現性隨 DLL 版本浮動 |
-| `MemoryLimitMb` | 2048（框架預設） | 注意：框架設它時會強制 `MIP.Strategy.File = 0` |
-| `NodeFileStrategy` | null | 被上一行的行為覆蓋成 0 |
+| `ParallelMode` | 1 | 已在 `Program.cs` 明設，固定 deterministic mode |
+| `MemoryLimitMb` | null | 現行框架不預填；沿用 CPLEX 預設。早期輪次的 2048 設定屬舊版歷史 |
+| `NodeFileStrategy` | null | 沿用 CPLEX 預設；只有明設 `MemoryLimitMb` 時才會觸發框架的 node-file 行為 |
 
 ### 量測契約
 
 | 項目 | 現值 | 狀態 |
 | --- | --- | --- |
-| experiment 期間 export | **全關** | ✅ 符合量測契約 —— exp 分支未呼叫 `.UseConfig(() => projectConfig)`，框架預設 solver log / LP / MPS / Sol 全 OFF |
+| experiment 期間 export | **全關** | ✅ 符合量測契約 —— exp 分支未呼叫 `.LoadConfig(projectConfig)`，框架預設 solver log / LP / MPS / Sol 全 OFF |
 | production 期間 export | LP / MPS / Sol 皆開 | 正常（promotion 驗證時要開回來確認時間仍可接受） |
-| 解正確性驗證 | **無** | ⚠️ 專案無 `Solution/` 與 `ValidateRules`，`OnSolved` 只做 `WriteToCSV` |
+| 解正確性驗證 | **無** | ⚠️ 專案無 `Solution/` 與 `ValidateRules`，`OptProject.Solve(..., onSolved: ...)` callback 只做 `WriteToCSV` |
 | dynamic search | 未檢查 | 每輪應確認 solver log 無停用 warning |
 
 ---

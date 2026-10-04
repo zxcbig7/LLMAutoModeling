@@ -85,13 +85,13 @@ $$ \min\ \sum_{e\in E}\sum_{d\in D}\Big( w_1 s^{off1}_{ed} + w_6 s^{six}_{ed} + 
 | C1 每天一班 | Balance | = | `CreateEqual` |
 | C2 需求 | Balance | = | `CreateEqual` |
 | C3 預排班 | Fixing | = | `CreateEqual` |
-| C4 連六天 | Implication（上下界） | ≤ , ≥ | `CreateLessEqual` + `CreateGreatEqual` |
+| C4 連六天 | Implication（上下界） | ≤ , ≥ | `CreateLessEqual` + `CreateGreaterEqual` |
 | C5 跨組別 | Implication | ≤ | `CreateLessEqual`（變數移 RHS） |
-| C6 不良轉換 | Implication | ≥ | `CreateGreatEqual`（變數移 RHS） |
-| C7 做休做 | Implication | ≥ | `CreateGreatEqual` |
-| C8 連休旗標 | Implication | ≥ | `CreateGreatEqual` |
-| C9 至少連休 | Disjunction | ≥ | `CreateGreatEqual` |
-| C10 低於平均 | Soft / 差距 | ≥ | `CreateGreatEqual` |
-| C11 週末彈性 | Soft / 差距 | ≥ | `CreateGreatEqual` |
+| C6 不良轉換 | Implication | ≥ | `CreateGreaterEqual`（變數移 RHS） |
+| C7 做休做 | Implication | ≥ | `CreateGreaterEqual` |
+| C8 連休旗標 | Implication | ≥ | `CreateGreaterEqual` |
+| C9 至少連休 | Disjunction | ≥ | `CreateGreaterEqual` |
+| C10 低於平均 | Soft / 差距 | ≥ | `CreateGreaterEqual` |
+| C11 週末彈性 | Soft / 差距 | ≥ | `CreateGreaterEqual` |
 
 > **天條**：所有數值（需求、罰分權重、跨組別成本、AVGOFF）一律放 `Parameter` / `Dataload`，Constraint / Objective 只能透過 dataload 查詢係數，**禁止寫死裸數字**。

@@ -71,7 +71,7 @@ api-guide 是 Phase 2 唯一標準，**NEVER 整份讀**——用你手上的搜
 | 資料層 Set / Parameter / Dataload / CSV | §2 |
 | 變數層 | §3 |
 | Objective 與 Constraint | §4 |
-| `Program.cs` 組裝 + 三態 CLI | §5 |
+| `Program.cs` 組裝 + 兩軸 CLI（模型來源 × 執行方式）+ import-data | §5 |
 | Solution 取解與輸出 | §6 |
 | 解驗證協定四步 | §7 |
 | exp 分支交棒契約 | §8.4 |
@@ -124,11 +124,11 @@ Objective 與 Constraint **誰先寫成檔案不拘**（5 / 6 可對調，multi-
 
 MUST 實跑一次 `-- exp` 確認管線可執行；bin 產物**不 archive**（archive 是 Phase 3 每輪的責任）。
 
-**不做**：sizing 比較、算 θ、判瓶頸剖面、指定 holdout seeds —— 那些是解讀，屬 Phase 3。
+**不做**：sizing 比較、判勝負、判瓶頸剖面、指定 holdout seeds —— 那些是解讀，屬 Phase 3。
 
 ## Step 6 · 交付 + 更新 status.json
 
-交付內容：build 結果、目標值、解摘要、輸出檔位置（`Solution/`、`Models/`）、與 Model.md 小例的對照結果、exp 分支的 R0-ready 確認結果。
+交付內容：build 結果、目標值、解摘要、輸出檔位置（`Solution/`、`Model/`）、與 Model.md 小例的對照結果、exp 分支的 R0-ready 確認結果。
 交付前 MUST 逐條跑完 `checklist.md`；不適用項目要說明原因。
 
 `Projects/<Project>/status.json` **只更新下列欄位**（完整 schema 在 `../AGENTS.md`，NEVER 整檔覆寫掉其他欄位）：

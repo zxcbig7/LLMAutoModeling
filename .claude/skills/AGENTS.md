@@ -39,7 +39,7 @@
 
 ### 數學一致性
 
-- NEVER 移項 / 改號 / 翻轉比較方向 / 合併化簡 —— ALWAYS 左側項 → `AddLHS`、右側項 → `AddRHS`，`>=` → `CreateGreatEqual`、`<=` → `CreateLessEqual`、`=` → `CreateEqual`
+- NEVER 移項 / 改號 / 翻轉比較方向 / 合併化簡 —— ALWAYS 左側項 → `AddLHS`、右側項 → `AddRHS`，`>=` → `CreateGreaterEqual`、`<=` → `CreateLessEqual`、`=` → `CreateEqual`
 - NEVER 四捨五入 / 推算 / 填佔位符——所有數值與題目描述完全一致
 - NEVER 在 Constraint / Objective 的**常數位**出現裸數字（含結構常數與迴圈邊界）——一律 `Parameter` 的 `QTY` 經 `Dataload` 取得。字面數字只允許出現在**係數位**（`Σ x` 的 identity）與線性化 pattern 自帶的常數（`= 1` / `− 1` / `= 0`）
 - NEVER 用 soft constraint 繞過 infeasible——要不要 soft 是 Model.md 說了算
@@ -59,7 +59,7 @@
 - **八資料夾，NEVER 增減**：`Model/` `Set/` `Parameter/` `Variable/` `Objective/` `Constraint/` `Solution/` `Data/`
 - `Model/` **只放** `<Project>_Model.md`——術語表內嵌其中，NEVER 另建 `Glossary.md`、NEVER 放 `.cs`
 - 一個型別一個 `.cs`，檔名 = 類別名 —— NEVER 集中檔（`Sets.cs`）
-- 模型組裝只在 `Program.cs`（唯一知道 `Dataload` 的地方），平坦三段：材料 → 模型 → 環境 —— NEVER 用 helper / local function 包裝組裝順序
+- 模型組裝只在 `Program.cs`（唯一知道 `Dataload` 的地方），固定四段：import-data → 設定 → 模型來源 → 環境 —— NEVER 用 helper / local function 包裝組裝順序
 - `OptEngine` 只從 `Build(OptEngine engine)` 進來 —— NEVER 進建構子
 - NEVER 建立流程暫存、草稿、交接或工作文件；可稽核內容直接寫入該 phase 的正式交付物。
 
@@ -76,6 +76,19 @@
 - Source generator 唯一寫法：`<Analyzer Include="..\..\dlls\OptimFoundation.Generators.dll" />` —— NEVER `ProjectReference` 跨 repo、NEVER 絕對路徑、NEVER 指向 bin 輸出
 - OptimFoundation rebuild／public API 變更後 MUST 依 `dlls/README.md` 回填 `dlls/` 並手寫更新 `VERSION.txt` provenance —— Why: stale DLL 會遮住 API drift，看似 build 綠實則已編不過
 - `Generated/` 僅供檢視：csproj MUST `<Compile Remove="Generated/**/*.cs" />`，否則第二次 build 撞名炸
+
+### 讀檔（大檔截斷會導致誤判）
+
+- NEVER 靠讀模型檔判斷模型結構（類型、各類變數數、限制式數）—— ALWAYS 讀實驗紀錄：主表的 `ModelType` 欄，或 `-meta.csv` 的 `model.<Model>.*`（`varCount` / `binaryVarCount` / `integerVarCount` / `continuousVarCount` / `constraintCount` 等；正式求解看 `<Project>-solve-meta.csv`）。這些值由框架直接問 CPLEX 模型，是唯一可信來源
+  Why: `.lp` 的 `Binaries` / `Generals` 區段在檔案**最後面**，檔案一大，讀檔工具只回傳前段（預設約 2000 行），看起來全是連續變數 → 把 MILP 誤判成 LP。實際發生過：依這個誤判跑了半小時 tuning，前提全錯
+- NEVER 把大檔整份讀進 context：`.lp` / `.mps` / `.sav`、solver log、`-trajectory.csv`、多列的實驗 CSV、`Input/*.csv` 資料檔、題目原始檔、`Generated/*.g.cs`、IIS `.ilp` —— 讀之前先看大小，超過約 2000 行一律用 grep / 逐欄抽取需要的那幾個值
+- 讀檔結果可能被截斷時（工具提示還有後續、或只讀了部分行數），NEVER 下「沒有 X」的結論——沒看到不等於沒有
+- 要查 `.lp` 裡某條式子 → 用限制式名 grep 那幾行；要知道有沒有某類變數 → 看 `ModelType` 與數量欄，不是翻 `.lp`
+- NEVER 自己比勝負或重算狀態筆數，NEVER 算平均或統計指標（sgm、PAR10、θ、gap 平均、改善量一律不用）：主表每列的 `VsBaseline` 是跟同一個 seed 的 baseline 比（`win` / `lose` / `tie` / `n/a`），`-summary.csv` 直接提供每組設定的 `Wins` / `Losses` / `Ties` / `NotCompared` 與 `FoundSolution`——判定只讀這些
+  Why: 逐列對 seed、分辨誰有解誰沒解的步驟多，自己比很容易對錯列；比錯一格就會把 retain 判成 promote
+- 讀 CSV 用 CSV 解析器（例如 PowerShell `Import-Csv`）—— NEVER 用逗號切字串（欄位內含逗號時會被加引號，切字串會錯位）
+- 讀 log 用精確的事件 tag 抽行（例如 `[變數建立完成]`、`[限制式建立]`、`rows=`、`Issues (`、`[DATA_VALIDATION_WARNING]`、`[OptEngine] Conflict constraints (`），並先確認讀的是**本次執行**的檔：log 取時間戳最新的那份，實驗 CSV 檔（`<Project>-<實驗名>-*.csv`）的修改時間要對得上本次執行時間
+- 要確認「某件事沒發生」時用正面證據計數，NEVER 用「沒看到」當證據：例如 dynamic search 用 `MIP search method: dynamic search.` 出現次數 = trial 數，而不是「沒看到停用 warning」
 
 ## Canonical 寫法（不得從相容範例反推）
 
@@ -120,7 +133,7 @@ Model.md 固定八段順序，**下游逐項在吃，缺一項轉譯就得猜**�
 ```text
 Projects/<Project>/
 ├── <Project>.csproj
-├── Program.cs          唯一組裝點：三態 CLI + 材料 → 模型 → 環境
+├── Program.cs          唯一組裝點：四段固定骨架（import-data / 設定 / 模型來源 / 環境），CLI 為兩軸自由組合（模型來源 × 執行方式）
 ├── Model/              只放 <Project>_Model.md（Phase 1 交付物，本階段唯讀）
 ├── Set/                Set_*.cs
 ├── Parameter/          Parameter_*.cs
@@ -141,37 +154,37 @@ Projects/<Project>/
 | `SolveStatus` | 語意                                                                                  | Phase 2 gate                                | 下一步                                              |
 | ------------- | ------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------- |
 | `Optimal`     | 證明最佳                                                                              | ②③④ 照跑                                    | 過 gate                                             |
-| `Feasible`    | **有 incumbent、未證明最佳**（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | ②③④ 對 incumbent 照跑（④ 改比 `BestBound`） | **過 gate**，記錄 `MipGap`；效能不足是 Phase 3 的事 |
+| `Feasible`    | **有 incumbent、未證明最佳**（撞 `TimeLimit` / `NodeLimit` / `IntegerSolutionLimit`） | ②③④ 對 incumbent 照跑（④ 改比 `BestBound`） | **過 gate**，記錄 `Gap`；效能不足是 Phase 3 的事 |
 | `TimeLimit`   | **中止且無任何可用解**（名字誤導，非時間專屬）                                        | 無解可驗，②③ 做不了                         | 換小 instance 求到 `Optimal` 完成 ②③④ 才過 gate     |
 | `Infeasible`  | 無可行解                                                                              | ✗                                           | 讀 IIS 取證，退回 Phase 1 / 2                       |
 | `Unbounded`   | 目標式無界                                                                            | ✗                                           | 補漏掉的界限 constraint，退回 Phase 2               |
 | `Error`       | 求解過程出錯                                                                          | ✗                                           | 執行面問題，先修到跑得起來再談驗證                  |
 | `NotSolved`   | 沒跑到求解                                                                            | ✗                                           | lifecycle 沒走完，先修                              |
 
-★ 純 LP（模型無整數變數）沒有 MIP bound，`BestBound` / `MipGap` 會是 `-1E+75` / `1E+75` 佔位值。那不是異常，是「這題沒有 gap 可言」；NEVER 把它當品質指標寫進交付報告（api-guide §7）。
+★ 純 LP（模型無整數變數）沒有 MIP bound，`BestBound` / `Gap` 會是 `-1E+75` / `1E+75` 佔位值。那不是異常，是「這題沒有 gap 可言」；NEVER 把它當品質指標寫進交付報告（api-guide §7）。
 
 Why 把 `Feasible` 放進 gate：撞時限但有 incumbent **正是 Phase 3 最典型的進場情境**。要求 `Optimal` 才准出 Phase 2 會讓這類專案卡死在 Phase 2——而 Phase 2 手上沒有任何合法工具能修「太慢」，那顆旋鈕在 Phase 3。轉譯忠實與否用 incumbent 就驗得出來，跟有沒有證明最佳無關。
 
-**出口 gate 之外另有一條交棒契約：exp 分支 MUST 已是 R0-ready 形狀**（`coding/optimfoundation-api-guide.md` §8.4）——experiment 名 `<Project>-tuning-r0`、config label 帶 `r0-` 前綴、`// R0 —` marker 就位、內容是 baseline × 5 seeds、`productionBaseline` 已明設 `ParallelMode = 1` / `Seed` / 實測定版的 `Threads`。Phase 3 進場時**一行 code 都不用改**就跑得出 R0。
+**出口 gate 之外另有一條交棒契約：exp 分支 MUST 已是 R0-ready 形狀**（`coding/optimfoundation-api-guide.md` §8.4）——experiment 名 `tuning-r0`（不含專案名）、config label 帶 `r0-` 前綴、`// R0 —` marker 就位、內容是 baseline × 5 seeds、`productionBaseline` 已明設 `ParallelMode = 1` / `Seed` / 實測定版的 `Threads`。Phase 3 進場時**一行 code 都不用改**就跑得出 R0。
 
-Why: exp 分支雖在 Phase 3 的白名單內，但「每次接棒都先重寫一次」等於把 Phase 2 沒做完的事推給下游，重寫期間的 build 失敗還會污染調校紀錄。Phase 2 只交形狀、不跑 R0——sizing、θ、瓶頸剖面都是**解讀**，屬 Phase 3。
+Why: exp 分支雖在 Phase 3 的白名單內，但「每次接棒都先重寫一次」等於把 Phase 2 沒做完的事推給下游，重寫期間的 build 失敗還會污染調校紀錄。Phase 2 只交形狀、不跑 R0——sizing、勝負判定、瓶頸剖面都是**解讀**，屬 Phase 3。
 
 ### Phase 3 出口契約
 
 凍結範圍：`Model.md`、`Data/*.csv`、`Dataload`、`Constraint_*`、`Objective` 全部唯讀。本階段只動 `Program.cs` 裡那顆 `CplexConfig productionBaseline`。
 
-`git diff` 只准出現下列五類（權威定義在 `tuning/solver-tuning-guide.md` §0.1.2，本處與其一致）：
+`git diff` 只准出現下列六類（權威定義在 `tuning/solver-tuning-guide.md` §0.1.2，本處與其一致）：
 
 ```text
 Projects/<Project>/Program.cs
 Projects/<Project>/TuningHistory.md
-Projects/<Project>/Experiments/<Project>-tuning-r<N>.csv
-Projects/<Project>/Experiments/<Project>-tuning-r<N>-meta.csv
-Projects/<Project>/Experiments/<Project>-tuning-r<N>.json
-Projects/<Project>/Experiments/<Project>-tuning-r<N>-trajectory.csv   ← 有收集到軌跡才會有
+Projects/<Project>/Experiments/<Project>-tuning-r<N>[-holdout]-trial.csv
+Projects/<Project>/Experiments/<Project>-tuning-r<N>[-holdout]-meta.csv
+Projects/<Project>/Experiments/<Project>-tuning-r<N>[-holdout]-summary.csv
+Projects/<Project>/Experiments/<Project>-tuning-r<N>[-holdout]-trajectory.csv ← 有收集到軌跡才會有
 ```
 
-（`status.json` 若已納管則可額外出現。）多出任何其他改動就是越界。`Experiments/` 是本階段唯一允許的專案結構擴充；每輪 `.csv` / `-meta.csv` / `.json` **三者缺一不可**，`-trajectory.csv` 則**只有在真的收集到軌跡時才會產生**（純 LP 或求解太快就沒有，看主表 `TrajectoryPoints` 是不是 0）。MUST 通過 [`tuning/checklist.md`](tuning/checklist.md) 的「每輪 archive 逐項驗收」A–E。
+（`status.json` 若已納管則可額外出現。）多出任何其他改動就是越界；`Experiments/` 內已 archive 的檔只能新增、不能修改，已 archive 的檔出現在 diff 就是越界；archive 不可變，這一輪任何一個檔已在 archive 就視為已 archive，NEVER 重跑，改開 r<N+1>。`Experiments/` 是本階段唯一允許的專案結構擴充；本輪 archive MUST 同時新增 `-trial.csv` / `-meta.csv` / `-summary.csv`（**三者缺一不可**），`-trajectory.csv` 則**只有在真的收集到軌跡時才會產生**。軌跡只含 CPLEX 實際呼叫 callback 時觀察到的點，框架不補點；純 LP、或 presolve / root 就解完時 callback 不會被呼叫，就不會有這個檔。MUST 通過 [`tuning/checklist.md`](tuning/checklist.md) 的「每輪 archive 逐項驗收」A–E。
 
 出口 gate = champion 寫回 baseline → 重新 build → 跑無參數 production → `ValidateRules` 通過。只產出 experiment 報表而 production 仍跑舊 config，**不算完成**。沒有可靠勝者時，「retain + 證據」也是合法交付。
 
@@ -188,7 +201,7 @@ Projects/<Project>/
 ├── Model/<Project>_Model.md             Phase 1 唯一正式模型
 ├── status.json                           phase gate 狀態
 ├── TuningHistory.md                      Phase 3 計畫、分析與裁決
-└── Experiments/<Project>-tuning-r<N>.*   Phase 3 原始證據
+└── Experiments/<Project>-tuning-r<N>[-holdout]-{trial,meta,summary,trajectory}.csv Phase 3 原始證據
 ```
 
 跨 session resume 時只讀上述正式檔案；短暫的 agent 工單、稽核結果與分析草稿不落檔。

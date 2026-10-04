@@ -62,7 +62,7 @@ namespace Template
         public static TemplateSolution ReadAndValidate(OptEngine engine, Dataload data)
         {
             Logging.Info($"Status={engine.Status} Obj={engine.GetObjectiveValue():F4} " +
-                         $"BestBound={engine.LastMetrics.BestBound:F4} MIPGap={engine.LastMetrics.MipGap:P2}");
+                         $"BestBound={engine.LastMetrics.BestBound:F4} Gap={engine.LastMetrics.Gap:P2}");
 
             var produce = engine.GetSetVarValues<VariableI_Produce>();
             var use = engine.GetSetVarValues<VariableB_Use>();

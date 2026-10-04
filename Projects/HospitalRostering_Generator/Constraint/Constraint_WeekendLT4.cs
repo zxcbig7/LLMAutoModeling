@@ -5,7 +5,7 @@ using HospitalRostering_Generator.Variable;
 
 namespace HospitalRostering_Generator.Constraint
 {
-    /// <summary>C11 週末休假彈性：z^wkd[e] ≥ 4 - Σ_{d∈W} y[e,d,O]，∀e。（CreateGreatEqual）</summary>
+    /// <summary>C11 週末休假彈性：z^wkd[e] ≥ 4 - Σ_{d∈W} y[e,d,O]，∀e。（CreateGreaterEqual）</summary>
     public class Constraint_WeekendLT4 : ConstraintBase
     {
         private readonly OptEngine optEngine;
@@ -29,7 +29,7 @@ namespace HospitalRostering_Generator.Constraint
                         .Where(w => w.DayOfWeek == DayOfWeek.Saturday || w.DayOfWeek == DayOfWeek.Sunday)
                         .ToList()
                         .ForEach(d => optEngine.AddRHS(-1, new VariableB_ShiftAssign { Date = d, Employee = e, Group = "O" }));
-                    optEngine.CreateGreatEqual(this, e);
+                    optEngine.CreateGreaterEqual(this, e);
                 });
             }
             catch (Exception) { throw; }
